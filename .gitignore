@@ -1,0 +1,55 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.build/
+build/
+dist/
+
+# Virtual env
+.venv/
+.venv*/
+venv/
+ENV/
+
+# IDE/editor
+.vscode/
+.idea/
+*.swp
+
+# Tests & coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+*.log
+logs/
+
+# Local environment & secrets
+.env
+.env.*
+*.local
+*.secret
+secrets.*
+
+# Node (if frontend added later)
+node_modules/
+
+# MacOS
+.DS_Store
+
+# Configs that may contain secrets (keep templates committed)
+configs/*.local.yaml
+configs/*.secrets.yaml
+# Keep the main operator-editable configs tracked by default.
+# If you prefer ignoring them locally, uncomment the following lines:
+# configs/payout.yaml
+# configs/integrations.yaml
+# configs/product.yaml

@@ -9,6 +9,15 @@ def create_app() -> FastAPI:
     """
     app = FastAPI(title="Pay2Slay API", version="0.1.0")
 
+    # Load configuration and attach to app.state
+    try:
+        from src.lib.config import get_config  # local import to avoid cycles
+
+        app.state.config = get_config()
+    except Exception as exc:  # pragma: no cover - do not crash app creation in tests
+        # In early TDD, configs may be incomplete; keep app up but mark config load error
+        app.state.config_error = str(exc)
+
     from .auth import router as auth_router
     from .user import router as user_router
     from .admin import router as admin_router
