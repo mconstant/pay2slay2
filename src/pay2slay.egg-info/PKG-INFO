@@ -1,0 +1,29 @@
+Metadata-Version: 2.4
+Name: pay2slay
+Version: 0.1.0
+Summary: Pay2Slay Faucet: Banano payouts for Fortnite kills
+Author-email: Community <opensource@example.org>
+License: MIT
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: fastapi>=0.111
+Requires-Dist: uvicorn[standard]>=0.30
+Requires-Dist: pydantic>=2.7
+Requires-Dist: sqlalchemy>=2.0
+Requires-Dist: alembic>=1.13
+Requires-Dist: httpx>=0.27
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: structlog>=24.1
+Requires-Dist: prometheus-client>=0.20
+Requires-Dist: opentelemetry-instrumentation-fastapi>=0.47b0
+Requires-Dist: opentelemetry-sdk>=1.25.0
+Requires-Dist: tenacity>=9.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.2; extra == "dev"
+Requires-Dist: pytest-asyncio>=0.23; extra == "dev"
+Requires-Dist: coverage[toml]>=7.6; extra == "dev"
+Requires-Dist: ruff>=0.6; extra == "dev"
+Requires-Dist: mypy>=1.11; extra == "dev"
+Requires-Dist: types-PyYAML>=6.0; extra == "dev"
+Requires-Dist: httpx[http2]>=0.27; extra == "dev"
+Requires-Dist: pre-commit>=3.7; extra == "dev"
