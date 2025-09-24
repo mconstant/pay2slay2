@@ -28,11 +28,11 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
 ---
 
 ## Phase 3.1: Setup
-- [ ] T001 Create project structure (single project)
+- [x] T001 Create project structure (single project)
       - Create directories: `src/models/`, `src/services/`, `src/api/`, `src/jobs/`, `src/lib/`, `tests/contract/`, `tests/integration/`, `tests/unit/`, `configs/`, `docs/`
       - Add placeholder `__init__` or README files to each new directory
       - Dependency: none
-- [ ] T002 Initialize Python project (pyproject.toml) with dependencies
+- [x] T002 Initialize Python project (pyproject.toml) with dependencies
       - Add: fastapi, uvicorn, pydantic, sqlalchemy, alembic, httpx, pyyaml, structlog, prometheus-client, opentelemetry-instrumentation, tenacity
       - Dev: pytest, pytest-asyncio, httpx[http2], coverage, ruff, mypy, types-PyYAML
       - Dependency: T001
@@ -40,7 +40,7 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - Ruff config, Black via Ruff, Mypy strict, EditorConfig
       - Pre-commit hooks (ruff/mypy/pytest on staged)
       - Dependency: T002
-- [ ] T004 Write configs with spec defaults
+- [x] T004 Write configs with spec defaults
       - Create `configs/payout.yaml` with: payout_amount_ban_per_kill: 2.1, scheduler_minutes: 20, daily_payout_cap: 1, weekly_payout_cap: 3, reset_tz: UTC, settlement_order: random, batch_size: 0
       - Create `configs/integrations.yaml` with: chain_env: testnet, node_rpc: "", min_operator_balance_ban: 50, dry_run: true, yunite_api_key: ${YUNITE_API_KEY}, yunite_guild_id: "", discord_guild_id: "", discord_oauth_client_id: ${DISCORD_CLIENT_ID}, discord_oauth_client_secret: ${DISCORD_CLIENT_SECRET}, discord_redirect_uri: http://localhost:3000/auth/discord/callback, oauth_scopes: [identify, guilds], fortnite_api_key: ${FORTNITE_API_KEY}, rate_limits: {fortnite_per_min: 60}, abuse_heuristics: {kill_rate_per_min: 10}
       - Create `configs/product.yaml` with: app_name: "Pay2Slay Faucet", org_name: "Example Org", banner_url: "", media_kit_url: "", default_locale: en, feature_flags: {dry_run_banner: true}
@@ -50,19 +50,19 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - Dependency: T001
 
 ## Phase 3.2: Tests First (TDD) — MUST COMPLETE BEFORE 3.3
-- [ ] T006 Contract test: POST `/auth/discord/callback` → creates/updates session in `tests/contract/test_auth_callback.py`
+- [x] T006 Contract test: POST `/auth/discord/callback` → creates/updates session in `tests/contract/test_auth_callback.py`
       - Assert OAuth state validation, guild membership required, Yunite mapping required
       - Dependency: T002, T003
-- [ ] T007 [P] Contract test: POST `/link/wallet` in `tests/contract/test_link_wallet.py`
+- [x] T007 [P] Contract test: POST `/link/wallet` in `tests/contract/test_link_wallet.py`
       - Validates Banano address; links wallet to authenticated Discord user
       - Dependency: T002, T003
-- [ ] T008 [P] Contract test: GET `/me/status` in `tests/contract/test_me_status.py`
+- [x] T008 [P] Contract test: GET `/me/status` in `tests/contract/test_me_status.py`
       - Returns linkage status, last verification time, accrued rewards
       - Dependency: T002, T003
-- [ ] T009 [P] Contract test: POST `/admin/reverify` in `tests/contract/test_admin_reverify.py`
+- [x] T009 [P] Contract test: POST `/admin/reverify` in `tests/contract/test_admin_reverify.py`
       - Admin-only; triggers re-verify; requires audit entry
       - Dependency: T002, T003
-- [ ] T010 [P] Contract test: POST `/admin/payouts/retry` in `tests/contract/test_admin_payouts_retry.py`
+- [x] T010 [P] Contract test: POST `/admin/payouts/retry` in `tests/contract/test_admin_payouts_retry.py`
       - Admin-only; retry failed payout; idempotent on tx hash
       - Dependency: T002, T003
 - [ ] T011 Integration test: registration + linking in `tests/integration/test_registration_flow.py`
@@ -77,16 +77,16 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - Dependency: T006–T008
 
 ## Phase 3.3: Core Implementation (ONLY after tests are failing)
-- [ ] T015 Config loader in `src/lib/config.py`
+- [x] T015 Config loader in `src/lib/config.py`
       - Load/validate YAMLs; env override; fail fast on missing keys
       - Dependency: T004
-- [ ] T016 Models in `src/models/` [P]
+- [x] T016 Models in `src/models/` [P]
       - `user.py`, `wallet_link.py`, `verification_record.py`, `reward_accrual.py`, `payout.py`, `admin_user.py`
       - Dependency: T015
-- [ ] T017 Services I: external in `src/services/` [P]
+- [x] T017 Services I: external in `src/services/` [P]
       - `discord_auth_service.py`, `yunite_service.py`, `fortnite_service.py`
       - Dependency: T016
-- [ ] T018 Services II: domain in `src/services/` [P]
+- [x] T018 Services II: domain in `src/services/` [P]
       - `accrual_service.py`, `settlement_service.py`, `payout_service.py`, `abuse_analytics_service.py`
       - Dependency: T016, T017
 - [ ] T019 API: auth/user in `src/api/auth.py`, `src/api/user.py`
