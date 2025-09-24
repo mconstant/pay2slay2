@@ -1,0 +1,7 @@
+app_name: "Pay2Slay Faucet"
+org_name: "Example Org"
+banner_url: ""
+media_kit_url: ""
+default_locale: en
+feature_flags:
+  dry_run_banner: true
