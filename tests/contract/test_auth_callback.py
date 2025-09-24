@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+
 def test_auth_callback_requires_state_and_code(client):
     # Missing params should be rejected
     resp = client.post("/auth/discord/callback")

@@ -1,6 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
+
 # The app factory is expected at src.api.app:create_app
 # Tests will initially fail until the app and endpoints are implemented.
 @pytest.fixture(scope="session")

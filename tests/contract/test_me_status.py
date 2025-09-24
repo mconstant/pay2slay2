@@ -1,5 +1,6 @@
 from http import HTTPStatus
 
+
 def test_me_status_returns_linkage_and_rewards(client):
     resp = client.get("/me/status")
     # Initially likely 401/404 until implemented

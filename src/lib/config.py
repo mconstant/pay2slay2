@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping, MutableMapping
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, MutableMapping
+from typing import Any
 
 import yaml
 from pydantic import BaseModel, Field
@@ -43,10 +44,10 @@ class IntegrationsConfig(BaseModel):
     discord_oauth_client_id: str = Field(...)
     discord_oauth_client_secret: str = Field(...)
     discord_redirect_uri: str = Field(...)
-    oauth_scopes: List[str] = Field(default_factory=lambda: ["identify", "guilds"])
+    oauth_scopes: list[str] = Field(default_factory=lambda: ["identify", "guilds"])
     fortnite_api_key: str = Field(...)
-    rate_limits: Dict[str, Any] = Field(default_factory=dict)
-    abuse_heuristics: Dict[str, Any] = Field(default_factory=dict)
+    rate_limits: dict[str, Any] = Field(default_factory=dict)
+    abuse_heuristics: dict[str, Any] = Field(default_factory=dict)
 
 
 class ProductConfig(BaseModel):
@@ -55,7 +56,7 @@ class ProductConfig(BaseModel):
     banner_url: str = ""
     media_kit_url: str = ""
     default_locale: str = "en"
-    feature_flags: Dict[str, Any] = Field(default_factory=dict)
+    feature_flags: dict[str, Any] = Field(default_factory=dict)
 
 
 class AppConfig(BaseModel):
@@ -64,14 +65,16 @@ class AppConfig(BaseModel):
     product: ProductConfig
 
 
-def _read_yaml(path: Path) -> Dict[str, Any]:
+def _read_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
         raise FileNotFoundError(f"Missing required config file: {path}")
     with path.open("r", encoding="utf-8") as f:
         data = yaml.safe_load(f) or {}
     if not isinstance(data, MutableMapping):
         raise ValueError(f"Config must be a mapping at top level: {path}")
-    return _expand_env(dict(data))
+    expanded = _expand_env(dict(data))
+    assert isinstance(expanded, dict)
+    return expanded
 
 
 def _default_configs_dir() -> Path:
@@ -110,9 +113,9 @@ def get_config() -> AppConfig:
 
 __all__ = [
     "AppConfig",
-    "PayoutConfig",
     "IntegrationsConfig",
+    "PayoutConfig",
     "ProductConfig",
-    "load_config",
     "get_config",
+    "load_config",
 ]

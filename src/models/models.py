@@ -1,0 +1,117 @@
+from __future__ import annotations
+
+from datetime import datetime
+
+from sqlalchemy import BigInteger, Boolean, ForeignKey, Index, Numeric, String, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base, TimestampMixin
+
+
+class User(Base, TimestampMixin):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    # Discord identity
+    discord_user_id: Mapped[str] = mapped_column(String(30), unique=True, index=True)
+    discord_username: Mapped[str | None] = mapped_column(String(100))
+    discord_guild_member: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Epic identity from Yunite
+    epic_account_id: Mapped[str | None] = mapped_column(String(64), index=True)
+
+    # Linked wallet (ban_ address) through WalletLink
+    wallet_links: Mapped[list[WalletLink]] = relationship(back_populates="user")
+
+    accruals: Mapped[list[RewardAccrual]] = relationship(back_populates="user")
+    payouts: Mapped[list[Payout]] = relationship(back_populates="user")
+
+
+class AdminUser(Base, TimestampMixin):
+    __tablename__ = "admin_users"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    # for simplicity store hashed secret outside scope here
+    password_hash: Mapped[str | None] = mapped_column(String(255))
+    is_active: Mapped[bool] = mapped_column(default=True)
+
+
+class WalletLink(Base, TimestampMixin):
+    __tablename__ = "wallet_links"
+    __table_args__ = (
+        UniqueConstraint("user_id", "address", name="uq_wallet_per_user"),
+        Index("ix_wallet_address", "address"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    address: Mapped[str] = mapped_column(String(70))  # ban_... up to ~64
+    is_primary: Mapped[bool] = mapped_column(default=True)
+    verified: Mapped[bool] = mapped_column(default=False)
+    verified_at: Mapped[datetime | None] = mapped_column()
+
+    user: Mapped[User] = relationship(back_populates="wallet_links")
+
+
+class VerificationRecord(Base, TimestampMixin):
+    __tablename__ = "verification_records"
+    __table_args__ = (
+        Index("ix_verif_discord", "discord_user_id"),
+        Index("ix_verif_epic", "epic_account_id"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+
+    discord_user_id: Mapped[str] = mapped_column(String(30))
+    discord_guild_member: Mapped[bool] = mapped_column(default=False)
+    epic_account_id: Mapped[str | None] = mapped_column(String(64))
+
+    source: Mapped[str] = mapped_column(String(32))  # e.g., "discord_oauth", "yunite_sync"
+    status: Mapped[str] = mapped_column(String(32))  # e.g., "ok", "mismatch", "error"
+    detail: Mapped[str | None] = mapped_column(String(500))
+
+
+class RewardAccrual(Base, TimestampMixin):
+    __tablename__ = "reward_accruals"
+    __table_args__ = (
+        Index("ix_accrual_user_created", "user_id", "created_at"),
+        Index("ix_accrual_settled", "settled"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    # count of kills accrued since last cursor for user
+    kills: Mapped[int] = mapped_column()
+    # snapshot value = kills * payout_per_kill at time of accrual (BAN)
+    amount_ban: Mapped[float] = mapped_column(Numeric(18, 8))
+    epoch_minute: Mapped[int] = mapped_column(BigInteger)  # aggregation slot or cursor minute
+
+    settled: Mapped[bool] = mapped_column(default=False)
+    settled_at: Mapped[datetime | None] = mapped_column()
+    payout_id: Mapped[int | None] = mapped_column(ForeignKey("payouts.id", ondelete="SET NULL"))
+
+    user: Mapped[User] = relationship(back_populates="accruals")
+    payout: Mapped[Payout | None] = relationship(back_populates="accruals")
+
+
+class Payout(Base, TimestampMixin):
+    __tablename__ = "payouts"
+    __table_args__ = (
+        Index("ix_payout_tx", "tx_hash", unique=True),
+        Index("ix_payout_user_created", "user_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    address: Mapped[str] = mapped_column(String(70))
+    # Sum of included accruals (BAN)
+    amount_ban: Mapped[float] = mapped_column(Numeric(18, 8))
+    # Blockchain fields
+    tx_hash: Mapped[str | None] = mapped_column(String(128))
+    status: Mapped[str] = mapped_column(String(20), default="pending")  # pending/sent/failed
+    error_detail: Mapped[str | None] = mapped_column(String(500))
+
+    user: Mapped[User] = relationship(back_populates="payouts")
+    accruals: Mapped[list[RewardAccrual]] = relationship(back_populates="payout")

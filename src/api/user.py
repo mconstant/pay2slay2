@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Body, HTTPException
+from fastapi.responses import JSONResponse
 
 router = APIRouter()
 
 
 @router.post("/link/wallet")
-def link_wallet(banano_address: str = Body(..., embed=True)):
+def link_wallet(banano_address: str = Body(..., embed=True)) -> JSONResponse:
     # rudimentary validation: must start with 'ban_'
     if not isinstance(banano_address, str) or not banano_address.startswith("ban_"):
         raise HTTPException(status_code=400, detail="Invalid Banano address")
@@ -12,6 +13,6 @@ def link_wallet(banano_address: str = Body(..., embed=True)):
 
 
 @router.get("/me/status")
-def me_status():
+def me_status() -> JSONResponse:
     # Would normally require auth; placeholder to satisfy tests
     raise HTTPException(status_code=401, detail="Unauthorized")

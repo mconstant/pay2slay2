@@ -47,9 +47,11 @@ source = ["src"]
 
 [tool.ruff]
 line-length = 100
-select = ["E","F","I","N","UP","B","A","PL","RUF"]
-ignore = ["E203","E266","E501","W503"]
 fix = true
+
+[tool.ruff.lint]
+select = ["E","F","I","N","UP","B","A","PL","RUF"]
+ignore = ["E203","E266","E501","PLC0415"]
 
 [tool.mypy]
 python_version = "3.11"
