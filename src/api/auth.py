@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException, Query, Request, Depends
+from collections.abc import Generator
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
-from typing import Generator
 from sqlalchemy.orm import Session
 
+from src.lib.auth import issue_session, session_secret
 from src.models.models import User, VerificationRecord
 from src.services.discord_auth_service import DiscordAuthService
 from src.services.yunite_service import YuniteService
@@ -24,7 +26,7 @@ def discord_callback(
     state: str = Query(..., description="OAuth state"),
     code: str = Query(..., description="OAuth authorization code"),
     request: Request = None,  # type: ignore[assignment]
-    db: Session = Depends(_get_db),
+    db: Session = Depends(_get_db),  # noqa: B008 - FastAPI dependency
 ) -> JSONResponse:
     if not state or not code:
         raise HTTPException(status_code=400, detail="Missing state or code")
@@ -77,10 +79,13 @@ def discord_callback(
     db.commit()
     db.refresh(user)
 
-    return JSONResponse(
+    token = issue_session(user.discord_user_id, session_secret())
+    resp = JSONResponse(
         {
             "discord_user_id": user.discord_user_id,
             "discord_username": user.discord_username,
             "epic_account_id": user.epic_account_id,
         }
     )
+    resp.set_cookie("p2s_session", token, httponly=True, samesite="lax")
+    return resp

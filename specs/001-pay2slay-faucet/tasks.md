@@ -89,8 +89,9 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
 - [x] T018 Services II: domain in `src/services/` [P]
       - `accrual_service.py`, `settlement_service.py`, `payout_service.py`, `abuse_analytics_service.py`
       - Dependency: T016, T017
-- [ ] T019 API: auth/user in `src/api/auth.py`, `src/api/user.py`
+- [x] T019 API: auth/user in `src/api/auth.py`, `src/api/user.py`
       - `/auth/discord/callback`, `/me/status`, `/link/wallet`
+      - Session cookie `p2s_session` issued on auth and validated in user endpoints
       - Dependency: T017, T018
 - [ ] T020 [P] API: admin in `src/api/admin.py`
       - `/admin/reverify`, `/admin/payouts/retry`, `/admin/health`
@@ -114,6 +115,7 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - Dependency: T016
 - [ ] T026 Auth middleware/session handling
       - Validate OAuth state, scopes; deserialize user
+      - Note: cookie verified inline in endpoints; dedicated middleware still pending
       - Dependency: T019
 - [ ] T027 Request/response logging and security headers
       - Correlation IDs; CORS; headers baseline

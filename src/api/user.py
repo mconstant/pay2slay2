@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Body, HTTPException, Request, Depends
+from collections.abc import Generator
+
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
-from typing import Generator
 from sqlalchemy.orm import Session
 
-from src.models.models import User, WalletLink, RewardAccrual
+from src.lib.auth import session_secret, verify_session
+from src.models.models import User, WalletLink
 
 router = APIRouter()
 
@@ -21,13 +23,17 @@ def _get_db(request: Request) -> Generator[Session, None, None]:
 def link_wallet(
     banano_address: str = Body(..., embed=True),
     request: Request = None,  # type: ignore[assignment]
-    db: Session = Depends(_get_db),
+    db: Session = Depends(_get_db),  # noqa: B008 - FastAPI dependency
 ) -> JSONResponse:
     # rudimentary validation: must start with 'ban_'
     if not isinstance(banano_address, str) or not banano_address.startswith("ban_"):
         raise HTTPException(status_code=400, detail="Invalid Banano address")
-    # Look up the most recent verified user (testing-only dry-run flow)
-    user = db.query(User).order_by(User.id.desc()).first()
+    # Identify user from session cookie
+    token = request.cookies.get("p2s_session") if request else None
+    uid = verify_session(token, session_secret()) if token else None
+    if not uid:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    user = db.query(User).filter(User.discord_user_id == uid).one_or_none()
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
     # Upsert primary wallet link
@@ -46,8 +52,12 @@ def link_wallet(
 
 
 @router.get("/me/status")
-def me_status(request: Request = None, db: Session = Depends(_get_db)) -> JSONResponse:  # type: ignore[assignment]
-    user = db.query(User).order_by(User.id.desc()).first()
+def me_status(request: Request = None, db: Session = Depends(_get_db)) -> JSONResponse:  # type: ignore[assignment]  # noqa: B008
+    token = request.cookies.get("p2s_session") if request else None
+    uid = verify_session(token, session_secret()) if token else None
+    if not uid:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    user = db.query(User).filter(User.discord_user_id == uid).one_or_none()
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
     # compute accrued rewards sum

@@ -72,6 +72,6 @@ class DiscordAuthService:
         access_token, token_type = self._token_exchange(code)
         me = self._fetch_me(access_token, token_type)
         is_member = self._is_member_via_user_token(access_token, token_type)
-        username = me.get("username", "")
-        return DiscordUser(user_id=str(me["id"]), username=str(username), guild_member=is_member)
+        username = str(me.get("username", ""))
+        return DiscordUser(user_id=str(me["id"]), username=username, guild_member=is_member)
 
