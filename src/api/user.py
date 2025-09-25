@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.lib.auth import session_secret, verify_session
-from src.models.models import User, WalletLink, VerificationRecord
+from src.models.models import User, VerificationRecord, WalletLink
 
 router = APIRouter()
 
@@ -70,10 +70,14 @@ def me_status(request: Request = None, db: Session = Depends(_get_db)) -> JSONRe
         .first()
     )
     last_verified_at = latest_ver.created_at.isoformat() if latest_ver and latest_ver.created_at else None
+    last_verified_status = latest_ver.status if latest_ver else None
+    last_verified_source = latest_ver.source if latest_ver else None
     return JSONResponse(
         {
             "linked": bool(user.wallet_links),
             "last_verified_at": last_verified_at,
+            "last_verified_status": last_verified_status,
+            "last_verified_source": last_verified_source,
             "accrued_rewards_ban": total_accrued,
         }
     )

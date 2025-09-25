@@ -93,12 +93,16 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - `/auth/discord/callback`, `/me/status`, `/link/wallet`
       - Session cookie `p2s_session` issued on auth and validated in user endpoints
       - `/me/status` returns `last_verified_at` from latest `VerificationRecord`
+      - `/me/status` also returns `last_verified_status` and `last_verified_source`
       - Dependency: T017, T018
 - [ ] T020 [P] API: admin in `src/api/admin.py`
       - `/admin/reverify`, `/admin/payouts/retry`, `/admin/health`
+      - Minimal endpoints scaffolded with header-based admin guard (`X-Admin-Token`); actions stubbed to return accepted
+      - Replace with real admin auth and implement reverify/retry logic
       - Dependency: T018
 - [ ] T021 [P] Jobs: scheduler in `src/jobs/settlement.py`
       - Interval runner; enforces `min_operator_balance_ban`; batch_size; metrics
+      - Skeleton `run_settlement` implemented using SettlementService and PayoutService; scheduler loop and checks TBD
       - Dependency: T018
 - [ ] T022 Observability wiring in `src/lib/observability.py`
       - structlog setup; Prometheus metrics; tracing init
