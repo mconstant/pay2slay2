@@ -23,6 +23,7 @@ class DiscordAuthService:
         guild_id: str,
         http: httpx.Client | None = None,
         base_url: str = "https://discord.com/api",
+        dry_run: bool = True,
     ) -> None:
         self.client_id = client_id
         self.client_secret = client_secret
@@ -30,6 +31,7 @@ class DiscordAuthService:
         self.guild_id = guild_id
         self.http = http or httpx.Client(timeout=10)
         self.base_url = base_url.rstrip("/")
+        self.dry_run = dry_run
 
     def _token_exchange(self, code: str) -> tuple[str, str]:
         data: dict[str, str] = {
@@ -62,6 +64,11 @@ class DiscordAuthService:
         return any(str(g.get("id")) == str(self.guild_id) for g in guilds)
 
     def exchange_code_for_user(self, code: str) -> DiscordUser:
+        if self.dry_run:
+            # Deterministic stub: build user from code
+            user_id = f"discord_{code}"
+            username = f"user_{code}"
+            return DiscordUser(user_id=user_id, username=username, guild_member=True)
         access_token, token_type = self._token_exchange(code)
         me = self._fetch_me(access_token, token_type)
         is_member = self._is_member_via_user_token(access_token, token_type)

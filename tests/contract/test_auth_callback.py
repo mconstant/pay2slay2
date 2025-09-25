@@ -7,12 +7,9 @@ def test_auth_callback_requires_state_and_code(client):
     assert resp.status_code in (HTTPStatus.BAD_REQUEST, HTTPStatus.UNPROCESSABLE_ENTITY)
 
 
-def test_auth_callback_requires_guild_membership_and_yunite_mapping(client):
-    # Dummy params; expected to fail until implemented
+def test_auth_callback_success(client):
+    # Dry-run flow should succeed and return identity payload
     resp = client.post("/auth/discord/callback?state=xyz&code=dummy")
-    assert resp.status_code in (
-        HTTPStatus.UNAUTHORIZED,
-        HTTPStatus.FORBIDDEN,
-        HTTPStatus.NOT_IMPLEMENTED,
-        HTTPStatus.BAD_REQUEST,
-    )
+    assert resp.status_code == HTTPStatus.OK
+    data = resp.json()
+    assert set(["discord_user_id", "discord_username", "epic_account_id"]).issubset(data.keys())
