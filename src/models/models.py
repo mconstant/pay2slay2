@@ -19,6 +19,12 @@ class User(Base, TimestampMixin):
 
     # Epic identity from Yunite
     epic_account_id: Mapped[str | None] = mapped_column(String(64), index=True)
+    # Settlement cursor fields
+    last_settled_kill_count: Mapped[int] = mapped_column(default=0)
+    last_settlement_at: Mapped[datetime | None] = mapped_column()
+    # Region & abuse flags (JSON/text for future extensibility)
+    region_code: Mapped[str | None] = mapped_column(String(8))
+    abuse_flags: Mapped[str | None] = mapped_column(String(500))
 
     # Linked wallet (ban_ address) through WalletLink
     wallet_links: Mapped[list[WalletLink]] = relationship(back_populates="user")
@@ -78,6 +84,8 @@ class RewardAccrual(Base, TimestampMixin):
     __table_args__ = (
         Index("ix_accrual_user_created", "user_id", "created_at"),
         Index("ix_accrual_settled", "settled"),
+        # Idempotency: at most one accrual per user per epoch_minute
+        UniqueConstraint("user_id", "epoch_minute", name="uq_accrual_user_epoch"),
     )
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
@@ -112,6 +120,10 @@ class Payout(Base, TimestampMixin):
     tx_hash: Mapped[str | None] = mapped_column(String(128))
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending/sent/failed
     error_detail: Mapped[str | None] = mapped_column(String(500))
+    # Retry / audit metadata
+    attempt_count: Mapped[int] = mapped_column(default=1)
+    first_attempt_at: Mapped[datetime | None] = mapped_column()
+    last_attempt_at: Mapped[datetime | None] = mapped_column()
 
     user: Mapped[User] = relationship(back_populates="payouts")
     accruals: Mapped[list[RewardAccrual]] = relationship(back_populates="payout")

@@ -51,6 +51,17 @@ def link_wallet(
     return JSONResponse({"linked": True, "address": banano_address})
 
 
+@router.post("/me/reverify")
+def me_reverify(request: Request = None, db: Session = Depends(_get_db)) -> JSONResponse:  # type: ignore[assignment]  # noqa: B008
+    token = request.cookies.get("p2s_session") if request else None
+    uid = verify_session(token, session_secret()) if token else None
+    if not uid:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    # Placeholder: real implementation will trigger an asynchronous re-verification workflow.
+    # Return NOT_IMPLEMENTED for now to satisfy contract test allowing 501.
+    raise HTTPException(status_code=501, detail="Not implemented yet")
+
+
 @router.get("/me/status")
 def me_status(request: Request = None, db: Session = Depends(_get_db)) -> JSONResponse:  # type: ignore[assignment]  # noqa: B008
     token = request.cookies.get("p2s_session") if request else None

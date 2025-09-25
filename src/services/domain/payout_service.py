@@ -36,7 +36,15 @@ class PayoutService:
         address = self._get_primary_address(user)
         if not address:
             return None
-        payout = Payout(user_id=user.id, address=address, amount_ban=amount_ban, status="pending")
+        now = datetime.now(UTC)
+        payout = Payout(
+            user_id=user.id,
+            address=address,
+            amount_ban=amount_ban,
+            status="pending",
+            first_attempt_at=now,
+            last_attempt_at=now,
+        )
         self.session.add(payout)
         # Mark accruals as settled and link to payout
         for a in accruals:
@@ -53,6 +61,11 @@ class PayoutService:
             )
             payout.tx_hash = tx
             payout.status = "sent" if tx else "failed"
+        # Advance cursor if payout succeeded (sum accrual kills added to cursor)
+        if payout.status == "sent":
+            total_kills = sum(a.kills for a in accruals)
+            user.last_settled_kill_count += total_kills
+            user.last_settlement_at = datetime.now(UTC)
         return PayoutResult(
             user_id=user.id,
             payout_id=0,

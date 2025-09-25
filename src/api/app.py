@@ -1,46 +1,54 @@
+import os
+from typing import Any
+
 from fastapi import FastAPI
 
 from src.lib.observability import get_logger, setup_structlog
 
 
-def create_app() -> FastAPI:
-    """Create and return the FastAPI application instance.
+def _init_db(app: FastAPI, log: Any) -> None:
+    from src.lib.db import make_engine, make_session_factory  # local import
+    from src.models.base import Base
 
-    Endpoints will be registered in subsequent tasks. For now, this exists to
-    allow contract tests to run and fail meaningfully (404/validation) under TDD.
-    """
-    # Initialize logging early
+    db_url = (
+        getattr(app.state.config, "database_url", None) if hasattr(app.state, "config") else None
+    )
+    if os.getenv("PAY2SLAY_AUTO_MIGRATE") == "1":  # pragma: no cover
+        try:
+            from alembic import command as alembic_command
+            from alembic.config import Config as AlembicConfig
+
+            cfg = AlembicConfig("alembic.ini")
+            if db_url:
+                cfg.set_main_option("sqlalchemy.url", db_url)
+            log.info("alembic_upgrade_start", url=db_url or "default")
+            alembic_command.upgrade(cfg, "head")
+            log.info("alembic_upgrade_complete")
+        except Exception as mig_exc:  # pragma: no cover
+            log.warning("alembic_upgrade_failed", error=str(mig_exc))
+    engine = make_engine(db_url)
+    session_factory = make_session_factory(engine)
+    app.state.engine = engine
+    app.state.session_factory = session_factory
+    Base.metadata.create_all(bind=engine)
+
+
+def create_app() -> FastAPI:
+    """Create and return the FastAPI application instance."""
     setup_structlog()
     log = get_logger(__name__)
     app = FastAPI(title="Pay2Slay API", version="0.1.0")
 
-    # Load configuration and attach to app.state
-    try:
-        from src.lib.config import get_config  # local import to avoid cycles
+    try:  # Config load
+        from src.lib.config import get_config  # local import
 
         app.state.config = get_config()
-    except Exception as exc:  # pragma: no cover - do not crash app creation in tests
-        # In early TDD, configs may be incomplete; keep app up but mark config load error
+    except Exception as exc:  # pragma: no cover
         app.state.config_error = str(exc)
         log.warning("config_load_failed", error=str(exc))
 
-    # Initialize DB engine and session factory
-    try:
-        from src.lib.db import make_engine, make_session_factory
-        from src.models.base import Base
-
-        db_url = (
-            getattr(app.state.config, "database_url", None)
-            if hasattr(app.state, "config")
-            else None
-        )
-        engine = make_engine(db_url)
-        session_factory = make_session_factory(engine)
-        app.state.engine = engine
-        app.state.session_factory = session_factory
-
-        # For early development/tests without Alembic, ensure tables exist
-        Base.metadata.create_all(bind=engine)
+    try:  # DB init
+        _init_db(app, log)
     except Exception as exc:  # pragma: no cover
         app.state.db_init_error = str(exc)
         log.warning("db_init_failed", error=str(exc))

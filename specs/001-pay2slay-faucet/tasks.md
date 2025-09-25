@@ -1,208 +1,133 @@
 # Tasks: Pay2Slay Faucet
 
-**Input**: Design documents from `/specs/001-pay2slay-faucet/`  
-**Prerequisites**: spec.md (available), plan.md (PASS), research/data-model/contracts (to be generated in Phase 1)
+Input Sources:
+- plan.md (PASS Constitution Check)
+- spec.md (functional requirements & user scenarios)
+- Missing currently: research.md, data-model.md, contracts/, quickstart.md (will be generated later)
 
-## Execution Flow (main)
+Prerequisite Script Output:
 ```
-1. Load plan.md from feature directory
-   → PASS Constitution Check detected
-   → Structure: Option 1 (single project)
-2. Load optional design documents (none present yet)
-3. Generate tasks by category from spec.md requirements
-4. Apply task rules (TDD-first, [P] for independent files)
-5. Number tasks sequentially (T001, T002...)
-6. Create parallel execution examples
-7. Return: SUCCESS (tasks ready for execution)
+FEATURE_DIR=/Users/mconstant/src/pay2slay2/specs/001-pay2slay-faucet
+AVAILABLE_DOCS=[]
 ```
 
-## Constitution Check (pre-task generation)
-PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability, Licensing/SBOM, Decentralized/Blockchain notes. No open clarifications.
+Generation Notes:
+- Entities & endpoints inferred from spec and existing code.
+- New tasks added for missing FRs (reverify endpoint, product config, payout history, region analytics, audit trail, tracing, rate limiting, Banano RPC, Fortnite deltas).
+- TDD preserved: all new tests appear before related implementation tasks.
 
-## Path Conventions
-- Single project (DEFAULT):
-  - src/ models/, services/, api/, jobs/, lib/
-  - tests/ contract/, integration/, unit/
-  - configs/ payout.yaml, integrations.yaml, product.yaml (operator-edited)
-
----
+Legend: [ ] pending, [x] done, [~] partial/stub.
 
 ## Phase 3.1: Setup
-- [x] T001 Create project structure (single project)
-      - Create directories: `src/models/`, `src/services/`, `src/api/`, `src/jobs/`, `src/lib/`, `tests/contract/`, `tests/integration/`, `tests/unit/`, `configs/`, `docs/`
-      - Add placeholder `__init__` or README files to each new directory
-      - Dependency: none
-- [x] T002 Initialize Python project (pyproject.toml) with dependencies
-      - Add: fastapi, uvicorn, pydantic, sqlalchemy, alembic, httpx, pyyaml, structlog, prometheus-client, opentelemetry-instrumentation, tenacity
-      - Dev: pytest, pytest-asyncio, httpx[http2], coverage, ruff, mypy, types-PyYAML
-      - Dependency: T001
-- [x] T003 [P] Configure linting/formatting/type-checking
-      - Ruff config, Black via Ruff, Mypy strict, EditorConfig
-      - Pre-commit hooks (ruff/mypy/pytest on staged)
-      - Dependency: T002
-- [x] T004 Write configs with spec defaults
-      - Create `configs/payout.yaml` with: payout_amount_ban_per_kill: 2.1, scheduler_minutes: 20, daily_payout_cap: 1, weekly_payout_cap: 3, reset_tz: UTC, settlement_order: random, batch_size: 0
-      - Create `configs/integrations.yaml` with: chain_env: testnet, node_rpc: "", min_operator_balance_ban: 50, dry_run: true, yunite_api_key: ${YUNITE_API_KEY}, yunite_guild_id: "", discord_guild_id: "", discord_oauth_client_id: ${DISCORD_CLIENT_ID}, discord_oauth_client_secret: ${DISCORD_CLIENT_SECRET}, discord_redirect_uri: http://localhost:3000/auth/discord/callback, oauth_scopes: [identify, guilds], fortnite_api_key: ${FORTNITE_API_KEY}, rate_limits: {fortnite_per_min: 60}, abuse_heuristics: {kill_rate_per_min: 10}
-      - Create `configs/product.yaml` with: app_name: "Pay2Slay Faucet", org_name: "Example Org", banner_url: "", media_kit_url: "", default_locale: en, feature_flags: {dry_run_banner: true}
-      - Dependency: T001
-- [~] T005 [P] Docs skeleton in `docs/` (README, SECURITY, CONTRIBUTING, LICENSE, QUICKSTART)
-      - Include no-KYC policy and regional analytics privacy note
-      - Dependency: T001
+- [x] T001 Project structure
+- [x] T002 Dependencies
+- [x] T003 Lint/format/type tooling
+- [x] T004 Config YAML defaults
+- [ ] T005 Docs skeleton (docs/README.md, SECURITY.md, CONTRIBUTING.md, LICENSE, QUICKSTART placeholder)
 
-## Phase 3.2: Tests First (TDD) — MUST COMPLETE BEFORE 3.3
-- [x] T006 Contract test: POST `/auth/discord/callback` → creates/updates session in `tests/contract/test_auth_callback.py`
-      - Assert OAuth state validation, guild membership required, Yunite mapping required
-      - Dependency: T002, T003
-- [x] T007 [P] Contract test: POST `/link/wallet` in `tests/contract/test_link_wallet.py`
-      - Validates Banano address; links wallet to authenticated Discord user
-      - Dependency: T002, T003
-- [x] T008 [P] Contract test: GET `/me/status` in `tests/contract/test_me_status.py`
-      - Returns linkage status, last verification time, accrued rewards
-      - Dependency: T002, T003
-- [x] T009 [P] Contract test: POST `/admin/reverify` in `tests/contract/test_admin_reverify.py`
-      - Admin-only; triggers re-verify; requires audit entry
-      - Dependency: T002, T003
-- [x] T010 [P] Contract test: POST `/admin/payouts/retry` in `tests/contract/test_admin_payouts_retry.py`
-      - Admin-only; retry failed payout; idempotent on tx hash
-      - Dependency: T002, T003
-- [ ] T011 Integration test: registration + linking in `tests/integration/test_registration_flow.py`
-      - Discord OAuth → Yunite EpicID mapping → wallet link → status
-      - Dependency: T006–T008
-- [ ] T012 [P] Integration test: accrual and settlement in `tests/integration/test_settlement_flow.py`
-      - Simulate kill deltas; scheduler pays 2.1 BAN/kill; enforce daily/weekly caps
-      - Dependency: T006–T008
-- [ ] T013 [P] Performance smoke: `/me/status` p95 < 300ms in `tests/integration/test_perf_status.py`
-      - Dependency: T006–T008
-- [ ] T014 [P] Security tests: OAuth replay, input validation, rate limiting in `tests/integration/test_security.py`
-      - Dependency: T006–T008
+## Phase 3.2: Tests First (Contract / Integration / Perf / Security)
+- [x] T006 Contract: POST /auth/discord/callback
+- [x] T007 Contract: POST /link/wallet
+- [x] T008 Contract: GET /me/status
+- [x] T009 Contract: POST /admin/reverify
+- [x] T010 Contract: POST /admin/payouts/retry
+- [ ] T011 Integration: registration flow (OAuth→Yunite→wallet link→status)
+- [ ] T012 Integration: accrual→settlement→payout (dry_run)
+- [ ] T013 Performance smoke: /me/status p95<300ms
+- [ ] T014 Security: OAuth replay/state, rate limit baseline, invalid wallet format fuzz
+- [x] T015 Contract: POST /me/reverify (stub test created)
+- [x] T016 Contract: GET /config/product (stub test created)
+- [x] T017 Contract: GET /me/payouts (stub test created)
 
-## Phase 3.3: Core Implementation (ONLY after tests are failing)
-- [x] T015 Config loader in `src/lib/config.py`
-      - Load/validate YAMLs; env override; fail fast on missing keys
-      - Dependency: T004
-- [x] T016 Models in `src/models/` [P]
-      - `user.py`, `wallet_link.py`, `verification_record.py`, `reward_accrual.py`, `payout.py`, `admin_user.py`
-      - Dependency: T015
-- [x] T017 Services I: external in `src/services/` [P]
-      - `discord_auth_service.py`, `yunite_service.py`, `fortnite_service.py`
-      - Dependency: T016
-- [x] T018 Services II: domain in `src/services/` [P]
-      - `accrual_service.py`, `settlement_service.py`, `payout_service.py`, `abuse_analytics_service.py`
-      - Dependency: T016, T017
-- [x] T019 API: auth/user in `src/api/auth.py`, `src/api/user.py`
-      - `/auth/discord/callback`, `/me/status`, `/link/wallet`
-      - Session cookie `p2s_session` issued on auth and validated in user endpoints
-      - `/me/status` returns `last_verified_at` from latest `VerificationRecord`
-      - `/me/status` also returns `last_verified_status` and `last_verified_source`
-      - Dependency: T017, T018
-- [~] T020 [P] API: admin in `src/api/admin.py`
-      - `/admin/login` (issues `p2s_admin` cookie for active AdminUser), `/admin/reverify`, `/admin/payouts/retry`, `/admin/health`
-      - Endpoints guarded by cookie-based admin session; reverify records a `VerificationRecord` and updates epic mapping using Yunite (via config, dry-run toggle respected); payouts/retry resends via Banano client using configured node with idempotency on `tx_hash`
-      - Next: expand admin UX and audit trails
-      - Dependency: T018
-- [~] T021 [P] Jobs: scheduler in `src/jobs/settlement.py`
-      - Interval runner; enforces `min_operator_balance_ban`; batch_size; metrics
-      - Skeleton `run_settlement` implemented; SettlementService applies UTC daily/weekly caps; zeroed candidates skipped
-      - Interval loop skeleton (`run_scheduler`) added with operator balance probe; sleeps between cycles; graceful shutdown via signals
-      - Prometheus counters exposed (candidates, payouts, accruals_settled) and CLI entrypoint (`python -m src.jobs`) starts loop with metrics server; readiness/liveness endpoints added (`/readyz`, `/livez`); structlog JSON logging wired
-      - Next: richer metrics and readiness/liveness endpoints
-      - Dependency: T018
-- [ ] T022 Observability wiring in `src/lib/observability.py`
-      - structlog setup; Prometheus metrics; tracing init
-      - Dependency: T019–T021
-- [ ] T023 Error handling and validation in `src/lib/http.py`
-      - Error responses; validation; rate limit responses
-      - Dependency: T019–T020
-- [ ] T024 Secrets management wiring
-      - Read secrets from env/secret store; remove plaintext
-      - Dependency: T015, T017
+## Phase 3.3: Core Implementation
+- [x] T018 Config loader (src/lib/config.py)
+- [x] T019 ORM models initial (src/models/models.py)
+- [x] T020 External service stubs (discord, yunite, fortnite, banano)
+- [x] T021 Domain services (settlement, payout, accrual) initial
+- [~] T022 Admin API (needs audit trail & health expansion)
+- [x] T023 Auth/User APIs
+- [~] T024 Scheduler job (needs operator balance + tracing)
+- [ ] T025 OAuth state/nonce validation (middleware or augmented auth flow)
+- [ ] T026 Implement /me/reverify endpoint
+- [ ] T027 Implement /config/product endpoint (src/api/config.py)
+- [ ] T028 Implement /me/payouts endpoint (paginated)
+- [ ] T029 Region analytics middleware (src/lib/region.py) setting User.region_code
+- [ ] T030 AdminAudit model + migration + persistence utilities
+- [ ] T031 Verification refresh background job (src/jobs/verification_refresh.py)
+- [ ] T032 FortniteService real kill delta retrieval + rate limiting
+- [ ] T033 Accrual batch job (src/jobs/accrual.py) iterating verified users
+- [ ] T034 BananoClient real RPC (balance/send/raw conversion)
+- [ ] T035 Payout idempotency key (hash unsettled accrual IDs) & duplicate guard
+- [ ] T036 Payout retry logic (attempt_count, last_attempt_at) + exponential backoff placeholder
 
-## Phase 3.4: Integration
-- [x] T025 Database setup
-      - SQLAlchemy models, Alembic migrations; SQLite dev; DSN configurable
-      - Dependency: T016
-- [ ] T026 Auth middleware/session handling
-      - Validate OAuth state, scopes; deserialize user
-      - Note: cookie verified inline in endpoints; dedicated middleware still pending
-      - Dependency: T019
-- [ ] T027 Request/response logging and security headers
-      - Correlation IDs; CORS; headers baseline
-      - Dependency: T022, T023
-- [x] T028 Dependency and license scanning in CI (SBOM)
-      - GitHub Actions CI: lint/type/test + SBOM (Syft) and scan (Grype)
-      - Dependency: T002
-- [ ] T029 [conditional] Artifact signing & verification
-      - Sign container/images (cosign); document verification
-      - Dependency: T002
-- [x] T030 Deployment artifacts for Akash
-      - Dockerfile + docker-compose for dev
-      - Terraform Akash provider with image_repo + image_tag variables
-      - GitHub Actions workflow builds & pushes image to GHCR then deploys via Terraform
-      - Secrets: `AKASH_MNEMONIC` documented; README wallet/on-ramp guide added
-      - Follow-up: capture deployment endpoint output (TODO)
-      - Dependency: T019–T022
+## Phase 3.4: Integration & Observability
+- [ ] T037 Tracing setup (OpenTelemetry) in src/lib/observability.py
+- [ ] T038 Correlation & trace ID logging middleware (src/lib/http.py)
+- [ ] T039 Rate limiting middleware (src/lib/ratelimit.py) using in-memory token bucket (extensible)
+- [ ] T040 Abuse heuristic service (enrich accrual / flag abnormal kill rates)
+- [ ] T041 Metrics: payouts_by_region, kills_by_region, flagged_users_total
+- [ ] T042 Operator balance check (real BananoClient) integrated into scheduler
+- [ ] T043 Alembic migration for AdminAudit and any new analytics columns
+- [ ] T044 Secrets handling review + docs update (no plaintext, env var mapping)
 
-## Added Follow-up Tasks
-- [ ] T037 Capture Akash lease/provider endpoint output post-terraform (expose via workflow summary)
-- [ ] T038 Harden Terraform: pin provider minor version and add variable validation & pricing tuning
-- [ ] T039 Add cosign signing & provenance for container image
-- [ ] T040 Add automated SBOM attach & vulnerability gating in deploy workflow
+## Phase 3.5: Docs & Polish
+- [ ] T045 quickstart.md (operator deploy + Akash + migrations + signing)
+- [ ] T046 research.md (Fortnite endpoints, Yunite specifics, Banano node, signing)
+- [ ] T047 data-model.md (including cursor, audit, region, abuse fields)
+- [ ] T048 contracts/ OpenAPI snapshot + per-endpoint markdown
+- [ ] T049 SECURITY.md expand (OAuth state, abuse heuristics, regional privacy)
+- [ ] T050 distribution/upgrade strategy (docs/distribution.md) incl. cosign & rollback
+- [ ] T051 Perf harness (parallel simulated users for accrual/settlement throughput)
+- [ ] T052 Decimal monetary types refactor (models/services/tests)
+- [ ] T053 i18n scaffolding (src/lib/i18n.py + locale negotiation)
+- [ ] T054 abuse.md documenting heuristics and flags semantics
 
-## Phase 3.5: Polish
-- [ ] T031 [P] Unit tests for services in `tests/unit/` (accrual, settlement, payout)
-      - Dependency: T018
-- [ ] T032 Performance tests in `tests/integration/test_perf_endpoints.py`
-      - Verify p95 targets; load test key paths
-      - Dependency: T019–T021
-- [ ] T033 [P] Update API docs (`docs/api.md`) and generate OpenAPI
-      - Dependency: T019–T020
-- [ ] T034 [P] Manual test script `docs/quickstart.md`
-      - Discord login, wallet link, accrual, settlement, admin actions
-      - Dependency: T019–T021
-- [ ] T035 [P] Update SECURITY.md and LICENSE/NOTICE with dependency licenses
-      - Dependency: T028
-- [ ] T036 [P] Document distribution/upgrade strategy `docs/distribution.md`
-      - Artifact signing, Akash deployment, upgrade plan
-      - Dependency: T029–T030
+## Phase 3.6: Security & Compliance
+- [ ] T055 Expand security tests (state mismatch, replay, rate limit exhaustion)
+- [ ] T056 /admin/audit query endpoint (admin_audit.py) with filters & pagination
+- [ ] T057 CI SBOM gating (fail on critical vulns; attach SBOM artifact)
+- [ ] T058 Cosign image signing & provenance in deploy workflow
+
+## Phase 3.7: Advanced / Optional Enhancements
+- [ ] T059 Pagination & filtering for payouts & accruals endpoints
+- [ ] T060 Admin dashboard aggregation endpoint (stats & metrics)
+- [ ] T061 Adaptive retry/backoff for payouts (exponential with jitter) + metric histogram
+- [ ] T062 Concurrency controls & adaptive rate limiting for kill ingestion (Fortnite)
 
 ## Validation Checklist
-- [ ] All tests present and failing before implementation (T006–T014)
-- [ ] Performance tests included and targets checked (T013, T032)
-- [ ] UX/accessibility checks included if UI added later
-- [ ] Observability tasks added for critical flows (T022)
-- [ ] Security tests and dependency/license scanning included (T014, T028)
-- [ ] Decentralized distribution/signing and blockchain tasks included (T029, T030)
+- All contract & integration tests (T006–T017) exist before implementing corresponding features
+- Accrual & settlement integration test (T012) passes before production deploy
+- Performance targets verified (T013, T051)
+- OAuth state enforced only after tests (T014) baseline
+- Observability (T037–T041) in place prior to performance hardening
+- Blockchain & distribution tasks (T050, T058) complete before public release
 
-## Current CI Gate (local)
-- `make all` = PASS on 2025-09-24 (admin wired to config, logging/metrics added)
-      - Lint: ruff → PASS
-      - Type: mypy → PASS
-      - Tests: pytest → PASS
+## Dependencies Summary
+Setup → Tests → Core Services → Endpoints → Jobs → Observability/Security → Docs → Advanced
+- T032 before T033
+- T034 before T042 & payout idempotency tests
+- T030 before T056
+- T025 + T014 before enabling strict OAuth state enforcement
+- T035 before scaling retries (T061)
 
-## Dependencies
-- Setup (T001–T005) → Tests (T006–T014) → Core (T015–T024) → Integration (T025–T030) → Polish (T031–T036)
-- T016 blocks T017–T018; T018 blocks T019–T021; T022 blocks T027
-- Admin endpoints (T020) depend on domain services (T018)
-
-## Parallel Example
+## Parallel Execution Examples
+Early contract test batch:
 ```
-# Launch contract/integration tests in parallel once setup is done:
-pytest -k test_auth_callback.py        # T006
-pytest -k test_link_wallet.py          # T007
-pytest -k test_me_status.py            # T008
-pytest -k test_admin_reverify.py       # T009
-pytest -k test_admin_payouts_retry.py  # T010
-pytest -k test_settlement_flow.py      # T012
-pytest -k test_perf_status.py          # T013
-pytest -k test_security.py             # T014
+T007, T008, T009, T010, T015, T016, T017
+```
+Core build parallel set (post tests):
+```
+T030 (AdminAudit model), T032 (Fortnite real), T034 (Banano RPC), T029 (Region middleware)
+```
+Observability batch:
+```
+T037, T038, T039, T041
 ```
 
 ## Notes
-- [P] tasks = different files, no dependencies
-- Ensure tests fail before implementing
-- Commit after each task
-- Keep secrets out of repo; use env/secret store
+- Distinct file tasks may run in parallel; avoid parallel edits to same module.
+- Ensure each new test initially fails (capture failing assertion screenshot/log in CI if needed).
+- Switch to Decimal (T052) before real money flows leave dry_run.
+- Provide migration safety: run Alembic upgrade in entrypoint before app start.
 
----
-
-Generated from spec: `/specs/001-pay2slay-faucet/spec.md` and plan: `/specs/001-pay2slay-faucet/plan.md` on 2025-09-24.
+Generated on 2025-09-25 (automated per tasks.prompt).

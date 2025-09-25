@@ -1,31 +1,50 @@
 # Simple dev Makefile
+#+--------------------------------------------------------------------
+# Tool invocation notes:
+#  - Use module invocation (python -m <tool>) so we don't depend on the tool's
+#    console script shim being on PATH (solves issues when "make" runs outside
+#    an activated venv).
+#  - Auto-detect a local .venv and prefer its interpreter if present.
+#  - Override PYTHON on the command line to force a different interpreter.
+#+--------------------------------------------------------------------
+
+PYTHON ?= python
+ifeq (,$(wildcard .venv/bin/python))
+# no project venv detected; will rely on PATH python
+else
+PYTHON := .venv/bin/python
+endif
+
+RUFF = $(PYTHON) -m ruff
+MYPY = $(PYTHON) -m mypy
+PYTEST = PYTHONPATH=. $(PYTHON) -m pytest
 
 .PHONY: api scheduler test lint type all
 .PHONY: ci deploy-akash workflow-ci workflow-deploy-akash rotate-akash-cert
 
 api:
-	uvicorn src.api.app:create_app --reload --port 8000
+	$(PYTHON) -m uvicorn src.api.app:create_app --reload --port 8000
 
 scheduler:
-	python -m src.jobs
+	$(PYTHON) -m src.jobs
 
 test:
-	PYTHONPATH=. pytest -q
+	$(PYTEST) -q
 
 lint:
-	ruff check .
+	$(RUFF) check .
 
 type:
-	mypy
+	$(MYPY)
 
 all: lint type test
 
 ci:
-	python -m pip install --upgrade pip
-	python -m pip install -e '.[dev]'
-	ruff check .
-	mypy
-	PYTHONPATH=. pytest -q
+	$(PYTHON) -m pip install --upgrade pip
+	$(PYTHON) -m pip install -e '.[dev]'
+	$(RUFF) check .
+	$(MYPY)
+	$(PYTEST) -q
 	@if command -v syft >/dev/null 2>&1; then echo 'Generating SBOM (syft)'; syft . -o spdx-json > sbom.spdx.json || true; else echo 'syft not installed; skipping SBOM'; fi
 	@if command -v grype >/dev/null 2>&1; then echo 'Running vulnerability scan (grype)'; grype . --fail-on high || true; else echo 'grype not installed; skipping scan'; fi
 

@@ -38,13 +38,19 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
     candidates = settlement.select_candidates(limit=cfg.batch_size)
     counters["candidates"] = len(candidates)
     for cand in candidates:
-        if cand.total_amount_ban <= 0 or cand.total_kills <= 0:
+        payable_amt = (
+            cand.payable_amount_ban
+            if hasattr(cand, "payable_amount_ban")
+            else cand.total_amount_ban
+        )
+        payable_kills = cand.payable_kills if hasattr(cand, "payable_kills") else cand.total_kills
+        if not payable_amt or not payable_kills:
             continue
         # collect unsettled accruals for this user
         accruals = [a for a in cand.user.accruals if not a.settled]
         if not accruals:
             continue
-        res = payout_svc.create_payout(cand.user, cand.total_amount_ban, accruals)
+        res = payout_svc.create_payout(cand.user, payable_amt, accruals)
         if res:
             counters["payouts"] += 1
             counters["accruals_settled"] += len(accruals)

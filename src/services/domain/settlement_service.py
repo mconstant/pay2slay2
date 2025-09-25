@@ -13,8 +13,10 @@ from ...models.models import RewardAccrual, User
 @dataclass
 class SettlementCandidate:
     user: User
-    total_kills: int
+    total_kills: int  # kills represented by unsettled accrual rows
     total_amount_ban: float
+    payable_kills: int | None = None  # after caps
+    payable_amount_ban: float | None = None
 
 
 class SettlementService:
@@ -53,11 +55,15 @@ class SettlementService:
         return [self.apply_caps(c) for c in candidates]
 
     def apply_caps(self, candidate: SettlementCandidate) -> SettlementCandidate:
-        # Compute payouts in last 24h and 7d to enforce caps
+        """Derive payable subset of kills honoring daily/weekly payout count caps.
+
+        Current policy: caps count payouts, not kills. If caps exceeded -> no payout.
+        If remaining daily or weekly allowance is 0, zero out. Otherwise full candidate is payable.
+        (Future: support per-kill monetary caps; partial payment logic would adjust counts.)
+        """
         now = datetime.now(UTC)
         day_ago = now - timedelta(days=1)
         week_ago = now - timedelta(days=7)
-        # Count payouts in windows
         from ...models.models import Payout
 
         day_count = (
@@ -70,7 +76,21 @@ class SettlementService:
             .filter(Payout.user_id == candidate.user.id, Payout.created_at >= week_ago)
             .count()
         )
-        # If over cap, zero out this candidate
-        if day_count >= self.daily_cap or week_count >= self.weekly_cap:
-            return SettlementCandidate(user=candidate.user, total_kills=0, total_amount_ban=0.0)
-        return candidate
+        remaining_daily = max(self.daily_cap - day_count, 0)
+        remaining_weekly = max(self.weekly_cap - week_count, 0)
+        if remaining_daily <= 0 or remaining_weekly <= 0:
+            return SettlementCandidate(
+                user=candidate.user,
+                total_kills=candidate.total_kills,
+                total_amount_ban=candidate.total_amount_ban,
+                payable_kills=0,
+                payable_amount_ban=0.0,
+            )
+        # For now, either full amount or zero (no partial monetary cap). Keep fields explicit.
+        return SettlementCandidate(
+            user=candidate.user,
+            total_kills=candidate.total_kills,
+            total_amount_ban=candidate.total_amount_ban,
+            payable_kills=candidate.total_kills,
+            payable_amount_ban=candidate.total_amount_ban,
+        )
