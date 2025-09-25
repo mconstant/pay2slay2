@@ -63,9 +63,9 @@ jobs:
           CERT_CONTENT: ${{ secrets.AKASH_CERT }}
       - name: Package Akash CLI environment
         run: |
-          which akash
+          which provider-services
           mkdir akash-env
-          cp $(which akash) akash-env/
+          cp $(which provider-services) akash-env/
           cp -r $HOME/.akash akash-env/
           tar -czf akash-env.tgz -C akash-env .
       - name: Upload Akash CLI artifact
