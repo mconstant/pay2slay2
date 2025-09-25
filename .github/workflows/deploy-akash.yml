@@ -52,7 +52,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install pass from snap (required by akash cli)
         run: |
-          sudo snap install pass
+          sudo apt-get update > /dev/null
+          sudo apt-get install -yqq pass
       - name: Setup Akash CLI
         uses: LumeWeb/akash-action@cfd98517684fe809a107442d56bb4e22e1cfa0a5
         with:
