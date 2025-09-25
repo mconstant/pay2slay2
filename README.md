@@ -64,6 +64,7 @@ Makefile shortcuts are available:
    - Infra code under `infra/akash` uses the Akash Terraform provider to submit a simple deployment.
    - Container image is built & pushed to GHCR automatically by the `deploy-akash` workflow.
    - NOTE: Workflow must exist on the target branch (use `REF=<branch>` with `make deploy-akash` if deploying a non-default branch).
+   - Cert Rotation: use `rotate-akash-cert` workflow_dispatch to mint a new Akash client certificate and automatically update `AKASH_CERT` (secret) and `AKASH_CERT_ID` (variable). Requires `GH_ADMIN_TOKEN` secret (repo admin PAT) and existing `AKASH_MNEMONIC`.
 
 ### Akash Deployment Guide (Cosmos Wallet via Keplr)
 

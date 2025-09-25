@@ -37,11 +37,15 @@ jobs:
           docker push ${IMAGE_REPO}:${IMAGE_TAG}
 
       - name: Setup Akash CLI
-        uses: ovrclk/akash-ghaction-setup@878fde023d859d76ddff7571c8ef8d2305e47195
+        uses: LumeWeb/akash-action@cfd98517684fe809a107442d56bb4e22e1cfa0a5
         with:
-          version: 0.1.0
+          wallet-name: deployer
+          mnemonic: ${{ env.AKASH_MNEMONIC }}
+          cert-content: ${{ env.CERT_CONTENT }}
+          cert-id: ${{ env.AKASH_CERT_ID }}
         env:
           AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
+          CERT_CONTENT: ${{ secrets.AKASH_CERT }}
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3

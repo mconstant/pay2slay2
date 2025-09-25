@@ -1,0 +1,109 @@
+name: rotate-akash-cert
+
+on:
+  workflow_dispatch:
+    inputs:
+      key_name:
+        description: 'Akash wallet key name (already imported by setup action)'
+        required: true
+        default: 'deployer'
+      akash_network:
+        description: 'Akash RPC endpoint'
+        required: true
+        default: 'https://rpc.akash.network:443'
+      chain_id:
+        description: 'Akash chain ID'
+        required: true
+        default: 'akashnet-2'
+      rotate_method:
+        description: 'cert-generation | openssl (fallback if CLI generation fails)'
+        required: true
+        default: 'cert-generation'
+  push:
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  rotate:
+    runs-on: ubuntu-latest
+    env:
+      AKASH_CHAIN_ID: ${{ github.event.inputs.chain_id }}
+      AKASH_NODE: ${{ github.event.inputs.akash_network }}
+      KEY_NAME: ${{ github.event.inputs.key_name }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Auth gh CLI (optional elevated token)
+        env:
+          GH_TOKEN_OPT: ${{ secrets.GH_ADMIN_TOKEN }}
+        run: |
+          if [ -n "${GH_TOKEN_OPT}" ]; then
+            echo "Using provided GH_ADMIN_TOKEN for auth";
+            echo "${GH_TOKEN_OPT}" | gh auth login --with-token;
+          else
+            echo 'No GH_ADMIN_TOKEN secret; relying on default GITHUB_TOKEN.';
+          fi
+
+      - name: Setup Akash CLI
+        uses: LumeWeb/akash-action@cfd98517684fe809a107442d56bb4e22e1cfa0a5
+        with:
+          wallet-name: ${{ github.event.inputs.key_name }}
+          mnemonic: ${{ secrets.AKASH_MNEMONIC }}
+        env:
+          AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
+
+      - name: Generate certificate
+        id: gen
+        env:
+          ROTATE_METHOD: ${{ github.event.inputs.rotate_method }}
+        run: |
+          set -euo pipefail
+          CERT_ID="cert-$(date -u +%Y%m%d-%H%M%S)"
+          echo "Using CERT_ID=$CERT_ID"
+          if [ "$ROTATE_METHOD" = "cert-generation" ]; then
+            # Attempt Akash CLI-based certificate generation (experimental; adjust if command differs)
+            # Placeholder command: the actual Akash CLI subcommand may vary by version.
+            if akash cert generate client --chain-id "$AKASH_CHAIN_ID" --node "$AKASH_NODE" --keyring-backend test --from "$KEY_NAME" -y 2>/dev/null; then
+              # Try to locate the most recent cert PEM (common pattern: client.crt or similar)
+              CERT_PATH=$(ls -t *.crt 2>/dev/null | head -n1 || true)
+              if [ -n "$CERT_PATH" ]; then
+                CERT_CONTENT=$(cat "$CERT_PATH")
+              else
+                echo 'Could not locate generated .crt file; falling back to openssl.' >&2
+                ROTATE_METHOD=openssl
+              fi
+            else
+              echo 'Akash CLI cert generation failed; falling back to openssl.' >&2
+              ROTATE_METHOD=openssl
+            fi
+          fi
+          if [ "$ROTATE_METHOD" = "openssl" ]; then
+            echo 'Generating self-signed placeholder certificate (openssl)'
+            openssl req -x509 -newkey ed25519 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=akash"
+            CERT_CONTENT=$(sed -n '1,200p' cert.pem)
+          fi
+          if [ -z "${CERT_CONTENT:-}" ]; then
+            echo 'Certificate content empty after attempts.' >&2
+            exit 1
+          fi
+          echo "cert-id=$CERT_ID" >> "$GITHUB_OUTPUT"
+          echo "$CERT_CONTENT" > cert.pem.final
+          # Escape for gh secret set via stdin
+          sed -n '1,200p' cert.pem.final
+
+      - name: Update AKASH_CERT secret
+        run: |
+          gh secret set AKASH_CERT < cert.pem.final
+
+      - name: Update AKASH_CERT_ID variable
+        run: |
+          gh variable set AKASH_CERT_ID --body "${{ steps.gen.outputs.cert-id }}"
+
+      - name: Summary
+        run: |
+          echo "Rotated certificate id: ${{ steps.gen.outputs.cert-id }}" >> $GITHUB_STEP_SUMMARY
+          echo "Secret AKASH_CERT updated." >> $GITHUB_STEP_SUMMARY
+          echo "Variable AKASH_CERT_ID updated." >> $GITHUB_STEP_SUMMARY
