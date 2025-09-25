@@ -50,7 +50,7 @@ jobs:
       IMAGE_REPO: ${{ needs.build_and_push.outputs.image_repo }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install pass from snap (required by akash cli)
+      - name: Install pass
         run: |
           sudo apt-get update > /dev/null
           sudo apt-get install -yqq pass
