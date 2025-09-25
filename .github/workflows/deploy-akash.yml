@@ -37,7 +37,7 @@ jobs:
           docker push ${IMAGE_REPO}:${IMAGE_TAG}
 
       - name: Setup Akash CLI
-        uses: ovrclk/akash-ghaction-setup@v0
+        uses: ovrclk/akash-ghaction-setup@878fde023d859d76ddff7571c8ef8d2305e47195
         with:
           version: 0.1.0
         env:
