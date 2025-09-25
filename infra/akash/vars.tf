@@ -28,17 +28,6 @@ variable "image_repo" {
   description = "Container image repository (e.g. ghcr.io/OWNER/REPO)."
 }
 
-variable "gas_price_uakt" {
-  type        = string
-  description = "Gas price in uakt units (as string)."
-  default     = "0.025"
-}
-
-variable "gas_adjustment" {
-  type        = number
-  description = "Gas adjustment multiplier."
-  default     = 1.5
-}
 
 variable "deployment_price_uakt" {
   type        = number

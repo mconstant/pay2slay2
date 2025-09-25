@@ -36,6 +36,13 @@ jobs:
           docker build -t ${IMAGE_REPO}:${IMAGE_TAG} .
           docker push ${IMAGE_REPO}:${IMAGE_TAG}
 
+      - name: Setup Akash CLI
+        uses: ovrclk/akash-ghaction-setup@v0
+        with:
+          version: 0.1.0
+        env:
+          AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
+
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
 

@@ -6,17 +6,9 @@
 provider "akash" {
   chain_id = var.akash_chain_id
   node     = var.akash_node
-
-  keyring {
-    backend  = "test" # For CI automation; consider 'os' or 'file' for prod/hardware
-    mnemonic = var.akash_mnemonic
-  }
-
-  gas_adjustment = var.gas_adjustment
-  gas_prices {
-    denom  = "uakt"
-    amount = var.gas_price_uakt
-  }
+  # NOTE: Provider v0.1.0 error shows keyring/gas blocks unsupported; mnemonic attribute also unsupported.
+  # Authentication must be handled via environment or future provider updates. Leaving mnemonic commented.
+  # mnemonic = var.akash_mnemonic
 }
 
 locals {
