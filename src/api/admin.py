@@ -1,10 +1,11 @@
 from collections.abc import Generator
 
-from fastapi import APIRouter, Body, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from src.models.models import Payout, User
+from src.lib.auth import issue_admin_session, session_secret, verify_admin_session
+from src.models.models import AdminUser, Payout, User
 
 router = APIRouter(prefix="/admin")
 
@@ -18,10 +19,25 @@ def _get_db(request: Request) -> Generator[Session, None, None]:
         session.close()
 
 
-def _require_admin(x_admin_token: str | None = Header(default=None)) -> None:
-    # Simple header-based admin auth; replace with real admin auth later
-    if not x_admin_token:
+def _require_admin(request: Request) -> None:
+    token = request.cookies.get("p2s_admin")
+    email = verify_admin_session(token, session_secret()) if token else None
+    if not email:
         raise HTTPException(status_code=401, detail="Unauthorized")
+
+
+@router.post("/login")
+def admin_login(email: str = Body(..., embed=True), db: Session = Depends(_get_db)) -> JSONResponse:  # noqa: B008
+    # Simple login: require active AdminUser with this email, then issue admin cookie
+    if not email:
+        raise HTTPException(status_code=400, detail="email required")
+    admin = db.query(AdminUser).filter(AdminUser.email == email, AdminUser.is_active == True).one_or_none()  # noqa: E712
+    if not admin:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    token = issue_admin_session(email, session_secret())
+    resp = JSONResponse({"email": email})
+    resp.set_cookie("p2s_admin", token, httponly=True, samesite="lax")
+    return resp
 
 @router.post("/reverify")
 def admin_reverify(

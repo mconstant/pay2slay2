@@ -31,6 +31,8 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
     candidates = settlement.select_candidates(limit=cfg.batch_size)
     counters["candidates"] = len(candidates)
     for cand in candidates:
+        if cand.total_amount_ban <= 0 or cand.total_kills <= 0:
+            continue
         # collect unsettled accruals for this user
         accruals = [a for a in cand.user.accruals if not a.settled]
         if not accruals:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -41,8 +42,27 @@ class SettlementService:
                 SettlementCandidate(user=user, total_kills=int(kills_sum or 0), total_amount_ban=float(amt_sum or 0.0))
             )
         random.shuffle(candidates)
-        return candidates
+        return [self.apply_caps(c) for c in candidates]
 
     def apply_caps(self, candidate: SettlementCandidate) -> SettlementCandidate:
-        # Placeholder: in real impl, compute prior payouts in 24h/7d windows
+        # Compute payouts in last 24h and 7d to enforce caps
+        now = datetime.now(UTC)
+        day_ago = now - timedelta(days=1)
+        week_ago = now - timedelta(days=7)
+        # Count payouts in windows
+        from ...models.models import Payout
+
+        day_count = (
+            self.session.query(Payout)
+            .filter(Payout.user_id == candidate.user.id, Payout.created_at >= day_ago)
+            .count()
+        )
+        week_count = (
+            self.session.query(Payout)
+            .filter(Payout.user_id == candidate.user.id, Payout.created_at >= week_ago)
+            .count()
+        )
+        # If over cap, zero out this candidate
+        if day_count >= self.daily_cap or week_count >= self.weekly_cap:
+            return SettlementCandidate(user=candidate.user, total_kills=0, total_amount_ban=0.0)
         return candidate

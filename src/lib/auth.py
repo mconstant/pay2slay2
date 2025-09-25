@@ -43,3 +43,30 @@ def verify_session(token: str, secret: str) -> str | None:
 
 def session_secret() -> str:
     return os.getenv("SESSION_SECRET", "dev-secret")
+
+
+# Admin sessions
+def issue_admin_session(admin_email: str, secret: str, ttl_seconds: int = 3600) -> str:
+    payload = {"role": "admin", "email": admin_email, "iat": int(time.time()), "exp": int(time.time()) + ttl_seconds}
+    body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    sig = hmac.new(secret.encode("utf-8"), body, sha256).digest()
+    return f"{_b64url(body)}.{_b64url(sig)}"
+
+
+def verify_admin_session(token: str, secret: str) -> str | None:
+    try:
+        body_b64, sig_b64 = token.split(".", 1)
+        body = _b64url_decode(body_b64)
+        sig = _b64url_decode(sig_b64)
+        good = hmac.new(secret.encode("utf-8"), body, sha256).digest()
+        if not hmac.compare_digest(sig, good):
+            return None
+        payload = json.loads(body)
+        if payload.get("exp", 0) < int(time.time()):
+            return None
+        if payload.get("role") != "admin":
+            return None
+        email = payload.get("email")
+        return str(email) if email is not None else None
+    except Exception:
+        return None

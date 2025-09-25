@@ -96,13 +96,14 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - `/me/status` also returns `last_verified_status` and `last_verified_source`
       - Dependency: T017, T018
 - [ ] T020 [P] API: admin in `src/api/admin.py`
-      - `/admin/reverify`, `/admin/payouts/retry`, `/admin/health`
-      - Minimal endpoints scaffolded with header-based admin guard (`X-Admin-Token`); actions stubbed to return accepted
-      - Replace with real admin auth and implement reverify/retry logic
+      - `/admin/login` (issues `p2s_admin` cookie for active AdminUser), `/admin/reverify`, `/admin/payouts/retry`, `/admin/health`
+      - Endpoints guarded by cookie-based admin session; reverify/retry currently stubbed to return accepted
+      - Next: implement real reverify flow and payout retry with idempotency; add proper admin auth UX
       - Dependency: T018
 - [ ] T021 [P] Jobs: scheduler in `src/jobs/settlement.py`
       - Interval runner; enforces `min_operator_balance_ban`; batch_size; metrics
-      - Skeleton `run_settlement` implemented using SettlementService and PayoutService; scheduler loop and checks TBD
+      - Skeleton `run_settlement` implemented; SettlementService applies UTC daily/weekly caps; zeroed candidates skipped
+      - Next: add operator balance check and Prometheus metrics; implement actual interval loop
       - Dependency: T018
 - [ ] T022 Observability wiring in `src/lib/observability.py`
       - structlog setup; Prometheus metrics; tracing init
