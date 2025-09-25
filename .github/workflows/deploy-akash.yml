@@ -10,7 +10,6 @@ on:
         description: 'Container image tag to build & deploy'
         required: true
         default: 'latest'
-  push:
 
 permissions:
   contents: read
