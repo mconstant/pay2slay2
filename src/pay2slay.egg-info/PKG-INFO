@@ -86,6 +86,13 @@ Makefile shortcuts are available:
 - Scheduler and metrics can be started via the CLI entrypoint (`python -m src.jobs`).
 - Metrics default to port 8001; set `P2S_METRICS_PORT` to change.
 
+## Deploy
+- Docker (local): `docker build -t pay2slay2:dev .` then `docker-compose up --build`
+- CI: GitHub Actions workflow `.github/workflows/ci.yml` runs lint, type, tests, SBOM/scan.
+- Akash (Terraform):
+   - Prereqs: set `AKASH_MNEMONIC` secret in GitHub, and use `deploy-akash` workflow dispatch with `image_tag`.
+   - Infra code under `infra/akash` uses the Akash Terraform provider to submit a simple deployment.
+
 ## Notes
 - Dry-run mode short-circuits external calls and assumes a healthy operator balance; use for local testing.
 - Alembic migrations are initialized; SQLite dev DB is created automatically on app startup.

@@ -13,6 +13,7 @@ src/lib/__init__.py
 src/lib/auth.py
 src/lib/config.py
 src/lib/db.py
+src/lib/observability.py
 src/models/__init__.py
 src/models/base.py
 src/models/models.py
