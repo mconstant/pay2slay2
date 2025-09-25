@@ -64,7 +64,68 @@ Makefile shortcuts are available:
    - Infra code under `infra/akash` uses the Akash Terraform provider to submit a simple deployment.
    - Container image is built & pushed to GHCR automatically by the `deploy-akash` workflow.
    - NOTE: Workflow must exist on the target branch (use `REF=<branch>` with `make deploy-akash` if deploying a non-default branch).
-   - Cert Rotation: use `rotate-akash-cert` workflow_dispatch to mint a new Akash client certificate and automatically update `AKASH_CERT` (secret) and `AKASH_CERT_ID` (variable). Requires `GH_ADMIN_TOKEN` secret (repo admin PAT) and existing `AKASH_MNEMONIC`.
+   - Cert Rotation: use either the GitHub UI (Actions → `rotate-akash-cert`) or the Makefile target `make rotate-akash-cert` to mint a new Akash client certificate and automatically update `AKASH_CERT` (secret) and `AKASH_CERT_ID` (variable). Requires an existing `AKASH_MNEMONIC` repo secret and (for secret/variable mutation via CLI) a `GH_ADMIN_TOKEN` repo secret (classic PAT with `repo` + `actions:write`).
+
+#### Rotate Akash Certificate (Makefile Usage)
+
+The Akash client certificate periodically needs rotation. This project provides a workflow plus a convenience Makefile target to trigger it from your local shell via the GitHub CLI.
+
+Prerequisites:
+1. Installed GitHub CLI (`gh auth login`).
+2. Repo secret `AKASH_MNEMONIC` (24-word wallet mnemonic).
+3. Repo secret `GH_ADMIN_TOKEN` (optional but recommended). Without it, the workflow will attempt to use the default `GITHUB_TOKEN`; updating secrets normally requires a PAT, so rotation may fail without `GH_ADMIN_TOKEN`.
+
+Default invocation (uses defaults: key `deployer`, network mainnet, chain `akashnet-2`, method `cert-generation` with fallback to `openssl`):
+
+```
+make rotate-akash-cert
+```
+
+Override inputs (they map 1:1 to workflow_dispatch inputs):
+
+```
+# Use a different key name already imported by the Akash CLI action
+make rotate-akash-cert KEY_NAME=mykey
+
+# Force OpenSSL fallback method directly
+make rotate-akash-cert ROTATE_METHOD=openssl
+
+# Target alternative network / chain (example: edgenet values shown illustratively)
+make rotate-akash-cert AKASH_NETWORK=https://rpc.edgenet.akash.network:443 AKASH_CHAIN_ID=edgenet-2
+```
+
+Parameters:
+- `KEY_NAME` → wallet key name to use inside the workflow (default `deployer`).
+- `ROTATE_METHOD` → `cert-generation` attempts Akash CLI cert generation; if it fails (or you set `openssl`) a self-signed placeholder cert is produced.
+- `AKASH_NETWORK` → RPC endpoint passed as `--node` (default `https://rpc.akash.network:443`).
+- `AKASH_CHAIN_ID` → Chain ID (default `akashnet-2`).
+
+What happens:
+1. The Makefile target dispatches the `rotate-akash-cert` workflow with your overrides.
+2. Workflow sets up the Akash CLI and tries to generate a client certificate.
+3. On success (or fallback), it updates:
+   - Secret `AKASH_CERT` (PEM content)
+   - Variable `AKASH_CERT_ID` (timestamped identifier)
+4. A short run summary appears in the workflow run page; you can also view it via:
+
+```
+gh run list --workflow rotate-akash-cert --limit 5
+gh run view <run-id>
+```
+
+Verification:
+1. GitHub → Settings → Secrets and variables → Actions → confirm updated timestamp for `AKASH_CERT`.
+2. Check `AKASH_CERT_ID` under variables for the new ID (format `cert-YYYYMMDD-HHMMSS`).
+3. (Optional) If your deploy workflow relies on the cert, re-run `make deploy-akash` to pick up the rotated secret.
+
+Failure Modes & Tips:
+- Missing `GH_ADMIN_TOKEN`: workflow may not have permission to update the secret—add it and re-run.
+- CLI generation command changes: if the Akash CLI subcommand differs in a future release, rotation may fall back to `openssl` (placeholder). Adjust the workflow script accordingly.
+- OpenSSL fallback is a stand-in: replace with proper chain-issued client cert flow before production usage.
+
+Security Considerations:
+- The mnemonic never leaves GitHub Actions (provided only as an injected secret to the setup step).
+- Rotate credentials after suspected compromise; revoke unused keys in your Akash environment.
 
 ### Akash Deployment Guide (Cosmos Wallet via Keplr)
 

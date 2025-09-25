@@ -19,6 +19,9 @@ on:
         description: 'cert-generation | openssl (fallback if CLI generation fails)'
         required: true
         default: 'cert-generation'
+      ref:
+        description: 'Git ref (branch or tag) to deploy (defaults to workflow run branch)'
+        required: false
 
 permissions:
   contents: read

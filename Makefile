@@ -55,5 +55,10 @@ rotate-akash-cert:
 	METHOD_ARG="cert-generation"; if [ -n "$(ROTATE_METHOD)" ]; then METHOD_ARG="$(ROTATE_METHOD)"; fi; \
 	AKASH_NET_ARG="https://rpc.akash.network:443"; if [ -n "$(AKASH_NETWORK)" ]; then AKASH_NET_ARG="$(AKASH_NETWORK)"; fi; \
 	CHAIN_ID_ARG="akashnet-2"; if [ -n "$(AKASH_CHAIN_ID)" ]; then CHAIN_ID_ARG="$(AKASH_CHAIN_ID)"; fi; \
-	echo "Dispatching rotate-akash-cert (key=$$KEY_NAME_ARG method=$$METHOD_ARG network=$$AKASH_NET_ARG chain=$$CHAIN_ID_ARG)"; \
-	gh workflow run rotate-akash-cert -f key_name=$$KEY_NAME_ARG -f rotate_method=$$METHOD_ARG -f akash_network=$$AKASH_NET_ARG -f chain_id=$$CHAIN_ID_ARG
+	# Auto-detect current branch if REF not provided (handles detached HEAD by leaving blank)
+	REF_DETECTED=$$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo ""); \
+	REF_TO_USE="$(REF)"; \
+	if [ -z "$$REF_TO_USE" ] && [ "$$REF_DETECTED" != "HEAD" ]; then REF_TO_USE="$$REF_DETECTED"; fi; \
+	if [ -n "$$REF_TO_USE" ]; then echo "Using ref: $$REF_TO_USE"; REF_FLAG="-r $$REF_TO_USE"; else echo 'No ref provided/detected (will use default branch)'; REF_FLAG=""; fi; \
+	echo "Dispatching rotate-akash-cert ($$REF_FLAG key=$$KEY_NAME_ARG method=$$METHOD_ARG network=$$AKASH_NET_ARG chain=$$CHAIN_ID_ARG)"; \
+	gh workflow run rotate-akash-cert $$REF_FLAG -f key_name=$$KEY_NAME_ARG -f rotate_method=$$METHOD_ARG -f akash_network=$$AKASH_NET_ARG -f chain_id=$$CHAIN_ID_ARG
