@@ -54,7 +54,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [ ] T029 Region analytics middleware (src/lib/region.py) setting User.region_code
 - [ ] T030 AdminAudit model + migration + persistence utilities
 - [ ] T031 Verification refresh background job (src/jobs/verification_refresh.py)
-- [ ] T032 FortniteService real kill delta retrieval + rate limiting
+- [~] T032 FortniteService real kill delta retrieval + rate limiting
 - [ ] T033 Accrual batch job (src/jobs/accrual.py) iterating verified users
 - [ ] T034 BananoClient real RPC (balance/send/raw conversion)
 - [ ] T035 Payout idempotency key (hash unsettled accrual IDs) & duplicate guard

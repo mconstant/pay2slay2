@@ -37,14 +37,18 @@ class AccrualService:
     def accrue_for_user(self, user: User, now: datetime | None = None) -> AccrualResult | None:
         if not user.epic_account_id:
             return None
-        # Placeholder delta until Fortnite integration: 0 (no accrual). Future: fetch via fortnite.get_kills_since(...)
-        delta_kills = 0
+        cursor = str(user.last_settled_kill_count)
+        result = self.fortnite.get_kills_since(user.epic_account_id, cursor)
+        delta_kills = result.kills
         if delta_kills <= 0:
+            # No new kills accrued this minute (still return informative result)
+            ts_zero = now or datetime.now(UTC)
+            epoch_minute_zero = floor(ts_zero.timestamp() / 60)
             return AccrualResult(
                 user_id=user.id,
                 kills_delta=0,
                 amount_ban=0.0,
-                epoch_minute=0,
+                epoch_minute=epoch_minute_zero,
                 created=False,
             )
         ts = now or datetime.now(UTC)
