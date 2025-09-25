@@ -36,7 +36,7 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - Add: fastapi, uvicorn, pydantic, sqlalchemy, alembic, httpx, pyyaml, structlog, prometheus-client, opentelemetry-instrumentation, tenacity
       - Dev: pytest, pytest-asyncio, httpx[http2], coverage, ruff, mypy, types-PyYAML
       - Dependency: T001
-- [~] T003 [P] Configure linting/formatting/type-checking
+- [x] T003 [P] Configure linting/formatting/type-checking
       - Ruff config, Black via Ruff, Mypy strict, EditorConfig
       - Pre-commit hooks (ruff/mypy/pytest on staged)
       - Dependency: T002
@@ -128,14 +128,17 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
 - [ ] T027 Request/response logging and security headers
       - Correlation IDs; CORS; headers baseline
       - Dependency: T022, T023
-- [ ] T028 Dependency and license scanning in CI (SBOM)
-      - Add Syft/Grype or pip-licenses; generate NOTICE
+- [x] T028 Dependency and license scanning in CI (SBOM)
+      - GitHub Actions CI: lint/type/test + SBOM (Syft) and scan (Grype)
       - Dependency: T002
 - [ ] T029 [conditional] Artifact signing & verification
       - Sign container/images (cosign); document verification
       - Dependency: T002
-- [ ] T030 Deployment artifacts for Akash
-      - Compose manifests and docs; include secrets references
+- [~] T030 Deployment artifacts for Akash
+      - Dockerfile + docker-compose for dev
+      - Terraform Akash provider skeleton under `infra/akash`
+      - GitHub Actions workflow (`deploy-akash.yml`) to deploy via Terraform
+      - Include secrets references and image_tag parameter
       - Dependency: T019–T022
 
 ## Phase 3.5: Polish

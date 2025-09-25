@@ -1,0 +1,43 @@
+name: deploy-akash
+on:
+  workflow_dispatch:
+    inputs:
+      akash_network:
+        description: 'Akash chain endpoint'
+        required: true
+        default: 'https://rpc.akash.network:443'
+      image_tag:
+        description: 'Container image tag to deploy'
+        required: true
+        default: 'latest'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AKASH_CHAIN_ID: "akashnet-2"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Configure cloud credentials
+        env:
+          AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
+        run: |
+          if [ -z "$AKASH_MNEMONIC" ]; then
+            echo "Missing AKASH_MNEMONIC secret" >&2
+            exit 1
+          fi
+
+      - name: Terraform init/plan/apply
+        working-directory: infra/akash
+        env:
+          TF_VAR_akash_mnemonic: ${{ secrets.AKASH_MNEMONIC }}
+          TF_VAR_image_tag: ${{ github.event.inputs.image_tag }}
+          TF_VAR_akash_network: ${{ github.event.inputs.akash_network }}
+        run: |
+          terraform init -input=false
+          terraform plan -input=false -out=tfplan
+          terraform apply -input=false -auto-approve tfplan
