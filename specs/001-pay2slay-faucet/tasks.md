@@ -70,7 +70,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 ## Phase 3.4: Integration & Observability
 - [~] T037 Tracing setup (OpenTelemetry) in src/lib/observability.py (console + optional OTLP exporter; added span attrs in scheduler & accrual; pending: HTTP span enrichment, DB spans, metrics correlation)
 - [x] T038 Correlation & trace ID logging middleware (src/lib/http.py)
-- [ ] T039 Rate limiting middleware (src/lib/ratelimit.py) using in-memory token bucket (extensible)
+- [x] T039 Rate limiting middleware (src/lib/ratelimit.py) using in-memory token bucket (extensible)
 - [ ] T040 Abuse heuristic service (enrich accrual / flag abnormal kill rates)
 - [ ] T041 Metrics: payouts_by_region, kills_by_region, flagged_users_total
 - [ ] T042 Operator balance check (real BananoClient) integrated into scheduler

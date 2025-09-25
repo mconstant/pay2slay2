@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request, Response
 
 from src.lib.http import correlation_middleware
 from src.lib.observability import get_logger, setup_structlog
+from src.lib.ratelimit import build_rate_limiters, rate_limit_middleware_factory
 from src.lib.region import infer_region_from_request
 
 
@@ -50,6 +51,15 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Pay2Slay API", version="0.1.0")
     # Add correlation/trace middleware early
     app.middleware("http")(correlation_middleware)
+
+    # Rate limiting middleware (global + per-IP) before other work
+    try:
+        cfg_for_limits = getattr(app.state, "config", None)  # may not be loaded yet
+        limiters = build_rate_limiters(cfg_for_limits) if cfg_for_limits else []
+        if limiters:
+            app.middleware("http")(rate_limit_middleware_factory(limiters))
+    except Exception as exc:  # pragma: no cover - defensive
+        log.warning("ratelimit_init_failed", error=str(exc))
 
     @app.middleware("http")
     async def region_middleware(

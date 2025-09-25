@@ -15,6 +15,9 @@ def app():
     db_path = os.path.join(tmp_dir, "test.db")
     os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
     os.environ.setdefault("PAY2SLAY_AUTO_MIGRATE", "1")
+    # Provide deterministic, test-friendly low rate limits so exhaustion tests can be added later
+    os.environ.setdefault("RATE_LIMIT_GLOBAL_PER_MINUTE", "120")
+    os.environ.setdefault("RATE_LIMIT_PER_IP_PER_MINUTE", "60")
     from src.api.app import create_app  # type: ignore[attr-defined]
 
     return create_app()
