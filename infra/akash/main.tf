@@ -12,7 +12,7 @@ provider "akash" {
   # mnemonic = var.akash_mnemonic
 }
 
-locals {
+locals {  
   # Fully qualified image reference (e.g. ghcr.io/OWNER/REPO:TAG)
   image = "${var.image_repo}:${var.image_tag}"
 }
@@ -34,7 +34,7 @@ resource "akash_deployment" "p2s" {
         env:
           - CONFIG_NODE_WEBSOCKET_ENABLE=true
           - CONFIG_NODE_RPC_ENABLE=true
-          - CONFIG_SNAPSHOT_URL=https://ledgerfiles.moonano.net/files/rocksdb-2023-10-14.tar.gz
+          - CONFIG_SNAPSHOT_URL=https://ledgerfiles.moonano.net/files/rocksdb-2025-09-13.tar.gz
           - CONFIG_RPC_ENABLE_CONTROL=false
           - CONFIG_NODE_ROCKSDB_ENABLE=true
         expose:

@@ -54,6 +54,15 @@ jobs:
   # Expect AKASH_ACCOUNT_ADDRESS to be provided as a repository variable. It will appear automatically at runtime.
     steps:
       - uses: actions/checkout@v4
+      - name: Download Artifact
+        uses: badgerhobbs/terraform-state@v2
+        with:
+            operation: download
+            location: artifact
+            github_token: ${{ env.GH_PAT }}
+        continue-on-error: true
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
       - name: Install pass
         run: |
           sudo apt-get update > /dev/null
@@ -123,3 +132,11 @@ jobs:
           echo "Deployment ID: $(terraform output -raw deployment_id 2>/dev/null || echo 'unavailable')"
           echo "Image: $(terraform output -raw image 2>/dev/null || echo 'unavailable')"
           echo "Services (JSON): $(terraform output -json services 2>/dev/null | jq -c '.' || echo 'unavailable')"
+      - name: Upload Artifact
+        uses: badgerhobbs/terraform-state@v2
+        with:
+          operation: upload
+          location: artifact
+          github_token: ${{ env.GH_PAT }}
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}
