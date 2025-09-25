@@ -6,6 +6,7 @@
 provider "akash" {
   chain_id = var.akash_chain_id
   node     = var.akash_node
+  account_address = var.akash_account_address
   # NOTE: Provider v0.1.0 error shows keyring/gas blocks unsupported; mnemonic attribute also unsupported.
   # Authentication must be handled via environment or future provider updates. Leaving mnemonic commented.
   # mnemonic = var.akash_mnemonic

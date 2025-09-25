@@ -10,6 +10,9 @@ on:
         description: 'Container image tag to build & deploy'
         required: true
         default: 'latest'
+      akash_account_address:
+        description: 'Akash account address (injected via TF_VAR_akash_account_address)'
+        required: true
       ref:
         description: 'Git ref (branch or tag) to deploy (defaults to workflow run branch)'
         required: false
@@ -112,6 +115,7 @@ jobs:
           TF_VAR_image_repo: ${{ env.IMAGE_REPO }}
           TF_VAR_akash_node: ${{ github.event.inputs.akash_network }}
           TF_VAR_akash_chain_id: ${{ env.AKASH_CHAIN_ID }}
+          TF_VAR_akash_account_address: ${{ env.AKASH_ACCOUNT_ADDRESS }}
         run: |
           terraform init -input=false
           terraform plan -input=false -out=tfplan

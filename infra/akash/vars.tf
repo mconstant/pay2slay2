@@ -52,3 +52,8 @@ variable "storage_size" {
   description = "Storage allocation (e.g. 1Gi)."
   default     = "1Gi"
 }
+
+variable "akash_account_address" {
+  type        = string
+  description = "Akash account address (injected via TF_VAR_akash_account_address)."
+}
