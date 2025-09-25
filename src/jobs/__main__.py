@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from src.lib.config import get_config
-from src.lib.observability import get_logger
+from src.lib.observability import get_logger, get_tracer
 from src.services.fortnite_service import FortniteService
 
 from .accrual import AccrualJobConfig, run_accrual
@@ -56,17 +56,26 @@ def main() -> None:
 
     import time
 
+    tracer = get_tracer("scheduler")
     while True:  # pragma: no cover
         session: Session = session_factory()
         try:
             try:
-                accrual_res = run_accrual(session, fortnite, accrual_cfg)
-                log.info("accrual_cycle", **accrual_res)
+                with tracer.start_as_current_span("accrual_cycle"):
+                    accrual_res = run_accrual(session, fortnite, accrual_cfg)
+                    log.info("accrual_cycle", **accrual_res)
             except Exception as exc:  # pragma: no cover
                 JOB_ERRORS.inc()
                 log.error("accrual_cycle_error", error=str(exc))
             try:
-                run_settlement(session, cfg)
+                from src.services.banano_client import BananoClient
+
+                banano = BananoClient(node_url=integrations.node_rpc, dry_run=integrations.dry_run)
+                if banano.has_min_balance(cfg.min_operator_balance_ban, operator_account):
+                    with tracer.start_as_current_span("settlement_cycle"):
+                        run_settlement(session, cfg)
+                else:
+                    log.warning("settlement_skipped_low_balance")
             except Exception as exc:  # pragma: no cover
                 JOB_ERRORS.inc()
                 log.error("settlement_cycle_error", error=str(exc))

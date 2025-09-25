@@ -59,7 +59,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 	- DONE: Retries with jittered exponential backoff; metrics counters & latency histogram
 	- TODO: Replace placeholder base_url with real Fortnite stats endpoint + auth scheme
 	- TODO: Persist observed (unsettled) kill cursor separately if needed for reconciliation
-	- TODO: Integration test covering positive delta + rate limit exhaustion fallback
+	- DONE: Integration test covering positive delta + rate limit exhaustion fallback (test_fortnite_rate_limit.py)
 - [x] T033 Accrual batch job (src/jobs/accrual.py) iterating verified users (implemented + unit test)
 - [ ] T034 BananoClient real RPC (balance/send/raw conversion)
 - [ ] T035 Payout idempotency key (hash unsettled accrual IDs) & duplicate guard
