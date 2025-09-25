@@ -42,7 +42,6 @@ jobs:
       image_repo: ${{ steps.meta.outputs.image_repo }}
 
   akash_cli_setup:
-    needs: build_and_push
     runs-on: ubuntu-latest
     env:
       AKASH_CHAIN_ID: "akashnet-2"
@@ -118,4 +117,5 @@ jobs:
           terraform plan -input=false -out=tfplan
           terraform apply -input=false -auto-approve tfplan
           echo "Deployment ID: $(terraform output -raw deployment_id 2>/dev/null || echo 'unavailable')"
+          echo "Image: $(terraform output -raw image 2>/dev/null || echo 'unavailable')"
           echo "Image: $(terraform output -raw image 2>/dev/null || echo 'unavailable')"
