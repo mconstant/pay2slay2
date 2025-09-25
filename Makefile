@@ -32,7 +32,12 @@ ci:
 deploy-akash:
 	@if ! command -v gh >/dev/null 2>&1; then echo 'gh CLI not installed'; exit 1; fi
 	@if [ -z "$(IMAGE_TAG)" ]; then echo 'IMAGE_TAG required (ex: IMAGE_TAG=latest)'; exit 1; fi
-	REF_FLAG=""; if [ -n "$(REF)" ]; then REF_FLAG="-r $(REF)"; fi; \
+	@if [ -z "$(AKASH_NETWORK)" ]; then echo 'AKASH_NETWORK required (ex: https://rpc.akash.network:443)'; exit 1; fi
+	# Auto-detect current branch if REF not provided (handles detached HEAD by leaving blank)
+	REF_DETECTED=$$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo ""); \
+	REF_TO_USE="$(REF)"; \
+	if [ -z "$$REF_TO_USE" ] && [ "$$REF_DETECTED" != "HEAD" ]; then REF_TO_USE="$$REF_DETECTED"; fi; \
+	if [ -n "$$REF_TO_USE" ]; then echo "Using ref: $$REF_TO_USE"; REF_FLAG="-r $$REF_TO_USE"; else echo 'No ref provided/detected (will use default branch)'; REF_FLAG=""; fi; \
 	gh workflow run deploy-akash $$REF_FLAG -f image_tag=$(IMAGE_TAG) -f akash_network=$(AKASH_NETWORK)
 
 # Trigger CI workflow remotely (uses current default branch HEAD)
