@@ -13,3 +13,9 @@ def test_auth_callback_success(client):
     assert resp.status_code == HTTPStatus.OK
     data = resp.json()
     assert set(["discord_user_id", "discord_username", "epic_account_id"]).issubset(data.keys())
+
+
+def test_auth_callback_invalid_state(client):
+    resp = client.post("/auth/discord/callback?state=badtoken&code=dummy")
+    # Should reject invalid state now
+    assert resp.status_code == HTTPStatus.BAD_REQUEST

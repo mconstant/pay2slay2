@@ -34,7 +34,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [~] T011 Integration: registration flow (OAuth→Yunite→wallet link→status) (test added)
 - [~] T012 Integration: accrual→settlement→payout (dry_run) (test added)
 - [ ] T013 Performance smoke: /me/status p95<300ms
-- [ ] T014 Security: OAuth replay/state, rate limit baseline, invalid wallet format fuzz
+- [~] T014 Security: OAuth replay/state (state enforced), rate limit baseline, invalid wallet format fuzz
 - [x] T015 Contract: POST /me/reverify (stub test created)
 - [x] T016 Contract: GET /config/product (stub test created)
 - [x] T017 Contract: GET /me/payouts (stub test created)
@@ -47,11 +47,11 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [~] T022 Admin API (needs audit trail & health expansion)
 - [x] T023 Auth/User APIs
 - [~] T024 Scheduler job (needs operator balance + tracing) - accrual+settlement alternating loop implemented; tracing & real balance validation TODO
-- [ ] T025 OAuth state/nonce validation (middleware or augmented auth flow)
+- [x] T025 OAuth state/nonce validation (basic HMAC state issued + validated)
 - [x] T026 Implement /me/reverify endpoint (returns accepted + creates VerificationRecord)
 - [x] T027 Implement /config/product endpoint (src/api/config.py)
 - [x] T028 Implement /me/payouts endpoint (paginated)
-- [ ] T029 Region analytics middleware (src/lib/region.py) setting User.region_code
+- [~] T029 Region analytics middleware (header-based region capture; pending GeoIP + metrics)
 - [ ] T030 AdminAudit model + migration + persistence utilities
 - [ ] T031 Verification refresh background job (src/jobs/verification_refresh.py)
 - [~] T032 FortniteService real kill delta retrieval + rate limiting

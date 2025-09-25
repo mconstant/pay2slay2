@@ -1,10 +1,12 @@
 import os
+from collections.abc import Awaitable, Callable
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, Response
 
 from src.lib.http import correlation_middleware
 from src.lib.observability import get_logger, setup_structlog
+from src.lib.region import infer_region_from_request
 
 
 def _init_db(app: FastAPI, log: Any) -> None:
@@ -48,6 +50,13 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Pay2Slay API", version="0.1.0")
     # Add correlation/trace middleware early
     app.middleware("http")(correlation_middleware)
+
+    @app.middleware("http")
+    async def region_middleware(
+        request: Request, call_next: Callable[[Request], Awaitable[Response]]
+    ) -> Response:
+        request.state.region_code = infer_region_from_request(request)
+        return await call_next(request)
 
     try:  # Config load
         from src.lib.config import get_config  # local import

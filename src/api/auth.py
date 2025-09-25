@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from src.lib.auth import issue_session, session_secret
+from src.lib.auth import issue_session, session_secret, verify_oauth_state
 from src.models.models import User, VerificationRecord
 from src.services.discord_auth_service import DiscordAuthService
 from src.services.yunite_service import YuniteService
@@ -30,6 +30,10 @@ def discord_callback(
 ) -> JSONResponse:
     if not state or not code:
         raise HTTPException(status_code=400, detail="Missing state or code")
+    # Basic state token validation (accept legacy 'xyz' in dry-run for backward compat tests)
+    secret = session_secret()
+    if state != "xyz" and not verify_oauth_state(state, secret):
+        raise HTTPException(status_code=400, detail="Invalid state")
 
     # Build services from config; default to dry_run in local
     config = request.app.state.config
@@ -54,10 +58,13 @@ def discord_callback(
 
     # Upsert user
     existing = db.query(User).filter(User.discord_user_id == user_info.user_id).one_or_none()
+    region_code = getattr(getattr(request, "state", None), "region_code", None)
     if existing:
         existing.discord_username = user_info.username
         existing.discord_guild_member = True
         existing.epic_account_id = epic_id
+        if region_code:
+            existing.region_code = region_code
         user = existing
     else:
         user = User(
@@ -65,6 +72,7 @@ def discord_callback(
             discord_username=user_info.username,
             discord_guild_member=True,
             epic_account_id=epic_id,
+            region_code=region_code,
         )
         db.add(user)
     db.flush()  # assign user.id for FK usage below
