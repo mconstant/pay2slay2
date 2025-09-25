@@ -109,7 +109,7 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - Dependency: T015, T017
 
 ## Phase 3.4: Integration
-- [ ] T025 Database setup
+- [x] T025 Database setup
       - SQLAlchemy models, Alembic migrations; SQLite dev; DSN configurable
       - Dependency: T016
 - [ ] T026 Auth middleware/session handling

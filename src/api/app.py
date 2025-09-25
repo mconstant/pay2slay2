@@ -18,6 +18,22 @@ def create_app() -> FastAPI:
         # In early TDD, configs may be incomplete; keep app up but mark config load error
         app.state.config_error = str(exc)
 
+    # Initialize DB engine and session factory
+    try:
+        from src.lib.db import make_engine, make_session_factory
+        from src.models.base import Base
+
+        db_url = getattr(app.state.config, "database_url", None) if hasattr(app.state, "config") else None
+        engine = make_engine(db_url)
+        session_factory = make_session_factory(engine)
+        app.state.engine = engine
+        app.state.session_factory = session_factory
+
+        # For early development/tests without Alembic, ensure tables exist
+        Base.metadata.create_all(bind=engine)
+    except Exception as exc:  # pragma: no cover
+        app.state.db_init_error = str(exc)
+
     from .admin import router as admin_router
     from .auth import router as auth_router
     from .user import router as user_router
