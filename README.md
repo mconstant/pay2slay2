@@ -60,7 +60,7 @@ Makefile shortcuts are available:
 - Docker (local): `docker build -t pay2slay2:dev .` then `docker-compose up --build`
 - CI: GitHub Actions workflow `.github/workflows/ci.yml` runs lint, type, tests, SBOM/scan.
 - Akash (Terraform):
-   - Prereqs: set `AKASH_MNEMONIC` secret in GitHub, and use `deploy-akash` workflow dispatch with `image_tag`.
+   - Prereqs: set `AKASH_MNEMONIC` secret in GitHub, set repository variable `AKASH_ACCOUNT_ADDRESS` (your `akash1...` wallet address), and use `deploy-akash` workflow dispatch with `image_tag`.
    - Infra code under `infra/akash` uses the Akash Terraform provider to submit a simple deployment.
    - Container image is built & pushed to GHCR automatically by the `deploy-akash` workflow.
    - NOTE: Workflow must exist on the target branch (use `REF=<branch>` with `make deploy-akash` if deploying a non-default branch).
@@ -184,16 +184,22 @@ Rotation / Revocation:
    - Value: Your 24-word mnemonic (space separated). DO NOT quote it; ensure there are exactly 24 words.
    - Save.
 
-6. Trigger Deployment:
+6. Set Repository Variable `AKASH_ACCOUNT_ADDRESS`:
+   - GitHub repo → Settings → Secrets and variables → Actions → Variables → New variable.
+   - Name: `AKASH_ACCOUNT_ADDRESS`
+   - Value: Your Keplr (or other wallet) Akash address (`akash1...`).
+   - This is required so Terraform provider authentication (account address) is wired into the `deploy-akash` workflow via `TF_VAR_akash_account_address`.
+
+7. Trigger Deployment:
    - Build & push via workflow dispatch: GitHub → Actions → `deploy-akash` → Run workflow → provide `image_tag` (e.g., `latest`) and `akash_network` (default OK).
    - Or locally via GitHub CLI (after push):
      - `make deploy-akash IMAGE_TAG=latest AKASH_NETWORK=https://rpc.akash.network:443`
 
-7. Confirm Deployment:
-   - Terraform step outputs events (future enhancement: capture outputs). For now, check Keplr → Transactions or Akash block explorer for deployment create.
-   - Query provider endpoint (once known) to reach the API on port 80.
+8. Confirm Deployment:
+   - Terraform step now outputs: deployment ID, image, and `services` (including `uris`, `ips`, replica counts).  Use the first URI (if present) to reach the API.
+   - Fallback: check Keplr → Transactions or an Akash block explorer for the deployment create.
 
-8. Rotating / Revoking Mnemonic:
+9. Rotating / Revoking Mnemonic:
    - If compromised: create a new wallet, fund it, update the secret, re-run deployment; revoke old by emptying funds.
 
 Security Notes:

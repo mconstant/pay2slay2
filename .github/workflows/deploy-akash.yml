@@ -13,6 +13,9 @@ on:
       ref:
         description: 'Git ref (branch or tag) to deploy (defaults to workflow run branch)'
         required: false
+      akash_account_address:
+        description: 'Akash wallet address (akash1...) if not set via repo variable'
+        required: false
 
 permissions:
   contents: read
@@ -48,6 +51,7 @@ jobs:
       AKASH_CHAIN_ID: "akashnet-2"
       IMAGE_TAG: ${{ needs.build_and_push.outputs.image_tag }}
       IMAGE_REPO: ${{ needs.build_and_push.outputs.image_repo }}
+  # Expect AKASH_ACCOUNT_ADDRESS to be provided as a repository variable. It will appear automatically at runtime.
     steps:
       - uses: actions/checkout@v4
       - name: Install pass
@@ -60,16 +64,26 @@ jobs:
           wallet-name: deployer
           mnemonic: ${{ env.AKASH_MNEMONIC }}
           cert-content: ${{ env.CERT_CONTENT }}
-          cert-id: ${{ env.AKASH_CERT_ID }}
+          cert-id: ${{ vars.AKASH_CERT_ID }}
         env:
           AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
           CERT_CONTENT: ${{ secrets.AKASH_CERT }}
-      - name: Get Akash account address
-        id: akash_account
+      - name: Validate required repository variables
         run: |
-          AKASH_ACCOUNT_ADDRESS=$(provider-services keys show deployer -a)
-          echo "Akash account address: $AKASH_ACCOUNT_ADDRESS"
-          echo "AKASH_ACCOUNT_ADDRESS=$AKASH_ACCOUNT_ADDRESS" >> $GITHUB_ENV
+          ADDRESS_SOURCE="env"
+          if [ -z "${AKASH_ACCOUNT_ADDRESS}" ]; then
+            if [ -n "${{ github.event.inputs.akash_account_address }}" ]; then
+              export AKASH_ACCOUNT_ADDRESS='${{ github.event.inputs.akash_account_address }}'
+              echo "AKASH_ACCOUNT_ADDRESS=${AKASH_ACCOUNT_ADDRESS}" >> $GITHUB_ENV
+              ADDRESS_SOURCE="input"
+            else
+              echo "Akash account address not provided. Set repo variable AKASH_ACCOUNT_ADDRESS or provide workflow input akash_account_address." >&2
+              exit 1
+            fi
+          else
+            echo "AKASH_ACCOUNT_ADDRESS present from environment (repo variable)."
+          fi
+          echo "Resolved Akash account address (${ADDRESS_SOURCE}): ${AKASH_ACCOUNT_ADDRESS}"
       - name: Create Akash cert
         run: |
           provider-services tx cert generate client --from deployer --yes
@@ -96,11 +110,16 @@ jobs:
           TF_VAR_image_repo: ${{ env.IMAGE_REPO }}
           TF_VAR_akash_node: ${{ github.event.inputs.akash_network }}
           TF_VAR_akash_chain_id: ${{ env.AKASH_CHAIN_ID }}
-          TF_VAR_akash_account_address: ${{ env.AKASH_ACCOUNT_ADDRESS }}
         run: |
+          if [ -z "${AKASH_ACCOUNT_ADDRESS}" ]; then
+            echo "AKASH_ACCOUNT_ADDRESS not populated at runtime (should have been set earlier)." >&2
+            exit 1
+          fi
+          export TF_VAR_akash_account_address="${AKASH_ACCOUNT_ADDRESS}"
+          echo "Using TF_VAR_akash_account_address=${TF_VAR_akash_account_address}"
           terraform init -input=false
           terraform plan -input=false -out=tfplan
           terraform apply -input=false -auto-approve tfplan
           echo "Deployment ID: $(terraform output -raw deployment_id 2>/dev/null || echo 'unavailable')"
           echo "Image: $(terraform output -raw image 2>/dev/null || echo 'unavailable')"
-          echo "Image: $(terraform output -raw image 2>/dev/null || echo 'unavailable')"
+          echo "Services (JSON): $(terraform output -json services 2>/dev/null | jq -c '.' || echo 'unavailable')"
