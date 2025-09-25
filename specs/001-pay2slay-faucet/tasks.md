@@ -31,8 +31,8 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T008 Contract: GET /me/status
 - [x] T009 Contract: POST /admin/reverify
 - [x] T010 Contract: POST /admin/payouts/retry
-- [ ] T011 Integration: registration flow (OAuth→Yunite→wallet link→status)
-- [ ] T012 Integration: accrual→settlement→payout (dry_run)
+- [~] T011 Integration: registration flow (OAuth→Yunite→wallet link→status) (test added)
+- [~] T012 Integration: accrual→settlement→payout (dry_run) (test added)
 - [ ] T013 Performance smoke: /me/status p95<300ms
 - [ ] T014 Security: OAuth replay/state, rate limit baseline, invalid wallet format fuzz
 - [x] T015 Contract: POST /me/reverify (stub test created)

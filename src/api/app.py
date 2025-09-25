@@ -13,6 +13,18 @@ def _init_db(app: FastAPI, log: Any) -> None:
     db_url = (
         getattr(app.state.config, "database_url", None) if hasattr(app.state, "config") else None
     )
+    # Import models early so metadata has full schema before create_all/migrations
+    from src.models import models  # noqa: F401  # pylint: disable=unused-import
+
+    engine = make_engine(db_url)
+    session_factory = make_session_factory(engine)
+    app.state.engine = engine
+    app.state.session_factory = session_factory
+
+    # Create tables if brand new
+    Base.metadata.create_all(bind=engine)
+
+    # Apply migrations for column additions / constraints
     if os.getenv("PAY2SLAY_AUTO_MIGRATE") == "1":  # pragma: no cover
         try:
             from alembic import command as alembic_command
@@ -26,11 +38,6 @@ def _init_db(app: FastAPI, log: Any) -> None:
             log.info("alembic_upgrade_complete")
         except Exception as mig_exc:  # pragma: no cover
             log.warning("alembic_upgrade_failed", error=str(mig_exc))
-    engine = make_engine(db_url)
-    session_factory = make_session_factory(engine)
-    app.state.engine = engine
-    app.state.session_factory = session_factory
-    Base.metadata.create_all(bind=engine)
 
 
 def create_app() -> FastAPI:

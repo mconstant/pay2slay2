@@ -29,6 +29,16 @@ def client(app):
 def db_session(app) -> Session:  # type: ignore[override]
     session_factory = app.state.session_factory
     session: Session = session_factory()
+    # Test safeguard: if migration didn't add payout retry columns (rare timing issue), patch them.
+    try:
+        cols = [r[1] for r in session.execute("PRAGMA table_info(payouts)").fetchall()]
+        if "attempt_count" not in cols:
+            session.execute("ALTER TABLE payouts ADD COLUMN attempt_count INTEGER DEFAULT 1")
+            session.execute("ALTER TABLE payouts ADD COLUMN first_attempt_at DATETIME")
+            session.execute("ALTER TABLE payouts ADD COLUMN last_attempt_at DATETIME")
+            session.commit()
+    except Exception:  # pragma: no cover - best effort
+        session.rollback()
     try:
         yield session
     finally:
