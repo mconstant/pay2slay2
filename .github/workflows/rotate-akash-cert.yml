@@ -74,11 +74,11 @@ jobs:
 
       - name: Update AKASH_CERT secret
         run: |
-          gh variable set 'AKASH_CERT' --body $(cat cert.pem.final) --repo ${{ github.repository }}
+          gh variable set 'AKASH_CERT' --body "$(cat cert.pem.final)" --repo "${{ github.repository }}"
 
       - name: Update AKASH_CERT_ID variable
         run: |
-          gh variable set 'AKASH_CERT_ID' --body "${{ steps.gen.outputs.cert-id }}" --repo ${{ github.repository }}
+          gh variable set 'AKASH_CERT_ID' --body "${{ steps.gen.outputs.cert-id }}" --repo "${{ github.repository }}"
 
       - name: Summary
         run: |
