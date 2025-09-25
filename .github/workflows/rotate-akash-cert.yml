@@ -76,14 +76,14 @@ jobs:
         run: |
           gh variable set 'AKASH_CERT' --body "$(cat cert.pem.final)" --repo "${{ github.repository }}"
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
 
 
       - name: Update AKASH_CERT_ID variable
         run: |
           gh variable set 'AKASH_CERT_ID' --body "${{ steps.gen.outputs.cert-id }}" --repo "${{ github.repository }}"
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
 
       - name: Summary
         run: |
