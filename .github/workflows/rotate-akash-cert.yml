@@ -74,7 +74,7 @@ jobs:
 
       - name: Update AKASH_CERT secret
         run: |
-          gh variable set 'AKASH_CERT' --body "$(cat cert.pem.final)" --repo "${{ github.repository }}"
+          gh secret set 'AKASH_CERT' --body "$(cat cert.pem.final)" --repo "${{ github.repository }}"
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
 

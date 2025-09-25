@@ -73,7 +73,7 @@ The Akash client certificate periodically needs rotation. This project provides 
 Prerequisites:
 1. Installed GitHub CLI (`gh auth login`).
 2. Repo secret `AKASH_MNEMONIC` (24-word wallet mnemonic).
-3. Repo secret `GH_ADMIN_TOKEN` (optional but recommended). Without it, the workflow will attempt to use the default `GITHUB_TOKEN`; updating secrets normally requires a PAT, so rotation may fail without `GH_ADMIN_TOKEN`.
+3. Repo secret `GH_PAT` (classic Personal Access Token) with at minimum the `repo` scope (for private repos) or `public_repo` (if public). This enables the rotation workflow to update repository secrets/variables reliably. (If you already created an older `GH_ADMIN_TOKEN`, you can keep using it, but new setups should prefer `GH_PAT`.)
 
 Default invocation (uses defaults: key `deployer`, network mainnet, chain `akashnet-2`, method `cert-generation` with fallback to `openssl`):
 
@@ -126,6 +126,34 @@ Failure Modes & Tips:
 Security Considerations:
 - The mnemonic never leaves GitHub Actions (provided only as an injected secret to the setup step).
 - Rotate credentials after suspected compromise; revoke unused keys in your Akash environment.
+
+#### Creating a GitHub Personal Access Token (Classic) as `GH_PAT`
+
+Use this PAT so the rotation workflow can mutate repository secrets/variables. The default `GITHUB_TOKEN` often lacks permission to set secrets.
+
+1. Navigate to GitHub → Settings (your user, not the repo) → Developer settings → Personal access tokens → Tokens (classic).
+2. Click "Generate new token (classic)".
+3. Give it a descriptive name, e.g. `pay2slay-rotate-cert`.
+4. Set an expiration (recommended: 30–90 days). Calendar a reminder to rotate.
+5. Select scopes:
+   - Private repo: check `repo` (full). (If the repository is public only, `public_repo` is sufficient.)
+   - You do NOT need `admin:org` or other broad scopes.
+6. Generate the token and copy it (you will not see it again).
+7. Store it in the repository:
+   - Repo → Settings → Secrets and variables → Actions → New repository secret.
+   - Name: `GH_PAT`
+   - Value: (paste the token)
+   - Save.
+8. (Optional) Locally verify you can auth with it (do NOT store permanently in shell history):
+   ```bash
+   echo "<token>" | gh auth login --with-token
+   gh auth status
+   ```
+9. Re-run `make rotate-akash-cert` and confirm the workflow updates `AKASH_CERT` / `AKASH_CERT_ID`.
+
+Rotation / Revocation:
+- Before expiry, generate a new PAT, update the `GH_PAT` secret, then delete the old token.
+- If leaked, delete the token immediately and replace the secret.
 
 ### Akash Deployment Guide (Cosmos Wallet via Keplr)
 
