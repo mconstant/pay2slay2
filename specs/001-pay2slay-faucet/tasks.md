@@ -134,12 +134,19 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
 - [ ] T029 [conditional] Artifact signing & verification
       - Sign container/images (cosign); document verification
       - Dependency: T002
-- [~] T030 Deployment artifacts for Akash
+- [x] T030 Deployment artifacts for Akash
       - Dockerfile + docker-compose for dev
-      - Terraform Akash provider skeleton under `infra/akash`
-      - GitHub Actions workflow (`deploy-akash.yml`) to deploy via Terraform
-      - Include secrets references and image_tag parameter
+      - Terraform Akash provider with image_repo + image_tag variables
+      - GitHub Actions workflow builds & pushes image to GHCR then deploys via Terraform
+      - Secrets: `AKASH_MNEMONIC` documented; README wallet/on-ramp guide added
+      - Follow-up: capture deployment endpoint output (TODO)
       - Dependency: T019–T022
+
+## Added Follow-up Tasks
+- [ ] T037 Capture Akash lease/provider endpoint output post-terraform (expose via workflow summary)
+- [ ] T038 Harden Terraform: pin provider minor version and add variable validation & pricing tuning
+- [ ] T039 Add cosign signing & provenance for container image
+- [ ] T040 Add automated SBOM attach & vulnerability gating in deploy workflow
 
 ## Phase 3.5: Polish
 - [ ] T031 [P] Unit tests for services in `tests/unit/` (accrual, settlement, payout)

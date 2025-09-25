@@ -62,6 +62,54 @@ Makefile shortcuts are available:
 - Akash (Terraform):
    - Prereqs: set `AKASH_MNEMONIC` secret in GitHub, and use `deploy-akash` workflow dispatch with `image_tag`.
    - Infra code under `infra/akash` uses the Akash Terraform provider to submit a simple deployment.
+   - Container image is built & pushed to GHCR automatically by the `deploy-akash` workflow.
+
+### Akash Deployment Guide (Cosmos Wallet via Keplr)
+
+1. Install Keplr:
+   - Browser extension: https://www.keplr.app/ (Chrome/Brave/Firefox)
+   - Create a new wallet (24-word mnemonic). Choose a strong password. Store the mnemonic securely (never commit or screenshot it).
+
+2. Add / Enable Akash Network in Keplr:
+   - Open Keplr → Select "Add more chains" → Search for "Akash" → Enable.
+   - Confirm you see an `akash1...` address.
+
+3. Fund Your Akash Wallet:
+   - Option A (Centralized Exchange Fiat On-Ramp):
+     1. Buy ATOM (Cosmos Hub) on an exchange (e.g., Coinbase / Kraken / Binance) with fiat.
+     2. Withdraw ATOM to your Keplr Cosmos Hub (ATOM) address.
+     3. Use an IBC transfer to move ATOM to Akash (Keplr: Cosmos Hub → Transfer → Select Akash → amount → send).
+     4. On Akash, use an on-chain swap (e.g., https://app.osmosis.zone) to convert ATOM → AKT if needed (Keplr will auto prompt to connect). Ensure you have some AKT for deployment fees.
+   - Option B (Direct AKT Purchase):
+     - Some exchanges list AKT directly; withdraw AKT to your `akash1...` Keplr address.
+   - Goal: Have at least a few AKT (plus a little ATOM or AKT dust for fees) for initial deployment.
+
+4. (Optional) Use Fiat→USDC→ATOM Flow:
+   - Buy USDC with fiat → Swap to ATOM on exchange → Withdraw to Keplr → IBC to Akash → Swap to AKT.
+
+5. Set GitHub Secret `AKASH_MNEMONIC`:
+   - Go to GitHub repo → Settings → Secrets and variables → Actions → New repository secret.
+   - Name: `AKASH_MNEMONIC`
+   - Value: Your 24-word mnemonic (space separated). DO NOT quote it; ensure there are exactly 24 words.
+   - Save.
+
+6. Trigger Deployment:
+   - Build & push via workflow dispatch: GitHub → Actions → `deploy-akash` → Run workflow → provide `image_tag` (e.g., `latest`) and `akash_network` (default OK).
+   - Or locally via GitHub CLI (after push):
+     - `make deploy-akash IMAGE_TAG=latest AKASH_NETWORK=https://rpc.akash.network:443`
+
+7. Confirm Deployment:
+   - Terraform step outputs events (future enhancement: capture outputs). For now, check Keplr → Transactions or Akash block explorer for deployment create.
+   - Query provider endpoint (once known) to reach the API on port 80.
+
+8. Rotating / Revoking Mnemonic:
+   - If compromised: create a new wallet, fund it, update the secret, re-run deployment; revoke old by emptying funds.
+
+Security Notes:
+ - Never commit keys or mnemonics.
+ - Use a hardware wallet for larger AKT balances.
+ - Consider splitting funds (operational vs vault).
+
 
 ## Notes
 - Dry-run mode short-circuits external calls and assumes a healthy operator balance; use for local testing.
