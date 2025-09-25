@@ -46,11 +46,11 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T021 Domain services (settlement, payout, accrual) initial
 - [~] T022 Admin API (needs audit trail & health expansion)
 - [x] T023 Auth/User APIs
-- [~] T024 Scheduler job (needs operator balance + tracing)
+- [~] T024 Scheduler job (needs operator balance + tracing) - accrual+settlement alternating loop implemented; tracing & real balance validation TODO
 - [ ] T025 OAuth state/nonce validation (middleware or augmented auth flow)
 - [ ] T026 Implement /me/reverify endpoint
-- [ ] T027 Implement /config/product endpoint (src/api/config.py)
-- [ ] T028 Implement /me/payouts endpoint (paginated)
+- [x] T027 Implement /config/product endpoint (src/api/config.py)
+- [x] T028 Implement /me/payouts endpoint (paginated)
 - [ ] T029 Region analytics middleware (src/lib/region.py) setting User.region_code
 - [ ] T030 AdminAudit model + migration + persistence utilities
 - [ ] T031 Verification refresh background job (src/jobs/verification_refresh.py)

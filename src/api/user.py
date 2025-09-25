@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.lib.auth import session_secret, verify_session
-from src.models.models import User, VerificationRecord, WalletLink
+from src.models.models import Payout, User, VerificationRecord, WalletLink
 
 router = APIRouter()
 
@@ -92,5 +92,46 @@ def me_status(request: Request = None, db: Session = Depends(_get_db)) -> JSONRe
             "last_verified_status": last_verified_status,
             "last_verified_source": last_verified_source,
             "accrued_rewards_ban": total_accrued,
+        }
+    )
+
+
+@router.get("/me/payouts")
+def me_payouts(
+    request: Request = None,  # type: ignore[assignment]
+    db: Session = Depends(_get_db),  # noqa: B008
+    limit: int = 20,
+    offset: int = 0,
+) -> JSONResponse:
+    token = request.cookies.get("p2s_session") if request else None
+    uid = verify_session(token, session_secret()) if token else None
+    if not uid:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    user = db.query(User).filter(User.discord_user_id == uid).one_or_none()
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    q = (
+        db.query(Payout)
+        .filter(Payout.user_id == user.id)
+        .order_by(Payout.created_at.desc())
+        .offset(offset)
+        .limit(min(limit, 100))
+    )
+    rows = q.all()
+    return JSONResponse(
+        {
+            "payouts": [
+                {
+                    "id": p.id,
+                    "amount_ban": float(p.amount_ban),
+                    "status": p.status,
+                    "tx_hash": p.tx_hash,
+                    "created_at": p.created_at.isoformat() if p.created_at else None,
+                }
+                for p in rows
+            ],
+            "count": len(rows),
+            "limit": limit,
+            "offset": offset,
         }
     )

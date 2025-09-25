@@ -2,11 +2,19 @@ from __future__ import annotations
 
 import os
 
-from prometheus_client import start_http_server
+from prometheus_client import Counter, start_http_server
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from .settlement import SchedulerConfig, run_scheduler
+from src.lib.config import get_config
+from src.lib.observability import get_logger
+from src.services.fortnite_service import FortniteService
+
+from .accrual import AccrualJobConfig, run_accrual
+from .settlement import SchedulerConfig, run_settlement
+
+log = get_logger("jobs.main")
+JOB_ERRORS = Counter("scheduler_errors_total", "Unhandled errors in main scheduler loop")
 
 
 def main() -> None:
@@ -37,7 +45,34 @@ def main() -> None:
         operator_account=operator_account,
     )
 
-    run_scheduler(session_factory, cfg)
+    cfg_obj = get_config()
+    integrations = cfg_obj.integrations
+    fortnite = FortniteService(
+        api_key=integrations.fortnite_api_key,
+        per_minute_limit=int(integrations.rate_limits.get("fortnite_per_minute", 60)),
+        dry_run=integrations.dry_run,
+    )
+    accrual_cfg = AccrualJobConfig(batch_size=None, dry_run=integrations.dry_run)
+
+    import time
+
+    while True:  # pragma: no cover
+        session: Session = session_factory()
+        try:
+            try:
+                accrual_res = run_accrual(session, fortnite, accrual_cfg)
+                log.info("accrual_cycle", **accrual_res)
+            except Exception as exc:  # pragma: no cover
+                JOB_ERRORS.inc()
+                log.error("accrual_cycle_error", error=str(exc))
+            try:
+                run_settlement(session, cfg)
+            except Exception as exc:  # pragma: no cover
+                JOB_ERRORS.inc()
+                log.error("settlement_cycle_error", error=str(exc))
+        finally:
+            session.close()
+        time.sleep(interval)
 
 
 if __name__ == "__main__":  # pragma: no cover
