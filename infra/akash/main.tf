@@ -29,6 +29,27 @@ resource "akash_deployment" "p2s" {
             as: 80
             to:
               - global: true
+      banano:
+        image: xmconstantx/configurable-bananode:stable
+        env:
+          - CONFIG_NODE_WEBSOCKET_ENABLE=true
+          - CONFIG_NODE_RPC_ENABLE=true
+          - CONFIG_SNAPSHOT_URL=https://ledgerfiles.moonano.net/files/rocksdb-2023-10-14.tar.gz
+          - CONFIG_RPC_ENABLE_CONTROL=false
+          - CONFIG_NODE_ROCKSDB_ENABLE=true
+        expose:
+          - port: 7071
+            as: 7071
+            to:
+              - global: true
+          - port: 7072
+            as: 7072
+            to:
+              - global: true
+          - port: 7074
+            as: 7074
+            to:
+              - global: true
     profiles:
       compute:
         api:
@@ -39,16 +60,31 @@ resource "akash_deployment" "p2s" {
               size: ${var.memory_size}
             storage:
               size: ${var.storage_size}
+        banano-profile:
+          resources:
+            cpu:
+              units: 2.0
+            memory:
+              size: 2Gi
+            storage:
+              size: 32Gi
       placement:
         westcoast:
           pricing:
             api:
               denom: uakt
               amount: ${var.deployment_price_uakt}
+            banano-profile:
+              denom: uakt
+              amount: 1000
     deployment:
       api:
         westcoast:
           profile: api
+          count: 1
+      banano:
+        westcoast:
+          profile: banano-profile
           count: 1
   EOT
 }
