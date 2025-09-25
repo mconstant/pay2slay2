@@ -50,7 +50,7 @@ jobs:
       - name: Install pass
         run: |
           sudo apt-get update
-          sudo apt-get install -y pass
+          sudo apt-get install -yqq pass
       - name: Setup Akash CLI
         uses: LumeWeb/akash-action@cfd98517684fe809a107442d56bb4e22e1cfa0a5
         with:
