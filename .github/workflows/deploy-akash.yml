@@ -19,28 +19,39 @@ permissions:
   packages: write
 
 jobs:
-  deploy:
+  build_and_push:
     runs-on: ubuntu-latest
     env:
-      AKASH_CHAIN_ID: "akashnet-2"
       IMAGE_TAG: ${{ github.event.inputs.image_tag }}
       IMAGE_REPO: ghcr.io/${{ github.repository }}
     steps:
       - uses: actions/checkout@v4
-
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
       - name: Build and push image
         run: |
           docker build -t ${IMAGE_REPO}:${IMAGE_TAG} .
           docker push ${IMAGE_REPO}:${IMAGE_TAG}
+      - name: Set outputs
+        id: meta
+        run: |
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "image_repo=${IMAGE_REPO}" >> $GITHUB_OUTPUT
+    outputs:
+      image_tag: ${{ steps.meta.outputs.image_tag }}
+      image_repo: ${{ steps.meta.outputs.image_repo }}
 
+  akash_cli_setup:
+    needs: build_and_push
+    runs-on: ubuntu-latest
+    env:
+      AKASH_CHAIN_ID: "akashnet-2"
+    steps:
+      - uses: actions/checkout@v4
       - name: Install pass
         run: |
           sudo apt-get update
           sudo apt-get install -y pass
-
       - name: Setup Akash CLI
         uses: LumeWeb/akash-action@cfd98517684fe809a107442d56bb4e22e1cfa0a5
         with:
@@ -51,10 +62,41 @@ jobs:
         env:
           AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
           CERT_CONTENT: ${{ secrets.AKASH_CERT }}
+      - name: Package Akash CLI environment
+        run: |
+          which akash
+          mkdir akash-env
+          cp $(which akash) akash-env/
+          cp -r $HOME/.akash akash-env/
+          tar -czf akash-env.tgz -C akash-env .
+      - name: Upload Akash CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+            name: akash-env
+            path: akash-env.tgz
+            retention-days: 1
 
+  terraform_deploy:
+    needs: [build_and_push, akash_cli_setup]
+    runs-on: ubuntu-latest
+    env:
+      AKASH_CHAIN_ID: "akashnet-2"
+      IMAGE_TAG: ${{ needs.build_and_push.outputs.image_tag }}
+      IMAGE_REPO: ${{ needs.build_and_push.outputs.image_repo }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Akash CLI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: akash-env
+      - name: Restore Akash CLI
+        run: |
+          tar -xzf akash-env.tgz
+          chmod +x akash
+          sudo mv akash /usr/local/bin/akash
+          mv .akash $HOME/.akash
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
-
       - name: Configure cloud credentials
         env:
           AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
@@ -63,7 +105,6 @@ jobs:
             echo "Missing AKASH_MNEMONIC secret" >&2
             exit 1
           fi
-
       - name: Terraform init/plan/apply
         working-directory: infra/akash
         env:
