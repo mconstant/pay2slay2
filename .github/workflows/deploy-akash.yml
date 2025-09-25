@@ -50,10 +50,9 @@ jobs:
       IMAGE_REPO: ${{ needs.build_and_push.outputs.image_repo }}
     steps:
       - uses: actions/checkout@v4
-      - name: Install pass
+      - name: Install pass from snap (required by akash cli)
         run: |
-          sudo apt-get update > /dev/null
-          sudo apt-get install -yqq pass
+          sudo snap install pass
       - name: Setup Akash CLI
         uses: LumeWeb/akash-action@cfd98517684fe809a107442d56bb4e22e1cfa0a5
         with:
