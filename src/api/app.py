@@ -46,4 +46,26 @@ def create_app() -> FastAPI:
     def healthz() -> dict[str, str]:  # pragma: no cover
         return {"status": "ok"}
 
+    @app.get("/livez")
+    def livez() -> dict[str, str]:  # pragma: no cover
+        # If the process is up, liveness is ok
+        return {"status": "alive"}
+
+    @app.get("/readyz")
+    def readyz() -> dict[str, str]:  # pragma: no cover
+        # Basic readiness: ensure DB session can be created
+        try:
+            session_factory = getattr(app.state, "session_factory", None)
+            if session_factory is None:
+                return {"status": "not_ready"}
+            session = session_factory()
+            try:
+                # do a trivial no-op
+                session.execute("SELECT 1")
+            finally:
+                session.close()
+            return {"status": "ready"}
+        except Exception:
+            return {"status": "not_ready"}
+
     return app

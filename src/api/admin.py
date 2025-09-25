@@ -5,7 +5,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.lib.auth import issue_admin_session, session_secret, verify_admin_session
-from src.models.models import AdminUser, Payout, User
+from src.models.models import AdminUser, Payout, User, VerificationRecord
+from src.services.banano_client import BananoClient
+from src.services.yunite_service import YuniteService
 
 router = APIRouter(prefix="/admin")
 
@@ -44,12 +46,29 @@ def admin_reverify(
     discord_id: str = Body(..., embed=True),
     _: None = Depends(_require_admin),
     db: Session = Depends(_get_db),  # noqa: B008
+    request: Request = None,  # type: ignore[assignment]
 ) -> JSONResponse:
-    # Minimal stub: check user exists and return accepted; real reverify job TBD
     user = db.query(User).filter(User.discord_user_id == discord_id).one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    return JSONResponse({"status": "accepted", "discord_id": discord_id})
+    # Deterministic dry-run: refresh Epic mapping via Yunite stub and record verification
+    yunite = YuniteService(api_key="", guild_id="", dry_run=True)
+    epic_id = yunite.get_epic_id_for_discord(discord_id)
+    user.epic_account_id = epic_id
+    # Assume still guild member in dry-run
+    user.discord_guild_member = True
+    vr = VerificationRecord(
+        user_id=user.id,
+        discord_user_id=user.discord_user_id,
+        discord_guild_member=user.discord_guild_member,
+        epic_account_id=epic_id,
+        source="admin_reverify",
+        status="ok",
+        detail=None,
+    )
+    db.add(vr)
+    db.commit()
+    return JSONResponse({"status": "accepted", "discord_id": discord_id, "epic_account_id": epic_id})
 
 
 @router.post("/payouts/retry")
@@ -58,8 +77,21 @@ def admin_payouts_retry(
     _: None = Depends(_require_admin),
     db: Session = Depends(_get_db),  # noqa: B008
 ) -> JSONResponse:
-    # Minimal stub: ensure payout exists; real retry to be implemented
     payout = db.query(Payout).filter(Payout.id == payout_id).one_or_none()
     if not payout:
         raise HTTPException(status_code=404, detail="Payout not found")
-    return JSONResponse({"status": "accepted", "payout_id": payout_id})
+    # Idempotency: if already has tx_hash and status sent, return success quickly
+    if payout.tx_hash and payout.status == "sent":
+        return JSONResponse({"status": "already_sent", "payout_id": payout_id, "tx_hash": payout.tx_hash})
+    # Attempt resend (dry-run by default)
+    banano = BananoClient(node_url="", dry_run=True)
+    tx = banano.send(source_wallet="operator", to_address=payout.address, amount_raw=str(float(payout.amount_ban)))
+    if tx:
+        payout.tx_hash = tx
+        payout.status = "sent"
+        payout.error_detail = None
+    else:
+        payout.status = "failed"
+        payout.error_detail = payout.error_detail or "retry failed"
+    db.commit()
+    return JSONResponse({"status": payout.status, "payout_id": payout_id, "tx_hash": payout.tx_hash})
