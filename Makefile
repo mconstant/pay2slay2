@@ -1,7 +1,7 @@
 # Simple dev Makefile
 
 .PHONY: api scheduler test lint type all
-.PHONY: ci deploy-akash workflow-ci workflow-deploy-akash
+.PHONY: ci deploy-akash workflow-ci workflow-deploy-akash rotate-akash-cert
 
 api:
 	uvicorn src.api.app:create_app --reload --port 8000
@@ -47,3 +47,13 @@ workflow-ci:
 
 # Trigger deploy-akash with variables (same as deploy-akash target alias for clarity)
 workflow-deploy-akash: deploy-akash
+
+# Rotate Akash certificate via workflow-dispatch
+rotate-akash-cert:
+	@if ! command -v gh >/dev/null 2>&1; then echo 'gh CLI not installed'; exit 1; fi
+	KEY_NAME_ARG="deployer"; if [ -n "$(KEY_NAME)" ]; then KEY_NAME_ARG="$(KEY_NAME)"; fi; \
+	METHOD_ARG="cert-generation"; if [ -n "$(ROTATE_METHOD)" ]; then METHOD_ARG="$(ROTATE_METHOD)"; fi; \
+	AKASH_NET_ARG="https://rpc.akash.network:443"; if [ -n "$(AKASH_NETWORK)" ]; then AKASH_NET_ARG="$(AKASH_NETWORK)"; fi; \
+	CHAIN_ID_ARG="akashnet-2"; if [ -n "$(AKASH_CHAIN_ID)" ]; then CHAIN_ID_ARG="$(AKASH_CHAIN_ID)"; fi; \
+	echo "Dispatching rotate-akash-cert (key=$$KEY_NAME_ARG method=$$METHOD_ARG network=$$AKASH_NET_ARG chain=$$CHAIN_ID_ARG)"; \
+	gh workflow run rotate-akash-cert -f key_name=$$KEY_NAME_ARG -f rotate_method=$$METHOD_ARG -f akash_network=$$AKASH_NET_ARG -f chain_id=$$CHAIN_ID_ARG
