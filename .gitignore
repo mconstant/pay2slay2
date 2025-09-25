@@ -45,6 +45,10 @@ node_modules/
 # MacOS
 .DS_Store
 
+# Local SQLite dev database (do not commit stateful artifacts)
+pay2slay.db
+
+
 # Configs that may contain secrets (keep templates committed)
 configs/*.local.yaml
 configs/*.secrets.yaml

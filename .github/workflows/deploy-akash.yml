@@ -7,17 +7,31 @@ on:
         required: true
         default: 'https://rpc.akash.network:443'
       image_tag:
-        description: 'Container image tag to deploy'
+        description: 'Container image tag to build & deploy'
         required: true
         default: 'latest'
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
       AKASH_CHAIN_ID: "akashnet-2"
+      IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+      IMAGE_REPO: ghcr.io/${{ github.repository }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build and push image
+        run: |
+          docker build -t ${IMAGE_REPO}:${IMAGE_TAG} .
+          docker push ${IMAGE_REPO}:${IMAGE_TAG}
 
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
@@ -35,7 +49,8 @@ jobs:
         working-directory: infra/akash
         env:
           TF_VAR_akash_mnemonic: ${{ secrets.AKASH_MNEMONIC }}
-          TF_VAR_image_tag: ${{ github.event.inputs.image_tag }}
+          TF_VAR_image_tag: ${{ env.IMAGE_TAG }}
+          TF_VAR_image_repo: ${{ env.IMAGE_REPO }}
           TF_VAR_akash_network: ${{ github.event.inputs.akash_network }}
         run: |
           terraform init -input=false

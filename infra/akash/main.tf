@@ -1,6 +1,7 @@
 variable "akash_mnemonic" { type = string }
 variable "akash_network" { type = string }
 variable "image_tag" { type = string }
+variable "image_repo" { type = string }
 
 provider "akash" {
   keyring {
@@ -12,7 +13,8 @@ provider "akash" {
 }
 
 locals {
-  image = "ghcr.io/${var.image_tag}"
+  # Fully qualified image reference (e.g. ghcr.io/OWNER/REPO:TAG)
+  image = "${var.image_repo}:${var.image_tag}"
 }
 
 # Placeholder: Define a basic SDL rendered as part of a deployment
