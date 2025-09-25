@@ -73,8 +73,10 @@ jobs:
       - name: Create Akash cert
         run: |
           # copy non base64 decoded cert content to a file in ./.akash/${AKASH_ACCOUNT_ADDRESS}.pem
-          mkdir -p ./.akash
-          echo "$CERT_CONTENT" > ./.akash/${AKASH_ACCOUNT_ADDRESS}.pem
+          mkdir -p /home/runner/.akash
+          echo "$CERT_CONTENT" > /home/runner/.akash/${AKASH_ACCOUNT_ADDRESS}.pem
+          # show contents of the .akash directory
+          ls -la /home/runner/.akash
         env:
           CERT_CONTENT: ${{ secrets.AKASH_CERT }}
       - name: Set up Terraform
