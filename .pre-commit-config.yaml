@@ -3,9 +3,8 @@ repos:
     rev: v0.6.9
     hooks:
       - id: ruff
-        args: [--fix]
+        args: ["--fix"]
       - id: ruff-format
-
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.10.0
     hooks:
@@ -20,7 +19,6 @@ repos:
           - alembic
           - types-PyYAML
         args: []
-
   - repo: local
     hooks:
       - id: pytest
@@ -31,5 +29,5 @@ repos:
         types: [python]
         pass_filenames: true
         files: ^tests/.*\.py$
-        stages: [push]
+        stages: [pre-push]
 
