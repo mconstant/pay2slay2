@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.lib.auth import session_secret, verify_session
-from src.models.models import User, WalletLink
+from src.models.models import User, WalletLink, VerificationRecord
 
 router = APIRouter()
 
@@ -62,10 +62,18 @@ def me_status(request: Request = None, db: Session = Depends(_get_db)) -> JSONRe
         raise HTTPException(status_code=401, detail="Unauthorized")
     # compute accrued rewards sum
     total_accrued = sum(float(a.amount_ban) for a in user.accruals)
+    # latest verification timestamp
+    latest_ver = (
+        db.query(VerificationRecord)
+        .filter(VerificationRecord.user_id == user.id)
+        .order_by(VerificationRecord.created_at.desc())
+        .first()
+    )
+    last_verified_at = latest_ver.created_at.isoformat() if latest_ver and latest_ver.created_at else None
     return JSONResponse(
         {
             "linked": bool(user.wallet_links),
-            "last_verified_at": None,  # could add from VerificationRecord
+            "last_verified_at": last_verified_at,
             "accrued_rewards_ban": total_accrued,
         }
     )

@@ -92,6 +92,7 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
 - [x] T019 API: auth/user in `src/api/auth.py`, `src/api/user.py`
       - `/auth/discord/callback`, `/me/status`, `/link/wallet`
       - Session cookie `p2s_session` issued on auth and validated in user endpoints
+      - `/me/status` returns `last_verified_at` from latest `VerificationRecord`
       - Dependency: T017, T018
 - [ ] T020 [P] API: admin in `src/api/admin.py`
       - `/admin/reverify`, `/admin/payouts/retry`, `/admin/health`
