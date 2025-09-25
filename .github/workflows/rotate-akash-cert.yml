@@ -50,12 +50,6 @@ jobs:
             echo 'No GH_ADMIN_TOKEN secret; relying on default GITHUB_TOKEN.';
           fi
 
-      - uses: qoomon/actions--access-token@v3
-        id: access-token
-        with:
-          permissions: |
-              secrets: write
-
       - name: Generate certificate
         id: gen
         env:
@@ -80,12 +74,10 @@ jobs:
 
       - name: Update AKASH_CERT secret
         run: >-
-          gh secret 
+          gh variable 
           set 'AKASH_CERT'
           --body $(cat cert.pem.final)
           --repo ${{ github.repository }}
-        env:
-          GH_TOKEN: ${{ steps.access-token.outputs.token }}
 
       - name: Update AKASH_CERT_ID variable
         run: >-
@@ -93,8 +85,6 @@ jobs:
           set 'AKASH_CERT_ID' 
           --body "${{ steps.gen.outputs.cert-id }}"
           --repo ${{ github.repository }}
-        env:
-          GH_TOKEN: ${{ steps.access-token.outputs.token }}
 
       - name: Summary
         run: |
