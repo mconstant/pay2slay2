@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-import time
+import signal
+import threading
+from collections.abc import Callable
+import types
 from dataclasses import dataclass
 
+from prometheus_client import Counter
 from sqlalchemy.orm import Session
 
 from src.services.banano_client import BananoClient
@@ -45,26 +49,50 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
             counters["payouts"] += 1
             counters["accruals_settled"] += len(accruals)
     session.commit()
+    # Export metrics
+    METRIC_CANDIDATES.inc(float(counters["candidates"]))
+    METRIC_PAYOUTS.inc(float(counters["payouts"]))
+    METRIC_ACCRUALS_SETTLED.inc(float(counters["accruals_settled"]))
     return counters
 
 
-from typing import Callable
+# Prometheus counters
+METRIC_CANDIDATES = Counter("settlement_candidates_total", "Number of candidates considered per run")
+METRIC_PAYOUTS = Counter("settlement_payouts_total", "Number of payouts created per run")
+METRIC_ACCRUALS_SETTLED = Counter(
+    "settlement_accruals_settled_total", "Number of accrual records settled per run"
+)
 
 
-def run_scheduler(session_factory: Callable[[], Session], cfg: SchedulerConfig) -> None:
+def run_scheduler(session_factory: Callable[[], Session], cfg: SchedulerConfig, stop_event: threading.Event | None = None) -> None:
     """Blocking loop that runs settlement on an interval with operator balance check.
 
     Intended to be started in a background process/task runner. Safe for dry_run.
     """
-    while True:
-        session: Session = session_factory()
-        try:
-            banano = BananoClient(node_url="", dry_run=cfg.dry_run)
-            if not banano.has_min_balance(cfg.min_operator_balance_ban, cfg.operator_account):
-                # Insufficient operator funds; skip this cycle
-                time.sleep(cfg.interval_seconds)
-                continue
-            run_settlement(session, cfg)
-        finally:
-            session.close()
-        time.sleep(cfg.interval_seconds)
+    local_event = stop_event or threading.Event()
+
+    def _signal_handler(signum: int, frame: types.FrameType | None) -> None:
+        # Set the event to stop the loop gracefully
+        local_event.set()
+
+    # Register signal handlers for graceful shutdown
+    prev_int = signal.signal(signal.SIGINT, _signal_handler)
+    prev_term = signal.signal(signal.SIGTERM, _signal_handler)
+    try:
+        while not local_event.is_set():
+            session: Session = session_factory()
+            try:
+                banano = BananoClient(node_url="", dry_run=cfg.dry_run)
+                if not banano.has_min_balance(cfg.min_operator_balance_ban, cfg.operator_account):
+                    # Insufficient operator funds; skip this cycle
+                    local_event.wait(cfg.interval_seconds)
+                else:
+                    run_settlement(session, cfg)
+            finally:
+                session.close()
+            # Wait for interval or until stop requested
+            local_event.wait(cfg.interval_seconds)
+    finally:
+        # Restore previous handlers
+        signal.signal(signal.SIGINT, prev_int)
+        signal.signal(signal.SIGTERM, prev_term)
