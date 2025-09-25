@@ -72,9 +72,8 @@ jobs:
           echo "AKASH_ACCOUNT_ADDRESS=$AKASH_ACCOUNT_ADDRESS" >> $GITHUB_ENV
       - name: Create Akash cert
         run: |
-          # copy non base64 decoded cert content to a file in ./.akash/${AKASH_ACCOUNT_ADDRESS}.pem
-          mkdir -p /home/runner/.akash
-          echo "$CERT_CONTENT" > /home/runner/.akash/${AKASH_ACCOUNT_ADDRESS}.pem
+          provider-services tx cert generate client --from deployer --yes
+          provider-services tx cert publish client --from deployer --yes
           # show contents of the .akash directory
           ls -la /home/runner/.akash
         env:
