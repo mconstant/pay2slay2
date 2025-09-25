@@ -54,8 +54,11 @@ jobs:
           TF_VAR_akash_mnemonic: ${{ secrets.AKASH_MNEMONIC }}
           TF_VAR_image_tag: ${{ env.IMAGE_TAG }}
           TF_VAR_image_repo: ${{ env.IMAGE_REPO }}
-          TF_VAR_akash_network: ${{ github.event.inputs.akash_network }}
+          TF_VAR_akash_node: ${{ github.event.inputs.akash_network }}
+          TF_VAR_akash_chain_id: ${{ env.AKASH_CHAIN_ID }}
         run: |
           terraform init -input=false
           terraform plan -input=false -out=tfplan
           terraform apply -input=false -auto-approve tfplan
+          echo "Deployment ID: $(terraform output -raw deployment_id 2>/dev/null || echo 'unavailable')"
+          echo "Image: $(terraform output -raw image 2>/dev/null || echo 'unavailable')"

@@ -1,15 +1,22 @@
-variable "akash_mnemonic" { type = string }
-variable "akash_network" { type = string }
-variable "image_tag" { type = string }
-variable "image_repo" { type = string }
+###############################################
+# Akash Deployment Terraform Configuration
+# Core logic (variables in vars.tf)
+###############################################
 
 provider "akash" {
+  chain_id = var.akash_chain_id
+  node     = var.akash_node
+
   keyring {
-    backend  = "test"
+    backend  = "test" # For CI automation; consider 'os' or 'file' for prod/hardware
     mnemonic = var.akash_mnemonic
   }
-  chain_id   = "akashnet-2"
-  node       = var.akash_network
+
+  gas_adjustment = var.gas_adjustment
+  gas_prices {
+    denom  = "uakt"
+    amount = var.gas_price_uakt
+  }
 }
 
 locals {
@@ -34,17 +41,17 @@ resource "akash_deployment" "p2s" {
         api:
           resources:
             cpu:
-              units: 0.1
+              units: ${var.cpu_units}
             memory:
-              size: 256Mi
+              size: ${var.memory_size}
             storage:
-              size: 1Gi
+              size: ${var.storage_size}
       placement:
         westcoast:
           pricing:
             api:
               denom: uakt
-              amount: 1000
+              amount: ${var.deployment_price_uakt}
     deployment:
       api:
         westcoast:
@@ -52,3 +59,4 @@ resource "akash_deployment" "p2s" {
           count: 1
   EOT
 }
+
