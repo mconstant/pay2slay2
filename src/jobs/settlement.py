@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import signal
 import threading
-from collections.abc import Callable
 import types
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from prometheus_client import Counter

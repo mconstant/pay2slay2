@@ -36,7 +36,7 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - Add: fastapi, uvicorn, pydantic, sqlalchemy, alembic, httpx, pyyaml, structlog, prometheus-client, opentelemetry-instrumentation, tenacity
       - Dev: pytest, pytest-asyncio, httpx[http2], coverage, ruff, mypy, types-PyYAML
       - Dependency: T001
-- [ ] T003 [P] Configure linting/formatting/type-checking
+- [~] T003 [P] Configure linting/formatting/type-checking
       - Ruff config, Black via Ruff, Mypy strict, EditorConfig
       - Pre-commit hooks (ruff/mypy/pytest on staged)
       - Dependency: T002
@@ -45,7 +45,7 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - Create `configs/integrations.yaml` with: chain_env: testnet, node_rpc: "", min_operator_balance_ban: 50, dry_run: true, yunite_api_key: ${YUNITE_API_KEY}, yunite_guild_id: "", discord_guild_id: "", discord_oauth_client_id: ${DISCORD_CLIENT_ID}, discord_oauth_client_secret: ${DISCORD_CLIENT_SECRET}, discord_redirect_uri: http://localhost:3000/auth/discord/callback, oauth_scopes: [identify, guilds], fortnite_api_key: ${FORTNITE_API_KEY}, rate_limits: {fortnite_per_min: 60}, abuse_heuristics: {kill_rate_per_min: 10}
       - Create `configs/product.yaml` with: app_name: "Pay2Slay Faucet", org_name: "Example Org", banner_url: "", media_kit_url: "", default_locale: en, feature_flags: {dry_run_banner: true}
       - Dependency: T001
-- [ ] T005 [P] Docs skeleton in `docs/` (README, SECURITY, CONTRIBUTING, LICENSE, QUICKSTART)
+- [~] T005 [P] Docs skeleton in `docs/` (README, SECURITY, CONTRIBUTING, LICENSE, QUICKSTART)
       - Include no-KYC policy and regional analytics privacy note
       - Dependency: T001
 
@@ -100,7 +100,7 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - Endpoints guarded by cookie-based admin session; reverify/retry currently stubbed to return accepted
       - Next: implement real reverify flow and payout retry with idempotency; add proper admin auth UX
       - Dependency: T018
-- [ ] T021 [P] Jobs: scheduler in `src/jobs/settlement.py`
+- [~] T021 [P] Jobs: scheduler in `src/jobs/settlement.py`
       - Interval runner; enforces `min_operator_balance_ban`; batch_size; metrics
       - Skeleton `run_settlement` implemented; SettlementService applies UTC daily/weekly caps; zeroed candidates skipped
       - Interval loop skeleton (`run_scheduler`) added with operator balance probe; sleeps between cycles; graceful shutdown via signals
@@ -162,6 +162,12 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
 - [ ] Observability tasks added for critical flows (T022)
 - [ ] Security tests and dependency/license scanning included (T014, T028)
 - [ ] Decentralized distribution/signing and blockchain tasks included (T029, T030)
+
+## Current CI Gate (local)
+- `make all` = PASS on 2025-09-24
+      - Lint: ruff → PASS
+      - Type: mypy → PASS
+      - Tests: pytest → PASS
 
 ## Dependencies
 - Setup (T001–T005) → Tests (T006–T014) → Core (T015–T024) → Integration (T025–T030) → Polish (T031–T036)
