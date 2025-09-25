@@ -55,6 +55,10 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [ ] T030 AdminAudit model + migration + persistence utilities
 - [ ] T031 Verification refresh background job (src/jobs/verification_refresh.py)
 - [~] T032 FortniteService real kill delta retrieval + rate limiting
+	- DONE: HTTP client (httpx), token-bucket rate limiting, dry_run path, delta computation from lifetime kills
+	- TODO: Replace placeholder base_url with real Fortnite stats endpoint + auth scheme; add retries w/ backoff & metrics
+	- TODO: Persist observed (unsettled) kill cursor separately if needed for reconciliation
+	- TODO: Integration test covering positive delta + rate limit exhaustion fallback
 - [ ] T033 Accrual batch job (src/jobs/accrual.py) iterating verified users
 - [ ] T034 BananoClient real RPC (balance/send/raw conversion)
 - [ ] T035 Payout idempotency key (hash unsettled accrual IDs) & duplicate guard
