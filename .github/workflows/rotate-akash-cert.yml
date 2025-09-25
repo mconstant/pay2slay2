@@ -26,6 +26,7 @@ on:
 permissions:
   contents: read
   packages: read
+  id-token: write
 
 jobs:
   rotate:
@@ -48,6 +49,12 @@ jobs:
           else
             echo 'No GH_ADMIN_TOKEN secret; relying on default GITHUB_TOKEN.';
           fi
+
+      - uses: qoomon/actions--access-token@v3
+        id: access-token
+        with:
+          permissions: |
+              secrets: write
 
       - name: Generate certificate
         id: gen
@@ -72,10 +79,13 @@ jobs:
           sed -n '1,200p' cert.pem.final
 
       - name: Update AKASH_CERT secret
-        run: |
-          gh secret set AKASH_CERT < cert.pem.final
+        run: >-
+          gh secret 
+          set 'AKASH_CERT'
+          --body $(cat cert.pem.final)
+          --repo ${{ github.repository }}
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.access-token.outputs.token }}
 
       - name: Update AKASH_CERT_ID variable
         run: |
