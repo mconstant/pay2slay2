@@ -70,6 +70,12 @@ jobs:
           AKASH_ACCOUNT_ADDRESS=$(provider-services keys show deployer -a)
           echo "Akash account address: $AKASH_ACCOUNT_ADDRESS"
           echo "AKASH_ACCOUNT_ADDRESS=$AKASH_ACCOUNT_ADDRESS" >> $GITHUB_ENV
+      - name: Create Akash cert
+        run: |
+          # copy non base64 decoded cert content to a file in ./.akash/${AKASH_ACCOUNT_ADDRESS}.pem
+          echo "$CERT_CONTENT" > ./.akash/${AKASH_ACCOUNT_ADDRESS}.pem
+        env:
+          CERT_CONTENT: ${{ secrets.AKASH_CERT }}
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
       - name: Configure cloud credentials
