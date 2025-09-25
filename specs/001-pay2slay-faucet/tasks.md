@@ -48,7 +48,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T023 Auth/User APIs
 - [~] T024 Scheduler job (needs operator balance + tracing) - accrual+settlement alternating loop implemented; tracing & real balance validation TODO
 - [ ] T025 OAuth state/nonce validation (middleware or augmented auth flow)
-- [ ] T026 Implement /me/reverify endpoint
+- [x] T026 Implement /me/reverify endpoint
 - [x] T027 Implement /config/product endpoint (src/api/config.py)
 - [x] T028 Implement /me/payouts endpoint (paginated)
 - [ ] T029 Region analytics middleware (src/lib/region.py) setting User.region_code
@@ -57,7 +57,8 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [~] T032 FortniteService real kill delta retrieval + rate limiting
 	- DONE: HTTP client (httpx), token-bucket rate limiting, dry_run path, delta computation from lifetime kills
 	- DONE: Retries with jittered exponential backoff; metrics counters & latency histogram
-	- TODO: Replace placeholder base_url with real Fortnite stats endpoint + auth scheme
+	- DONE: Auth header configurability (header name + scheme)
+	- TODO: Replace placeholder base_url with real Fortnite stats endpoint & request signing if required
 	- TODO: Persist observed (unsettled) kill cursor separately if needed for reconciliation
 	- DONE: Integration test covering positive delta + rate limit exhaustion fallback (test_fortnite_rate_limit.py)
 - [x] T033 Accrual batch job (src/jobs/accrual.py) iterating verified users (implemented + unit test)
@@ -66,8 +67,8 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [ ] T036 Payout retry logic (attempt_count, last_attempt_at) + exponential backoff placeholder
 
 ## Phase 3.4: Integration & Observability
-- [ ] T037 Tracing setup (OpenTelemetry) in src/lib/observability.py
-- [ ] T038 Correlation & trace ID logging middleware (src/lib/http.py)
+- [~] T037 Tracing setup (OpenTelemetry) in src/lib/observability.py (basic tracer + console exporter; needs OTLP/export config & richer span attrs)
+- [x] T038 Correlation & trace ID logging middleware (src/lib/http.py)
 - [ ] T039 Rate limiting middleware (src/lib/ratelimit.py) using in-memory token bucket (extensible)
 - [ ] T040 Abuse heuristic service (enrich accrual / flag abnormal kill rates)
 - [ ] T041 Metrics: payouts_by_region, kills_by_region, flagged_users_total

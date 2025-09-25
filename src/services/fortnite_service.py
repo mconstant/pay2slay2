@@ -52,6 +52,8 @@ class FortniteService:
         dry_run: bool = True,
         max_retries: int = 2,
         backoff_base: float = 0.25,
+        auth_header_name: str = "Authorization",
+        auth_scheme: str = "Bearer",
     ) -> None:
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
@@ -63,6 +65,8 @@ class FortniteService:
         self._dry_run = dry_run
         self._max_retries = max_retries
         self._backoff_base = backoff_base
+        self._auth_header_name = auth_header_name
+        self._auth_scheme = auth_scheme
 
     # --- Rate limiting helpers ---
     def _refill(self) -> None:
@@ -112,9 +116,10 @@ class FortniteService:
             start = time.monotonic()
             try:
                 with self._client_factory() as client:
+                    headers = {self._auth_header_name: f"{self._auth_scheme} {self.api_key}"}
                     resp = client.get(
                         f"{self.base_url}/players/{epic_account_id}/stats",
-                        headers={"Authorization": f"Bearer {self.api_key}"},
+                        headers=headers,
                     )
                     FORTNITE_LATENCY.observe(time.monotonic() - start)
                     if resp.status_code == HTTP_OK:

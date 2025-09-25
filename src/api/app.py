@@ -3,6 +3,7 @@ from typing import Any
 
 from fastapi import FastAPI
 
+from src.lib.http import correlation_middleware
 from src.lib.observability import get_logger, setup_structlog
 
 
@@ -45,6 +46,8 @@ def create_app() -> FastAPI:
     setup_structlog()
     log = get_logger(__name__)
     app = FastAPI(title="Pay2Slay API", version="0.1.0")
+    # Add correlation/trace middleware early
+    app.middleware("http")(correlation_middleware)
 
     try:  # Config load
         from src.lib.config import get_config  # local import

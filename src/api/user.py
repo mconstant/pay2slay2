@@ -52,14 +52,51 @@ def link_wallet(
 
 
 @router.post("/me/reverify")
-def me_reverify(request: Request = None, db: Session = Depends(_get_db)) -> JSONResponse:  # type: ignore[assignment]  # noqa: B008
+def me_reverify(
+    request: Request | None = None,
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
     token = request.cookies.get("p2s_session") if request else None
     uid = verify_session(token, session_secret()) if token else None
     if not uid:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    # Placeholder: real implementation will trigger an asynchronous re-verification workflow.
-    # Return NOT_IMPLEMENTED for now to satisfy contract test allowing 501.
-    raise HTTPException(status_code=501, detail="Not implemented yet")
+    user = db.query(User).filter(User.discord_user_id == uid).one_or_none()
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    # Access app integrations config
+    app_state = getattr(getattr(request, "app", None), "state", None)
+    cfg_obj = getattr(app_state, "config", None)
+    integrations = getattr(cfg_obj, "integrations", None)
+    if integrations is None:
+        raise HTTPException(status_code=500, detail="Config not loaded")
+    # Invoke Yunite to fetch latest epic id
+    from src.services.yunite_service import YuniteService
+
+    yunite = YuniteService(
+        api_key=integrations.yunite_api_key,
+        guild_id=integrations.yunite_guild_id,
+        dry_run=integrations.dry_run,
+    )
+    epic_id = yunite.get_epic_id_for_discord(user.discord_user_id)
+    user.epic_account_id = epic_id
+    vr = VerificationRecord(
+        user_id=user.id,
+        discord_user_id=user.discord_user_id,
+        discord_guild_member=user.discord_guild_member,
+        epic_account_id=epic_id,
+        source="user_reverify",
+        status="ok",
+        detail=None,
+    )
+    db.add(vr)
+    db.commit()
+    return JSONResponse(
+        {
+            "status": "accepted",
+            "discord_id": user.discord_user_id,
+            "epic_account_id": epic_id,
+        }
+    )
 
 
 @router.get("/me/status")
