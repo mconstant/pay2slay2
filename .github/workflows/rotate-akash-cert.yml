@@ -19,7 +19,6 @@ on:
         description: 'cert-generation | openssl (fallback if CLI generation fails)'
         required: true
         default: 'cert-generation'
-  push:
 
 permissions:
   contents: read
