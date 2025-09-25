@@ -41,10 +41,13 @@ jobs:
       image_tag: ${{ steps.meta.outputs.image_tag }}
       image_repo: ${{ steps.meta.outputs.image_repo }}
 
-  akash_cli_setup:
+  deploy:
     runs-on: ubuntu-latest
+    needs: build_and_push
     env:
       AKASH_CHAIN_ID: "akashnet-2"
+      IMAGE_TAG: ${{ needs.build_and_push.outputs.image_tag }}
+      IMAGE_REPO: ${{ needs.build_and_push.outputs.image_repo }}
     steps:
       - uses: actions/checkout@v4
       - name: Install pass
@@ -61,39 +64,6 @@ jobs:
         env:
           AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
           CERT_CONTENT: ${{ secrets.AKASH_CERT }}
-      - name: Package Akash CLI environment
-        run: |
-          which provider-services
-          mkdir akash-env
-          cp $(which provider-services) akash-env/
-          cp -r $HOME/.akash akash-env/
-          tar -czf akash-env.tgz -C akash-env .
-      - name: Upload Akash CLI artifact
-        uses: actions/upload-artifact@v4
-        with:
-            name: akash-env
-            path: akash-env.tgz
-            retention-days: 1
-
-  terraform_deploy:
-    needs: [build_and_push, akash_cli_setup]
-    runs-on: ubuntu-latest
-    env:
-      AKASH_CHAIN_ID: "akashnet-2"
-      IMAGE_TAG: ${{ needs.build_and_push.outputs.image_tag }}
-      IMAGE_REPO: ${{ needs.build_and_push.outputs.image_repo }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download Akash CLI artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: akash-env
-      - name: Restore Akash CLI
-        run: |
-          tar -xzf akash-env.tgz
-          chmod +x provider-services
-          sudo mv provider-services /usr/local/bin/provider-services
-          mv .akash $HOME/.akash
       - name: Get Akash account address
         id: akash_account
         run: |
