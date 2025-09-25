@@ -74,6 +74,8 @@ jobs:
       - name: Update AKASH_CERT secret
         run: |
           gh secret set AKASH_CERT < cert.pem.final
+        env:
+          GH_TOKEN: ${{ github.token }}
 
       - name: Update AKASH_CERT_ID variable
         run: |
