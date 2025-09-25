@@ -18,7 +18,7 @@ on:
       rotate_method:
         description: 'cert-generation | openssl (fallback if CLI generation fails)'
         required: true
-        default: 'cert-generation'
+        default: 'openssl'
       ref:
         description: 'Git ref (branch or tag) to deploy (defaults to workflow run branch)'
         required: false
@@ -49,14 +49,6 @@ jobs:
             echo 'No GH_ADMIN_TOKEN secret; relying on default GITHUB_TOKEN.';
           fi
 
-      - name: Setup Akash CLI
-        uses: LumeWeb/akash-action@cfd98517684fe809a107442d56bb4e22e1cfa0a5
-        with:
-          wallet-name: ${{ github.event.inputs.key_name }}
-          mnemonic: ${{ secrets.AKASH_MNEMONIC }}
-        env:
-          AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
-
       - name: Generate certificate
         id: gen
         env:
@@ -65,23 +57,6 @@ jobs:
           set -euo pipefail
           CERT_ID="cert-$(date -u +%Y%m%d-%H%M%S)"
           echo "Using CERT_ID=$CERT_ID"
-          if [ "$ROTATE_METHOD" = "cert-generation" ]; then
-            # Attempt Akash CLI-based certificate generation (experimental; adjust if command differs)
-            # Placeholder command: the actual Akash CLI subcommand may vary by version.
-            if akash cert generate client --chain-id "$AKASH_CHAIN_ID" --node "$AKASH_NODE" --keyring-backend test --from "$KEY_NAME" -y 2>/dev/null; then
-              # Try to locate the most recent cert PEM (common pattern: client.crt or similar)
-              CERT_PATH=$(ls -t *.crt 2>/dev/null | head -n1 || true)
-              if [ -n "$CERT_PATH" ]; then
-                CERT_CONTENT=$(cat "$CERT_PATH")
-              else
-                echo 'Could not locate generated .crt file; falling back to openssl.' >&2
-                ROTATE_METHOD=openssl
-              fi
-            else
-              echo 'Akash CLI cert generation failed; falling back to openssl.' >&2
-              ROTATE_METHOD=openssl
-            fi
-          fi
           if [ "$ROTATE_METHOD" = "openssl" ]; then
             echo 'Generating self-signed placeholder certificate (openssl)'
             openssl req -x509 -newkey ed25519 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=akash"
