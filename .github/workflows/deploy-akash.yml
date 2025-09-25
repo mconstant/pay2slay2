@@ -10,9 +10,6 @@ on:
         description: 'Container image tag to build & deploy'
         required: true
         default: 'latest'
-      akash_account_address:
-        description: 'Akash account address (injected via TF_VAR_akash_account_address)'
-        required: true
       ref:
         description: 'Git ref (branch or tag) to deploy (defaults to workflow run branch)'
         required: false
@@ -97,6 +94,12 @@ jobs:
           chmod +x provider-services
           sudo mv provider-services /usr/local/bin/provider-services
           mv .akash $HOME/.akash
+      - name: Get Akash account address
+        id: akash_account
+        run: |
+          AKASH_ACCOUNT_ADDRESS=$(provider-services keys show deployer -a)
+          echo "Akash account address: $AKASH_ACCOUNT_ADDRESS"
+          echo "AKASH_ACCOUNT_ADDRESS=$AKASH_ACCOUNT_ADDRESS" >> $GITHUB_ENV
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
       - name: Configure cloud credentials
