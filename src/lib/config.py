@@ -38,6 +38,9 @@ class IntegrationsConfig(BaseModel):
     node_rpc: str = Field("", description="Banano node RPC endpoint")
     min_operator_balance_ban: float = Field(50, ge=0)
     dry_run: bool = True
+    fortnite_base_url: str = Field(
+        "https://fortnite.example.api/v1", description="Fortnite stats API base URL"
+    )
     yunite_api_key: str = Field(...)
     yunite_guild_id: str = Field(...)
     discord_guild_id: str = Field(...)

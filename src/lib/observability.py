@@ -12,6 +12,8 @@ from opentelemetry.sdk.trace.export import (  # type: ignore[import-not-found]
     ConsoleSpanExporter,
 )
 
+OTLPSpanExporter = None  # Placeholder; add dependency and import when enabling OTLP export
+
 _TRACER_INITIALIZED = False
 
 
@@ -37,8 +39,9 @@ def setup_structlog(level: str | int = "INFO") -> None:
     if not _TRACER_INITIALIZED:
         resource = Resource.create({"service.name": "pay2slay"})
         provider = TracerProvider(resource=resource)
-        processor = BatchSpanProcessor(ConsoleSpanExporter())
-        provider.add_span_processor(processor)
+        # Always console exporter in dev
+        provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+        # TODO: Add OTLP exporter when dependency is included
         trace.set_tracer_provider(provider)
         _TRACER_INITIALIZED = True
 

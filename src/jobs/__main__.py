@@ -49,6 +49,7 @@ def main() -> None:
     integrations = cfg_obj.integrations
     fortnite = FortniteService(
         api_key=integrations.fortnite_api_key,
+        base_url=getattr(integrations, "fortnite_base_url", "https://fortnite.example.api/v1"),
         per_minute_limit=int(integrations.rate_limits.get("fortnite_per_minute", 60)),
         dry_run=integrations.dry_run,
     )
@@ -61,7 +62,14 @@ def main() -> None:
         session: Session = session_factory()
         try:
             try:
-                with tracer.start_as_current_span("accrual_cycle"):
+                with tracer.start_as_current_span(
+                    "accrual_cycle",
+                    attributes={
+                        "scheduler.interval_sec": interval,
+                        "scheduler.dry_run": dry_run,
+                        "fortnite.base_url": fortnite.base_url,
+                    },
+                ):
                     accrual_res = run_accrual(session, fortnite, accrual_cfg)
                     log.info("accrual_cycle", **accrual_res)
             except Exception as exc:  # pragma: no cover
@@ -72,7 +80,14 @@ def main() -> None:
 
                 banano = BananoClient(node_url=integrations.node_rpc, dry_run=integrations.dry_run)
                 if banano.has_min_balance(cfg.min_operator_balance_ban, operator_account):
-                    with tracer.start_as_current_span("settlement_cycle"):
+                    with tracer.start_as_current_span(
+                        "settlement_cycle",
+                        attributes={
+                            "scheduler.interval_sec": interval,
+                            "scheduler.dry_run": dry_run,
+                            "banano.min_balance": cfg.min_operator_balance_ban,
+                        },
+                    ):
                         run_settlement(session, cfg)
                 else:
                     log.warning("settlement_skipped_low_balance")

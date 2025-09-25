@@ -21,6 +21,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.lib.config import get_config
+from src.lib.observability import get_tracer
 from src.models.models import User, WalletLink
 from src.services.domain.accrual_service import AccrualService
 from src.services.fortnite_service import FortniteService
@@ -78,9 +79,13 @@ def run_accrual(
         "zero_delta": 0,
         "total_kills": 0,
     }
+    tracer = get_tracer("accrual_job")
     for user in _eligible_users(session, cfg):
         counters["users_considered"] += 1
-        res = svc.accrue_for_user(user)
+        with tracer.start_as_current_span(
+            "accrue_user", attributes={"user.id": user.id, "user.discord_id": user.discord_user_id}
+        ):
+            res = svc.accrue_for_user(user)
         if not res:
             counters["zero_delta"] += 1
             continue
