@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
@@ -16,6 +17,8 @@ class SchedulerConfig:
     daily_cap: int
     weekly_cap: int
     dry_run: bool
+    interval_seconds: int = 1200  # default 20 minutes
+    operator_account: str | None = None
 
 
 def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
@@ -43,3 +46,25 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
             counters["accruals_settled"] += len(accruals)
     session.commit()
     return counters
+
+
+from typing import Callable
+
+
+def run_scheduler(session_factory: Callable[[], Session], cfg: SchedulerConfig) -> None:
+    """Blocking loop that runs settlement on an interval with operator balance check.
+
+    Intended to be started in a background process/task runner. Safe for dry_run.
+    """
+    while True:
+        session: Session = session_factory()
+        try:
+            banano = BananoClient(node_url="", dry_run=cfg.dry_run)
+            if not banano.has_min_balance(cfg.min_operator_balance_ban, cfg.operator_account):
+                # Insufficient operator funds; skip this cycle
+                time.sleep(cfg.interval_seconds)
+                continue
+            run_settlement(session, cfg)
+        finally:
+            session.close()
+        time.sleep(cfg.interval_seconds)

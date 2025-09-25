@@ -103,7 +103,8 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
 - [ ] T021 [P] Jobs: scheduler in `src/jobs/settlement.py`
       - Interval runner; enforces `min_operator_balance_ban`; batch_size; metrics
       - Skeleton `run_settlement` implemented; SettlementService applies UTC daily/weekly caps; zeroed candidates skipped
-      - Next: add operator balance check and Prometheus metrics; implement actual interval loop
+      - Interval loop skeleton (`run_scheduler`) added with operator balance probe; sleeps between cycles
+      - Next: Prometheus metrics and graceful shutdown signals
       - Dependency: T018
 - [ ] T022 Observability wiring in `src/lib/observability.py`
       - structlog setup; Prometheus metrics; tracing init
