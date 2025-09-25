@@ -5,7 +5,7 @@ on:
       akash_network:
         description: 'Akash chain endpoint'
         required: true
-        default: 'https://rpc.akash.network:443'
+        default: 'https://akash-rpc.polkachu.com:443'
       image_tag:
         description: 'Container image tag to build & deploy'
         required: true
