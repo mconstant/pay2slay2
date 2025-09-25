@@ -32,7 +32,8 @@ ci:
 deploy-akash:
 	@if ! command -v gh >/dev/null 2>&1; then echo 'gh CLI not installed'; exit 1; fi
 	@if [ -z "$(IMAGE_TAG)" ]; then echo 'IMAGE_TAG required (ex: IMAGE_TAG=latest)'; exit 1; fi
-	gh workflow run deploy-akash -f image_tag=$(IMAGE_TAG) -f akash_network=$(AKASH_NETWORK)
+	REF_FLAG=""; if [ -n "$(REF)" ]; then REF_FLAG="-r $(REF)"; fi; \
+	gh workflow run deploy-akash $$REF_FLAG -f image_tag=$(IMAGE_TAG) -f akash_network=$(AKASH_NETWORK)
 
 # Trigger CI workflow remotely (uses current default branch HEAD)
 workflow-ci:

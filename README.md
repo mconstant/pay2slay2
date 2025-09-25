@@ -63,6 +63,7 @@ Makefile shortcuts are available:
    - Prereqs: set `AKASH_MNEMONIC` secret in GitHub, and use `deploy-akash` workflow dispatch with `image_tag`.
    - Infra code under `infra/akash` uses the Akash Terraform provider to submit a simple deployment.
    - Container image is built & pushed to GHCR automatically by the `deploy-akash` workflow.
+   - NOTE: Workflow must exist on the target branch (use `REF=<branch>` with `make deploy-akash` if deploying a non-default branch).
 
 ### Akash Deployment Guide (Cosmos Wallet via Keplr)
 
