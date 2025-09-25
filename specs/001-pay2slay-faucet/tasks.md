@@ -97,14 +97,14 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
       - Dependency: T017, T018
 - [~] T020 [P] API: admin in `src/api/admin.py`
       - `/admin/login` (issues `p2s_admin` cookie for active AdminUser), `/admin/reverify`, `/admin/payouts/retry`, `/admin/health`
-      - Endpoints guarded by cookie-based admin session; reverify now records a `VerificationRecord` and updates epic mapping (dry-run); payouts/retry resends with idempotency on `tx_hash` (dry-run)
-      - Next: wire real services/config into admin flows and add proper admin auth UX
+      - Endpoints guarded by cookie-based admin session; reverify records a `VerificationRecord` and updates epic mapping using Yunite (via config, dry-run toggle respected); payouts/retry resends via Banano client using configured node with idempotency on `tx_hash`
+      - Next: expand admin UX and audit trails
       - Dependency: T018
 - [~] T021 [P] Jobs: scheduler in `src/jobs/settlement.py`
       - Interval runner; enforces `min_operator_balance_ban`; batch_size; metrics
       - Skeleton `run_settlement` implemented; SettlementService applies UTC daily/weekly caps; zeroed candidates skipped
       - Interval loop skeleton (`run_scheduler`) added with operator balance probe; sleeps between cycles; graceful shutdown via signals
-      - Prometheus counters exposed (candidates, payouts, accruals_settled) and CLI entrypoint (`python -m src.jobs`) starts loop with metrics server; readiness/liveness endpoints added (`/readyz`, `/livez`)
+      - Prometheus counters exposed (candidates, payouts, accruals_settled) and CLI entrypoint (`python -m src.jobs`) starts loop with metrics server; readiness/liveness endpoints added (`/readyz`, `/livez`); structlog JSON logging wired
       - Next: richer metrics and readiness/liveness endpoints
       - Dependency: T018
 - [ ] T022 Observability wiring in `src/lib/observability.py`
@@ -164,7 +164,7 @@ PASS — plan.md includes Security, Tests (TDD), UX, Performance, Observability,
 - [ ] Decentralized distribution/signing and blockchain tasks included (T029, T030)
 
 ## Current CI Gate (local)
-- `make all` = PASS on 2025-09-24 (post-admin updates)
+- `make all` = PASS on 2025-09-24 (admin wired to config, logging/metrics added)
       - Lint: ruff → PASS
       - Type: mypy → PASS
       - Tests: pytest → PASS

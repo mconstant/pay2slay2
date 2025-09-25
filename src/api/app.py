@@ -1,5 +1,7 @@
 from fastapi import FastAPI
 
+from src.lib.observability import get_logger, setup_structlog
+
 
 def create_app() -> FastAPI:
     """Create and return the FastAPI application instance.
@@ -7,6 +9,9 @@ def create_app() -> FastAPI:
     Endpoints will be registered in subsequent tasks. For now, this exists to
     allow contract tests to run and fail meaningfully (404/validation) under TDD.
     """
+    # Initialize logging early
+    setup_structlog()
+    log = get_logger(__name__)
     app = FastAPI(title="Pay2Slay API", version="0.1.0")
 
     # Load configuration and attach to app.state
@@ -17,6 +22,7 @@ def create_app() -> FastAPI:
     except Exception as exc:  # pragma: no cover - do not crash app creation in tests
         # In early TDD, configs may be incomplete; keep app up but mark config load error
         app.state.config_error = str(exc)
+        log.warning("config_load_failed", error=str(exc))
 
     # Initialize DB engine and session factory
     try:
@@ -33,6 +39,7 @@ def create_app() -> FastAPI:
         Base.metadata.create_all(bind=engine)
     except Exception as exc:  # pragma: no cover
         app.state.db_init_error = str(exc)
+        log.warning("db_init_failed", error=str(exc))
 
     from .admin import router as admin_router
     from .auth import router as auth_router

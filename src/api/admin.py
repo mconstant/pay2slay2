@@ -1,15 +1,23 @@
+import os
 from collections.abc import Generator
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+from prometheus_client import Counter
 from sqlalchemy.orm import Session
 
 from src.lib.auth import issue_admin_session, session_secret, verify_admin_session
+from src.lib.observability import get_logger
 from src.models.models import AdminUser, Payout, User, VerificationRecord
 from src.services.banano_client import BananoClient
 from src.services.yunite_service import YuniteService
 
 router = APIRouter(prefix="/admin")
+log = get_logger("api.admin")
+
+# Admin metrics
+ADMIN_REVERIFY_TOTAL = Counter("admin_reverify_total", "Admin reverify requests", ["result"])
+ADMIN_PAYOUT_RETRY_TOTAL = Counter("admin_payout_retry_total", "Admin payout retry attempts", ["result"])
 
 
 def _get_db(request: Request) -> Generator[Session, None, None]:
@@ -39,6 +47,7 @@ def admin_login(email: str = Body(..., embed=True), db: Session = Depends(_get_d
     token = issue_admin_session(email, session_secret())
     resp = JSONResponse({"email": email})
     resp.set_cookie("p2s_admin", token, httponly=True, samesite="lax")
+    log.info("admin_login", email=email)
     return resp
 
 @router.post("/reverify")
@@ -51,12 +60,20 @@ def admin_reverify(
     user = db.query(User).filter(User.discord_user_id == discord_id).one_or_none()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    # Deterministic dry-run: refresh Epic mapping via Yunite stub and record verification
-    yunite = YuniteService(api_key="", guild_id="", dry_run=True)
+    # Build Yunite service from app config
+    app_state = getattr(getattr(request, "app", None), "state", None)
+    cfg_obj = getattr(app_state, "config", None)
+    integrations = getattr(cfg_obj, "integrations", None)
+    if integrations is None:
+        raise HTTPException(status_code=500, detail="Config not loaded")
+    yunite = YuniteService(
+        api_key=integrations.yunite_api_key,
+        guild_id=integrations.yunite_guild_id,
+        dry_run=integrations.dry_run,
+    )
     epic_id = yunite.get_epic_id_for_discord(discord_id)
     user.epic_account_id = epic_id
-    # Assume still guild member in dry-run
-    user.discord_guild_member = True
+    # Do not change guild membership here; separate Discord check would be needed
     vr = VerificationRecord(
         user_id=user.id,
         discord_user_id=user.discord_user_id,
@@ -68,6 +85,8 @@ def admin_reverify(
     )
     db.add(vr)
     db.commit()
+    log.info("admin_reverify", discord_id=discord_id, epic_account_id=epic_id)
+    ADMIN_REVERIFY_TOTAL.labels(result="accepted").inc()
     return JSONResponse({"status": "accepted", "discord_id": discord_id, "epic_account_id": epic_id})
 
 
@@ -76,22 +95,36 @@ def admin_payouts_retry(
     payout_id: int = Body(..., embed=True),
     _: None = Depends(_require_admin),
     db: Session = Depends(_get_db),  # noqa: B008
+    request: Request = None,  # type: ignore[assignment]
 ) -> JSONResponse:
     payout = db.query(Payout).filter(Payout.id == payout_id).one_or_none()
     if not payout:
         raise HTTPException(status_code=404, detail="Payout not found")
     # Idempotency: if already has tx_hash and status sent, return success quickly
     if payout.tx_hash and payout.status == "sent":
+        ADMIN_PAYOUT_RETRY_TOTAL.labels(result="already_sent").inc()
+        log.info("admin_payout_retry_already_sent", payout_id=payout_id, tx_hash=payout.tx_hash)
         return JSONResponse({"status": "already_sent", "payout_id": payout_id, "tx_hash": payout.tx_hash})
-    # Attempt resend (dry-run by default)
-    banano = BananoClient(node_url="", dry_run=True)
-    tx = banano.send(source_wallet="operator", to_address=payout.address, amount_raw=str(float(payout.amount_ban)))
+    # Attempt resend using configured node
+    app_state = getattr(getattr(request, "app", None), "state", None)
+    cfg_obj = getattr(app_state, "config", None)
+    integrations = getattr(cfg_obj, "integrations", None)
+    if integrations is None:
+        raise HTTPException(status_code=500, detail="Config not loaded")
+    banano = BananoClient(node_url=integrations.node_rpc, dry_run=integrations.dry_run)
+    source_wallet = os.getenv("P2S_OPERATOR_WALLET", "operator")
+    amount_raw = str(float(payout.amount_ban))
+    tx = banano.send(source_wallet=source_wallet, to_address=payout.address, amount_raw=amount_raw)
     if tx:
         payout.tx_hash = tx
         payout.status = "sent"
         payout.error_detail = None
+        ADMIN_PAYOUT_RETRY_TOTAL.labels(result="sent").inc()
+        log.info("admin_payout_retry_sent", payout_id=payout_id, tx_hash=tx)
     else:
         payout.status = "failed"
         payout.error_detail = payout.error_detail or "retry failed"
+        ADMIN_PAYOUT_RETRY_TOTAL.labels(result="failed").inc()
+        log.warning("admin_payout_retry_failed", payout_id=payout_id)
     db.commit()
     return JSONResponse({"status": payout.status, "payout_id": payout_id, "tx_hash": payout.tx_hash})
