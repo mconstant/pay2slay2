@@ -73,6 +73,7 @@ jobs:
       - name: Create Akash cert
         run: |
           # copy non base64 decoded cert content to a file in ./.akash/${AKASH_ACCOUNT_ADDRESS}.pem
+          mkdir -p ./.akash
           echo "$CERT_CONTENT" > ./.akash/${AKASH_ACCOUNT_ADDRESS}.pem
         env:
           CERT_CONTENT: ${{ secrets.AKASH_CERT }}
