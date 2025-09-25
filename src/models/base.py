@@ -12,4 +12,6 @@ class Base(DeclarativeBase):
 
 class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(default=None, server_default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(default=None, onupdate=func.now(), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        default=None, onupdate=func.now(), server_default=func.now()
+    )

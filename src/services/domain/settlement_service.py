@@ -26,7 +26,11 @@ class SettlementService:
     def select_candidates(self, limit: int | None = None) -> list[SettlementCandidate]:
         # Simplified: group unsettled accruals per user
         q = (
-            select(RewardAccrual.user_id, func.sum(RewardAccrual.kills), func.sum(RewardAccrual.amount_ban))
+            select(
+                RewardAccrual.user_id,
+                func.sum(RewardAccrual.kills),
+                func.sum(RewardAccrual.amount_ban),
+            )
             .where(RewardAccrual.settled == False)  # noqa: E712
             .group_by(RewardAccrual.user_id)
         )
@@ -39,7 +43,11 @@ class SettlementService:
             if not user:
                 continue
             candidates.append(
-                SettlementCandidate(user=user, total_kills=int(kills_sum or 0), total_amount_ban=float(amt_sum or 0.0))
+                SettlementCandidate(
+                    user=user,
+                    total_kills=int(kills_sum or 0),
+                    total_amount_ban=float(amt_sum or 0.0),
+                )
             )
         random.shuffle(candidates)
         return [self.apply_caps(c) for c in candidates]

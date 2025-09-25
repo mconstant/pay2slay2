@@ -15,7 +15,12 @@ class BananoClient:
         if self.dry_run:
             return "dryrun-tx"
         assert self.http is not None
-        payload = {"action": "send", "wallet": source_wallet, "destination": to_address, "amount": amount_raw}
+        payload = {
+            "action": "send",
+            "wallet": source_wallet,
+            "destination": to_address,
+            "amount": amount_raw,
+        }
         resp = self.http.post(self.node_url, json=payload)
         resp.raise_for_status()
         data = resp.json() or {}
@@ -41,5 +46,5 @@ class BananoClient:
             raw = int(data.get("balance", "0"))
         except ValueError:
             raw = 0
-        ban = raw / (10 ** 29)
+        ban = raw / (10**29)
         return ban >= min_ban

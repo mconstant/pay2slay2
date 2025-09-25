@@ -30,7 +30,9 @@ class PayoutService:
         row = self.session.execute(q).scalars().first()
         return row.address if row else None
 
-    def create_payout(self, user: User, amount_ban: float, accruals: list[RewardAccrual]) -> PayoutResult | None:
+    def create_payout(
+        self, user: User, amount_ban: float, accruals: list[RewardAccrual]
+    ) -> PayoutResult | None:
         address = self._get_primary_address(user)
         if not address:
             return None
@@ -46,7 +48,15 @@ class PayoutService:
             payout.tx_hash = "dryrun"
         else:
             # Convert BAN to raw if needed (placeholder: assume input already in BAN and node accepts it)
-            tx = self.banano.send(source_wallet="operator", to_address=address, amount_raw=str(amount_ban))
+            tx = self.banano.send(
+                source_wallet="operator", to_address=address, amount_raw=str(amount_ban)
+            )
             payout.tx_hash = tx
             payout.status = "sent" if tx else "failed"
-        return PayoutResult(user_id=user.id, payout_id=0, amount_ban=amount_ban, tx_hash=payout.tx_hash, status=payout.status)
+        return PayoutResult(
+            user_id=user.id,
+            payout_id=0,
+            amount_ban=amount_ban,
+            tx_hash=payout.tx_hash,
+            status=payout.status,
+        )

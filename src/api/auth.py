@@ -41,7 +41,9 @@ def discord_callback(
         guild_id=integ.discord_guild_id,
         dry_run=integ.dry_run,
     )
-    yunite = YuniteService(api_key=integ.yunite_api_key, guild_id=integ.yunite_guild_id, dry_run=integ.dry_run)
+    yunite = YuniteService(
+        api_key=integ.yunite_api_key, guild_id=integ.yunite_guild_id, dry_run=integ.dry_run
+    )
 
     user_info = discord.exchange_code_for_user(code)
     if not user_info.guild_member:

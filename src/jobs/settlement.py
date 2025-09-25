@@ -57,14 +57,20 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
 
 
 # Prometheus counters
-METRIC_CANDIDATES = Counter("settlement_candidates_total", "Number of candidates considered per run")
+METRIC_CANDIDATES = Counter(
+    "settlement_candidates_total", "Number of candidates considered per run"
+)
 METRIC_PAYOUTS = Counter("settlement_payouts_total", "Number of payouts created per run")
 METRIC_ACCRUALS_SETTLED = Counter(
     "settlement_accruals_settled_total", "Number of accrual records settled per run"
 )
 
 
-def run_scheduler(session_factory: Callable[[], Session], cfg: SchedulerConfig, stop_event: threading.Event | None = None) -> None:
+def run_scheduler(
+    session_factory: Callable[[], Session],
+    cfg: SchedulerConfig,
+    stop_event: threading.Event | None = None,
+) -> None:
     """Blocking loop that runs settlement on an interval with operator balance check.
 
     Intended to be started in a background process/task runner. Safe for dry_run.

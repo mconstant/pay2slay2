@@ -69,7 +69,9 @@ def me_status(request: Request = None, db: Session = Depends(_get_db)) -> JSONRe
         .order_by(VerificationRecord.created_at.desc())
         .first()
     )
-    last_verified_at = latest_ver.created_at.isoformat() if latest_ver and latest_ver.created_at else None
+    last_verified_at = (
+        latest_ver.created_at.isoformat() if latest_ver and latest_ver.created_at else None
+    )
     last_verified_status = latest_ver.status if latest_ver else None
     last_verified_source = latest_ver.source if latest_ver else None
     return JSONResponse(

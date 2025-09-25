@@ -18,7 +18,11 @@ def _b64url_decode(data: str) -> bytes:
 
 
 def issue_session(discord_user_id: str, secret: str, ttl_seconds: int = 86400) -> str:
-    payload = {"uid": discord_user_id, "iat": int(time.time()), "exp": int(time.time()) + ttl_seconds}
+    payload = {
+        "uid": discord_user_id,
+        "iat": int(time.time()),
+        "exp": int(time.time()) + ttl_seconds,
+    }
     body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     sig = hmac.new(secret.encode("utf-8"), body, sha256).digest()
     return f"{_b64url(body)}.{_b64url(sig)}"
@@ -47,7 +51,12 @@ def session_secret() -> str:
 
 # Admin sessions
 def issue_admin_session(admin_email: str, secret: str, ttl_seconds: int = 3600) -> str:
-    payload = {"role": "admin", "email": admin_email, "iat": int(time.time()), "exp": int(time.time()) + ttl_seconds}
+    payload = {
+        "role": "admin",
+        "email": admin_email,
+        "iat": int(time.time()),
+        "exp": int(time.time()) + ttl_seconds,
+    }
     body = json.dumps(payload, separators=(",", ":")).encode("utf-8")
     sig = hmac.new(secret.encode("utf-8"), body, sha256).digest()
     return f"{_b64url(body)}.{_b64url(sig)}"

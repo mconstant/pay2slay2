@@ -29,7 +29,11 @@ def create_app() -> FastAPI:
         from src.lib.db import make_engine, make_session_factory
         from src.models.base import Base
 
-        db_url = getattr(app.state.config, "database_url", None) if hasattr(app.state, "config") else None
+        db_url = (
+            getattr(app.state.config, "database_url", None)
+            if hasattr(app.state, "config")
+            else None
+        )
         engine = make_engine(db_url)
         session_factory = make_session_factory(engine)
         app.state.engine = engine

@@ -17,7 +17,9 @@ log = get_logger("api.admin")
 
 # Admin metrics
 ADMIN_REVERIFY_TOTAL = Counter("admin_reverify_total", "Admin reverify requests", ["result"])
-ADMIN_PAYOUT_RETRY_TOTAL = Counter("admin_payout_retry_total", "Admin payout retry attempts", ["result"])
+ADMIN_PAYOUT_RETRY_TOTAL = Counter(
+    "admin_payout_retry_total", "Admin payout retry attempts", ["result"]
+)
 
 
 def _get_db(request: Request) -> Generator[Session, None, None]:
@@ -41,7 +43,11 @@ def admin_login(email: str = Body(..., embed=True), db: Session = Depends(_get_d
     # Simple login: require active AdminUser with this email, then issue admin cookie
     if not email:
         raise HTTPException(status_code=400, detail="email required")
-    admin = db.query(AdminUser).filter(AdminUser.email == email, AdminUser.is_active == True).one_or_none()  # noqa: E712
+    admin = (
+        db.query(AdminUser)
+        .filter(AdminUser.email == email, AdminUser.is_active.is_(True))
+        .one_or_none()
+    )
     if not admin:
         raise HTTPException(status_code=401, detail="Unauthorized")
     token = issue_admin_session(email, session_secret())
@@ -49,6 +55,7 @@ def admin_login(email: str = Body(..., embed=True), db: Session = Depends(_get_d
     resp.set_cookie("p2s_admin", token, httponly=True, samesite="lax")
     log.info("admin_login", email=email)
     return resp
+
 
 @router.post("/reverify")
 def admin_reverify(
@@ -87,7 +94,9 @@ def admin_reverify(
     db.commit()
     log.info("admin_reverify", discord_id=discord_id, epic_account_id=epic_id)
     ADMIN_REVERIFY_TOTAL.labels(result="accepted").inc()
-    return JSONResponse({"status": "accepted", "discord_id": discord_id, "epic_account_id": epic_id})
+    return JSONResponse(
+        {"status": "accepted", "discord_id": discord_id, "epic_account_id": epic_id}
+    )
 
 
 @router.post("/payouts/retry")
@@ -104,7 +113,9 @@ def admin_payouts_retry(
     if payout.tx_hash and payout.status == "sent":
         ADMIN_PAYOUT_RETRY_TOTAL.labels(result="already_sent").inc()
         log.info("admin_payout_retry_already_sent", payout_id=payout_id, tx_hash=payout.tx_hash)
-        return JSONResponse({"status": "already_sent", "payout_id": payout_id, "tx_hash": payout.tx_hash})
+        return JSONResponse(
+            {"status": "already_sent", "payout_id": payout_id, "tx_hash": payout.tx_hash}
+        )
     # Attempt resend using configured node
     app_state = getattr(getattr(request, "app", None), "state", None)
     cfg_obj = getattr(app_state, "config", None)
@@ -127,4 +138,6 @@ def admin_payouts_retry(
         ADMIN_PAYOUT_RETRY_TOTAL.labels(result="failed").inc()
         log.warning("admin_payout_retry_failed", payout_id=payout_id)
     db.commit()
-    return JSONResponse({"status": payout.status, "payout_id": payout_id, "tx_hash": payout.tx_hash})
+    return JSONResponse(
+        {"status": payout.status, "payout_id": payout_id, "tx_hash": payout.tx_hash}
+    )
