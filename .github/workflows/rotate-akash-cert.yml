@@ -88,8 +88,13 @@ jobs:
           GH_TOKEN: ${{ steps.access-token.outputs.token }}
 
       - name: Update AKASH_CERT_ID variable
-        run: |
-          gh variable set AKASH_CERT_ID --body "${{ steps.gen.outputs.cert-id }}"
+        run: >-
+          gh variable 
+          set 'AKASH_CERT_ID' 
+          --body "${{ steps.gen.outputs.cert-id }}"
+          --repo ${{ github.repository }}
+        env:
+          GH_TOKEN: ${{ steps.access-token.outputs.token }}
 
       - name: Summary
         run: |
