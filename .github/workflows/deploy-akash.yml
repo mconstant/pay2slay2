@@ -91,8 +91,8 @@ jobs:
       - name: Restore Akash CLI
         run: |
           tar -xzf akash-env.tgz
-          chmod +x akash
-          sudo mv akash /usr/local/bin/akash
+          chmod +x provider-services
+          sudo mv provider-services /usr/local/bin/provider-services
           mv .akash $HOME/.akash
       - name: Set up Terraform
         uses: hashicorp/setup-terraform@v3
