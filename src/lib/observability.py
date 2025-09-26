@@ -8,6 +8,14 @@ from typing import Any, no_type_check
 
 import structlog
 
+try:  # Optional Prometheus dependency (already in deps, but guard defensively)
+    from prometheus_client import Counter
+
+    _PROM_AVAILABLE = True
+except Exception:  # pragma: no cover
+    Counter = None  # type: ignore
+    _PROM_AVAILABLE = False
+
 _TRACE_MOD: Any | None = None
 Resource: Any | None = None
 TracerProvider: Any | None = None
@@ -304,4 +312,61 @@ __all__ = [
     "instrument_http_call",
     "instrument_sqlalchemy",
     "setup_structlog",
+    "record_image_build",
+    "record_rollback",
+    "get_metric_value",
 ]
+
+# --------------------------------------------------------------------------------------
+# Metrics (T022): lightweight dual-path metrics (Prometheus counter + in-process mirror)
+# Counters:
+#   image_build_total{repository_type="canonical|staging|unknown"}
+#   rollback_total{repository_type="canonical|staging|unknown"}
+# Exported helpers record_image_build / record_rollback keep tests simple without requiring
+# a running Prometheus exporter. get_metric_value(key) used in unit tests (T052) while
+# prometheus_client Counter remains the production instrumentation path. (T060 doc update)
+# --------------------------------------------------------------------------------------
+
+_METRIC_COUNTS: dict[str, int] = {}
+
+if _PROM_AVAILABLE:
+    _IMAGE_BUILD_COUNTER = Counter(
+        "image_build_total", "Total number of image builds", ["repository_type"]
+    )
+    _ROLLBACK_COUNTER = Counter(
+        "rollback_total", "Total number of rollbacks performed", ["repository_type"]
+    )
+else:  # pragma: no cover - fallback
+    _IMAGE_BUILD_COUNTER = None  # type: ignore
+    _ROLLBACK_COUNTER = None  # type: ignore
+
+
+def _inc(key: str) -> None:
+    _METRIC_COUNTS[key] = _METRIC_COUNTS.get(key, 0) + 1
+
+
+def record_image_build(repository_type: str) -> None:
+    """Increment image build counter for repository_type (T022)."""
+    key = f"image_build_total|{repository_type}"
+    _inc(key)
+    if _PROM_AVAILABLE and _IMAGE_BUILD_COUNTER is not None:  # pragma: no branch
+        try:
+            _IMAGE_BUILD_COUNTER.labels(repository_type=repository_type).inc()
+        except Exception:  # pragma: no cover
+            pass
+
+
+def record_rollback(repository_type: str) -> None:
+    """Increment rollback counter for repository_type (T022)."""
+    key = f"rollback_total|{repository_type}"
+    _inc(key)
+    if _PROM_AVAILABLE and _ROLLBACK_COUNTER is not None:  # pragma: no branch
+        try:
+            _ROLLBACK_COUNTER.labels(repository_type=repository_type).inc()
+        except Exception:  # pragma: no cover
+            pass
+
+
+def get_metric_value(key: str) -> int:
+    """Return in-process metric value (used by unit tests)."""
+    return _METRIC_COUNTS.get(key, 0)

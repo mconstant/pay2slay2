@@ -62,7 +62,7 @@ Guiding Principles: TDD-first (contract tests before workflow edits), immutabili
  - [ ] T019 Flesh out signature soft verify step: stub cosign command wrapper `scripts/ci/soft_verify.sh` (returns 0 + status json; failure to find signature sets status=unverified, signature_reason=missing) and include arch detection.
 - [ ] T020 Update contract tests to consume actual helper functions (remove placeholder stubs) ensuring they pass.
  - [ ] T021 Enhance integration test to assert rollback reverts deployment reference variable/state representation and preserves digest & arch, repository selection unchanged.
- - [ ] T022 Add metrics emission (optional) gauge/counter via existing observability: `image_build_total`, `rollback_total` + ensure counters labeled by repository_type (canonical|staging) (guarded to avoid noise if metrics disabled).
+ - [x] T022 Add metrics emission (optional) gauge/counter via existing observability: `image_build_total`, `rollback_total` + ensure counters labeled by repository_type (canonical|staging) (guarded to avoid noise if metrics disabled).
 
 ## Phase 3.6: Documentation & Governance
 - [ ] T023 Expand `docs/distribution.md` with Immutable Tagging section referencing FR-001..FR-017, including rollback procedure and signature escalation path.
