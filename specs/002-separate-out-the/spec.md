@@ -5,6 +5,10 @@
 **Status**: Draft  
 **Input**: User description: "separate out the akash stack into discrete deployments. the banano node needs it's own deployment workflow and separate akash sdl. I need to have the banano_rpc_endpoint as a terraform output and available as an input for the api deployment."
 
+## Clarifications
+### Session 2025-09-25
+- Q: What retry strategy and total timeout should the Banano deployment workflow use to discover the forwarded RPC port (7072) before declaring failure? → A: Exponential backoff 5s,10s,20s,40s (4 attempts, ~75s max)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### Primary User Story
@@ -35,7 +39,7 @@ Not a user-facing UI feature; surfaced only through CI workflow logs and Terrafo
 - **FR-001**: Banano Terraform stack MUST be isolated in its own directory (e.g., `infra/akash-banano/`) with a dedicated SDL containing ONLY the Banano service.
 - **FR-002**: API Terraform stack MUST exclude Banano service and accept an input variable `banano_rpc_endpoint`.
 - **FR-003**: Banano deployment workflow MUST output a Terraform output named `banano_rpc_endpoint` capturing `host:external_port` associated with internal port 7072.
-- **FR-004**: Banano workflow MUST implement a retry loop (minimum 5 attempts over ≥30s total) to discover the forwarded RPC port before failing.
+- **FR-004**: Banano workflow MUST attempt RPC port (7072) discovery with an exponential backoff schedule of 4 attempts at 5s, 10s, 20s, and 40s delays (≈75s max elapsed). After the 4th failed attempt it MUST hard-fail and NOT emit a partial/empty endpoint artifact.
 - **FR-005**: On success, Banano workflow MUST persist the endpoint via artifact AND set a workflow output for downstream/manual copy.
 - **FR-006**: API workflow MUST fail fast if `banano_rpc_endpoint` input is absent or empty.
 - **FR-007**: API workflow MUST surface the injected endpoint in logs (redacting nothing—no secret content).
