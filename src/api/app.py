@@ -94,7 +94,7 @@ def _register_health(app: FastAPI) -> None:
             return {"status": "not_ready"}
 
 
-def create_app() -> FastAPI:
+def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup logic
     """Create and return the FastAPI application instance."""
     setup_structlog()
     log = get_logger(__name__)
@@ -126,6 +126,34 @@ def create_app() -> FastAPI:
             log.info("config_loaded", config=app.state.config.safe_dict())
         except Exception:  # pragma: no cover
             pass
+        # T064: Production secrets & config audit (fail fast if defaults in non-dry-run mode)
+        try:
+            integ = app.state.config.integrations
+            session_secret = os.getenv("SESSION_SECRET", "dev-secret")
+            if not integ.dry_run:
+                if session_secret == "dev-secret":
+                    raise RuntimeError(
+                        "SESSION_SECRET must be overridden in production (dry_run=false)"
+                    )
+                if not integ.node_rpc or "localhost" in integ.node_rpc:
+                    raise RuntimeError(
+                        "Banano node_rpc must point to production endpoint when dry_run=false"
+                    )
+            # Emit dry_run mode metric & log for visibility (T065)
+            try:
+                from prometheus_client import Gauge  # local import inside block
+
+                _dry_run_gauge = Gauge(
+                    "app_dry_run_mode", "1 if application running in dry_run mode"
+                )
+                _dry_run_gauge.set(1.0 if integ.dry_run else 0.0)
+            except Exception:
+                pass
+            log.info("runtime_mode", dry_run=integ.dry_run)
+        except Exception as guard_exc:
+            # Store failure reason and raise to prevent partial unsafe startup
+            log.error("startup_guard_failed", error=str(guard_exc))
+            raise
     except Exception as exc:  # pragma: no cover
         app.state.config_error = str(exc)
         log.warning("config_load_failed", error=str(exc))

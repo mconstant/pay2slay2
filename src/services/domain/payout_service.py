@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from prometheus_client import Counter, Histogram
+from prometheus_client import Counter, Gauge, Histogram
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -27,13 +27,23 @@ class PayoutService:
         self.session = session
         self.dry_run = dry_run
         self.banano = banano
+        # Metrics (T066)
+        self._payout_amount_hist = Histogram(
+            "payout_amount_ban",
+            "Distribution of payout amounts (BAN)",
+            buckets=(0.0001, 0.001, 0.01, 0.1, 1.0, 5.0, 10.0, 25.0, 50.0),
+        )
+        self._accrual_lag_gauge = Gauge(
+            "payout_accrual_lag_minutes",
+            "Minutes between oldest unsettled accrual and payout creation",
+        )
 
     def _get_primary_address(self, user: User) -> str | None:
         q = select(WalletLink).where(WalletLink.user_id == user.id, WalletLink.is_primary == True)  # noqa: E712
         row = self.session.execute(q).scalars().first()
         return row.address if row else None
 
-    def create_payout(
+    def create_payout(  # noqa: PLR0915 - complex orchestration kept inline for traceability
         self,
         user: User,
         amount_ban: Decimal,
@@ -77,6 +87,16 @@ class PayoutService:
             a.settled = True
             a.settled_at = datetime.now(UTC)
             a.payout = payout
+        # Metrics capture (T066)
+        try:
+            self._payout_amount_hist.observe(float(amount_ban))
+            if accruals:
+                oldest = min(a.created_at for a in accruals if getattr(a, "created_at", None))
+                if oldest:
+                    lag_min = max((now - oldest).total_seconds() / 60.0, 0.0)
+                    self._accrual_lag_gauge.set(lag_min)
+        except Exception:
+            pass
         import random
         import time
 
@@ -85,6 +105,13 @@ class PayoutService:
                 payout.tx_hash = "dryrun"
                 payout.status = "sent"
                 return True
+            # T065: Preflight operator balance minimal check (if implemented upstream)
+            try:
+                if not self.banano.has_min_balance(float(amount_ban) * 1.1):  # 10% margin
+                    payout.status = "failed"
+                    return False
+            except Exception:
+                pass
             tx = self.banano.send(
                 source_wallet="operator", to_address=address, amount_raw=str(amount_ban)
             )

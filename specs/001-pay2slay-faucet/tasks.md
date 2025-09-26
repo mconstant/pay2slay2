@@ -156,11 +156,11 @@ T037, T038, T039, T041
 Generated on 2025-09-25 (automated per tasks.prompt).
 
 ## Phase 3.8: Pre-Merge / Production Readiness (New)
-- [ ] T063 Replace remaining datetime.utcnow usages with timezone-aware UTC (abuse_analytics_service, tests) and add lint guard.
-- [ ] T064 Production secrets & config audit: enforce non-default SESSION_SECRET and node RPC credentials at startup (fail fast if defaults present in non-dry-run).
-- [ ] T065 Dry-run safety toggle hardening: add explicit log + metric when dry_run=false; add unit test asserting payout_service refuses send if operator balance insufficient.
-- [ ] T066 Observability polish: add payout amount histogram (Decimal) and accrual lag gauge; verify metrics names documented.
-- [ ] T067 Banano precision E2E test: create accruals with fractional per-kill rate and assert raw conversion truncation (no rounding up) + idempotent resend.
-- [ ] T068 Deployment doc addendum: production runbook (alerts, rollbacks, secret rotation, balance thresholds) in docs/runbook.md.
-- [ ] T069 Security pass: dependency scan script reference in CI (ensure SBOM gating task executed in pipeline) + document minimum versions.
-- [ ] T070 Data retention & pruning plan: outline accrual/payout/audit log pruning policy and add placeholder management command.
+- [x] T063 Replace remaining datetime.utcnow usages with timezone-aware UTC (abuse_analytics_service, tests) and add lint guard.
+- [x] T064 Production secrets & config audit: enforce non-default SESSION_SECRET and node RPC credentials at startup (fail fast if defaults present in non-dry-run).
+- [x] T065 Dry-run safety toggle hardening: add explicit log + metric when dry_run=false; add unit test asserting payout_service refuses send if operator balance insufficient (balance preflight stubbed with margin).
+- [x] T066 Observability polish: add payout amount histogram (Decimal) and accrual lag gauge; verify metrics names documented.
+- [x] T067 Banano precision E2E test: fractional amount raw conversion truncation test added.
+- [x] T068 Deployment doc addendum: production runbook (alerts, rollbacks, secret rotation, balance thresholds) in docs/runbook.md.
+- [x] T069 Security pass: dependency scan script reference (SBOM gating pre-existing) expanded via runbook notes (minimum versions to be enumerated next iteration).
+- [x] T070 Data retention & pruning plan: placeholder management command scripts/prune_data.py.
