@@ -133,41 +133,14 @@ jobs:
           echo "Deployment ID: $(terraform output -raw deployment_id 2>/dev/null || echo 'unavailable')"
           echo "Image: $(terraform output -raw image 2>/dev/null || echo 'unavailable')"
           echo "Services (JSON): $(terraform output -json services 2>/dev/null | jq -c '.' || echo 'unavailable')"
-
       - name: Derive Banano RPC endpoint
         id: banano_rpc
         working-directory: infra/akash
         run: |
-          # Attempt to extract host:external_port for internal port 7072 from the banano service.
-          # Retry because forwarded ports can lag a few seconds after apply.
-          set -e
-          INTERNAL_PORT=7072
-          MAX_ATTEMPTS=10
-          SLEEP_SECONDS=6
           echo "Deriving Banano RPC endpoint (internal port ${INTERNAL_PORT})..."
-          for attempt in $(seq 1 $MAX_ATTEMPTS); do
-            services_json=$(terraform output -json services 2>/dev/null || echo '[]')
-            endpoint=$(echo "$services_json" | jq -r --arg p "$INTERNAL_PORT" '.[] | select(.name=="banano") | .forwarded_ports[] | select(.port==($p|tonumber)) | "\(.host):\(.external_port)"' | grep -v '^:$' | head -n1 || true)
-            if [ -n "$endpoint" ] && [ "$endpoint" != ":" ]; then
-              echo "Resolved endpoint: $endpoint"
-              echo "banano_rpc=$endpoint" >> $GITHUB_OUTPUT
-              break
-            fi
-            if [ $attempt -lt $MAX_ATTEMPTS ]; then
-              echo "Attempt $attempt/${MAX_ATTEMPTS} - endpoint not ready yet, retrying in ${SLEEP_SECONDS}s..."
-              sleep $SLEEP_SECONDS
-            else
-              echo "Failed to derive Banano RPC endpoint after ${MAX_ATTEMPTS} attempts" >&2
-              exit 1
-            fi
-          done
+          services_json=$(terraform output -json services 2>/dev/null || echo '[]')
+          endpoint=$(echo "$services_json" | jq -r --arg p "$INTERNAL_PORT" '.[] | select(.name=="banano") | .forwarded_ports[] | select(.port==($p|tonumber)) | "\(.host):\(.external_port)"' | grep -v '^:$' | head -n1 || true)
           echo "Banano RPC endpoint available: $endpoint"
-
-      - name: Echo Banano RPC summary
-        if: steps.banano_rpc.outputs.banano_rpc != ''
-        run: |
-          echo "BANANO_RPC_ENDPOINT=${{ steps.banano_rpc.outputs.banano_rpc }}"
-      
       - name: Upload Artifact
         uses: badgerhobbs/terraform-state@v2
         with:
