@@ -164,3 +164,5 @@ Generated on 2025-09-25 (automated per tasks.prompt).
 - [x] T068 Deployment doc addendum: production runbook (alerts, rollbacks, secret rotation, balance thresholds) in docs/runbook.md.
 - [x] T069 Security pass: dependency scan script reference (SBOM gating pre-existing) expanded via runbook notes (minimum versions to be enumerated next iteration).
 - [x] T070 Data retention & pruning plan: placeholder management command scripts/prune_data.py.
+- [x] T071 Build workflow PYTHONPATH fix (metadata emission) – implemented and verified.
+- [ ] T072 Normalize digest verification: ensure pre vs post compares same artifact (config digest stability) while recording manifest digest; update check_digest_post_push.py to avoid false mismatch (implemented) and document difference in distribution.md.
