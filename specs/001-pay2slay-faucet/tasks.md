@@ -54,14 +54,15 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [~] T029 Region analytics middleware (header-based region capture; pending GeoIP + metrics)
 - [x] T030 AdminAudit model + migration + persistence utilities
 - [x] T031 Verification refresh background job (src/jobs/verification_refresh.py)
-- [~] T032 FortniteService real kill delta retrieval + rate limiting
-	- DONE: HTTP client (httpx), token-bucket rate limiting, dry_run path, delta computation from lifetime kills
-	- DONE: Retries with jittered exponential backoff; metrics counters & latency histogram
-	- DONE: Auth header configurability (header name + scheme)
-	- DONE: Configurable base_url via integrations.fortnite_base_url
-	- TODO: Request signing / authentication refinement if upstream requires additional headers
-	- TODO: Persist observed (unsettled) kill cursor separately if needed for reconciliation
-	- DONE: Integration test covering positive delta + rate limit exhaustion fallback (test_fortnite_rate_limit.py)
+- [x] T032 FortniteService real kill delta retrieval + rate limiting
+	- Implemented: httpx client usage, token-bucket rate limiting, dry_run zero-delta mode
+	- Implemented: jittered exponential retry, metrics (calls/errors/latency/delta/rate-limited)
+	- Implemented: auth header configurability (name + scheme) & base_url from config
+	- Implemented: delta derivation from lifetime kill count + negative guard
+	- Implemented: instrumentation (spans via instrument_http_call)
+	- Implemented: integration test (test_fortnite_rate_limit.py) covers rate limit fallback
+	- Deferred: request signing (depends on upstream contract)
+	- Deferred: separate persistent unresolved kill cursor (current uses last_settled_kill_count; reconciliation story acceptable for MVP)
 - [x] T033 Accrual batch job (src/jobs/accrual.py) iterating verified users (implemented + unit test)
 - [x] T034 BananoClient real RPC (balance/send/raw conversion)
 - [x] T035 Payout idempotency key (hash unsettled accrual IDs) & duplicate guard
