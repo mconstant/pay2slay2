@@ -53,7 +53,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T028 Implement /me/payouts endpoint (paginated)
 - [~] T029 Region analytics middleware (header-based region capture; pending GeoIP + metrics)
 - [x] T030 AdminAudit model + migration + persistence utilities
-- [ ] T031 Verification refresh background job (src/jobs/verification_refresh.py)
+- [x] T031 Verification refresh background job (src/jobs/verification_refresh.py)
 - [~] T032 FortniteService real kill delta retrieval + rate limiting
 	- DONE: HTTP client (httpx), token-bucket rate limiting, dry_run path, delta computation from lifetime kills
 	- DONE: Retries with jittered exponential backoff; metrics counters & latency histogram
