@@ -8,7 +8,8 @@ Banano payouts for verified Fortnite kills. Identity via Discord + Yunite. Inter
 - configs/product.yaml — Whitelabel branding & flags
 
 ## Privacy & Eligibility
-- No KYC. Regional analytics only for abuse detection (coarse, aggregated).
+- No KYC. Regional analytics only for coarse abuse detection.
+- Detailed policy: see [PRIVACY.md](./PRIVACY.md) for data categories, retention guidance, and operator checklist.
 
 ## Next Steps
 - Install dependencies and run tests (after they’re authored per tasks.md).
