@@ -69,6 +69,8 @@ jobs:
       - name: Emit Initial Metadata JSON
         id: meta_init
         run: |
+          # Ensure local package import path so 'from src.lib...' works even before install editable
+          export PYTHONPATH="$PYTHONPATH:$(pwd)"
           python scripts/ci/emit_image_metadata.py \
             --sha ${{ steps.vars.outputs.git_sha }} \
             --repository ${{ steps.repo.outputs.repository }} \
