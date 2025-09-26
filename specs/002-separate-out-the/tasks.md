@@ -58,13 +58,13 @@ Parallel `[P]` only when tasks touch different files/directories with no depende
   Depends: T016
 
 ## Phase 3.5: Integration & Observability
-- [ ] T018 Enhance Banano workflow logs: attempt counters, success line, failure line (FR-007)  
+- [x] T018 Enhance Banano workflow logs: attempt counters, success line, failure line (FR-007)  
   Depends: T013
-- [ ] T019 Add redeploy scenario test script `scripts/infra/test_redeploy.sh` (simulate second artifact, ensure different timestamp)  
+- [x] T019 Add redeploy scenario test script `scripts/infra/test_redeploy.sh` (simulate second artifact, ensure different timestamp)  
   Depends: T013
-- [ ] T020 Add doc `docs/operations/split-deployments.md` summarizing steps (operator process FR-014)  
+- [x] T020 Add doc `docs/operations/split-deployments.md` summarizing steps (operator process FR-014)  
   Depends: T017
-- [ ] T021 Add optional metric stub (commented) in discovery script for future Prometheus sidecar (documentation only)  
+- [x] T021 Add optional metric stub (commented) in discovery script for future Prometheus sidecar (documentation only)  
   Depends: T018
 
 ## Phase 3.6: Polish & Hardening
