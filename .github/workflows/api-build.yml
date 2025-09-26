@@ -102,13 +102,15 @@ jobs:
       - name: Upload SBOM Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sbom
+          # Unique artifact name per build to avoid collisions and allow deterministic retrieval
+          name: sbom-${{ steps.vars.outputs.git_sha }}
           path: sbom.json
 
       - name: Upload Metadata Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: image-metadata
+          # Unique artifact name keyed by immutable git SHA (40 hex)
+          name: image-metadata-${{ steps.vars.outputs.git_sha }}
           path: metadata.json
 
       - name: Log Summary

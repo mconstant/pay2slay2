@@ -7,6 +7,10 @@ on:
         description: 40-char immutable image SHA to deploy
         required: true
         type: string
+      build_run_id:
+        description: Run ID of the corresponding API Build workflow (produced artifacts)
+        required: true
+        type: string
 
 jobs:
   deploy:
@@ -14,6 +18,7 @@ jobs:
     permissions:
       contents: read
       packages: read
+      actions: read  # needed to download artifacts from another workflow run
     env:
       REGISTRY_CANONICAL: ghcr.io/mconstant/pay2slay-api
       REGISTRY_STAGING: ghcr.io/mconstant/pay2slay-api-staging
@@ -24,28 +29,35 @@ jobs:
       - name: Download Build Metadata
         uses: actions/download-artifact@v4
         with:
-          name: image-metadata
+          # Use unique artifact name that matches the build's git SHA
+          name: image-metadata-${{ inputs.image_sha }}
           path: build_artifacts
-        continue-on-error: true
+          run-id: ${{ inputs.build_run_id }}
+        # Artifact must exist; fail fast if not
+        continue-on-error: false
 
       - name: Validate Metadata Artifact
         id: meta
         run: |
-          if [ ! -f build_artifacts/metadata.json ]; then
-            echo "metadata artifact missing" >&2
-            exit 1
-          fi
-          cat build_artifacts/metadata.json
-          SHA="${{ inputs.image_sha }}"
-          if [ ${#SHA} -ne 40 ]; then
-            echo "Provided image_sha length invalid" >&2; exit 1; fi
-          echo "image_sha=$SHA" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          META=build_artifacts/metadata.json
+          if [ ! -f "$META" ]; then
+            echo "metadata artifact missing (expected $META)" >&2; exit 1; fi
+          SHA_INPUT='${{ inputs.image_sha }}'
+          # Validate SHA format (40 lowercase hex)
+          if ! echo "$SHA_INPUT" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "Provided image_sha length/format invalid" >&2; exit 2; fi
+          META_SHA=$(python -c 'import json; import sys; print(json.load(open("build_artifacts/metadata.json"))["image_sha"])')
+          if [ "$META_SHA" != "$SHA_INPUT" ]; then
+            echo "image_sha mismatch: input=$SHA_INPUT metadata=$META_SHA" >&2; exit 3; fi
+          echo '{"validated": true, "image_sha": '"$META_SHA"'}'
+          echo "image_sha=${{ inputs.image_sha }}" >> $GITHUB_OUTPUT
 
       - name: Derive Repository
         id: repo
         run: |
           BRANCH_REF=${GITHUB_REF##*/}
-          if [ "$BRANCH_REF" = "main" ]; then
+          if [ "$BRANCH_REF" = "main" ] || [ "$BRANCH_REF" = "master" ]; then
             echo "repository=$REGISTRY_CANONICAL" >> $GITHUB_OUTPUT
           else
             echo "repository=$REGISTRY_STAGING" >> $GITHUB_OUTPUT
