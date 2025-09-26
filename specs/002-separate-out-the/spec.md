@@ -9,6 +9,7 @@
 ### Session 2025-09-25
 - Q: What retry strategy and total timeout should the Banano deployment workflow use to discover the forwarded RPC port (7072) before declaring failure? → A: Exponential backoff 5s,10s,20s,40s (4 attempts, ~75s max)
 - Q: How should the Banano workflow persist the resolved banano_rpc_endpoint for consumption by the API workflow? → A: Terraform output + JSON artifact (endpoint.json with {"banano_rpc_endpoint": ...})
+- Q: What validation rules should we enforce on the banano_rpc_endpoint host:port string before accepting it as valid? → A: Host must be DNS label or IPv4; port 1024–65535
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -48,7 +49,7 @@ Not a user-facing UI feature; surfaced only through CI workflow logs and Terrafo
 - **FR-009**: Banano Terraform MUST expose ONLY necessary ports (7071, 7072, 7074) per initial design; any removal or addition requires explicit variable or documentation update.
 - **FR-010**: Workflows MUST be independently triggerable via `workflow_dispatch` with clear inputs.
 - **FR-011**: Banano workflow MUST mark failure if Terraform apply succeeds but no forwarded port 7072 is present.
-- **FR-012**: Endpoint resolution MUST disallow an empty `host` value (validate non-whitespace host).
+- **FR-012**: Endpoint validation MUST ensure host is a valid DNS label or IPv4 address (regex class `[a-z0-9.-]+` with at least one non-digit alpha segment allowed) and port is numeric in the inclusive range 1024–65535; empty or whitespace-only host is invalid.
 - **FR-013**: If multiple Banano deployments exist, the workflow MUST target exactly one state directory (no ambiguous merges).
 - **FR-014**: Documentation MUST describe operator process: 1) Deploy Banano; 2) Copy or reference endpoint; 3) Deploy API with endpoint.
 - **FR-015**: Terraform outputs for Banano MUST include `deployment_id` (unchanged) plus the new endpoint for traceability.
