@@ -47,3 +47,13 @@ jobs:
         run: |
           echo 'For detailed vulnerability report see action artifacts and the Grype step logs.' >> $GITHUB_STEP_SUMMARY
           echo 'Gating policy: build fails if any CRITICAL vulnerabilities are detected in direct or transitive dependencies.' >> $GITHUB_STEP_SUMMARY
+
+  docs-validate:
+    runs-on: ubuntu-latest
+    name: Docs Validation
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Docs
+        run: |
+          chmod +x scripts/ci/validate_docs.sh
+          scripts/ci/validate_docs.sh
