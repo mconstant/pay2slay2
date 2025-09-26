@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from decimal import ROUND_DOWN, Decimal
 from typing import Any
 
 import httpx
@@ -23,9 +24,21 @@ class BananoClient:
         resp.raise_for_status()
         return resp.json() or {}
 
-    def ban_to_raw(self, amount_ban: float) -> str:
-        raw = int(amount_ban * self._raw_per_ban)
-        return str(raw)
+    def ban_to_raw(self, amount_ban: float | Decimal) -> str:
+        """Convert BAN (Decimal or float) to raw integer units (as string).
+
+        Accepts either float (legacy callers) or Decimal (preferred) and truncates
+        toward zero at 29 decimal places (integer raw units). We deliberately avoid
+        rounding up to prevent over-paying when converting fractional values.
+        """
+        if not isinstance(amount_ban, Decimal):  # normalize legacy float callers
+            amount_ban = Decimal(str(amount_ban))
+        # Ensure non-negative; negative payouts not expected
+        if amount_ban < 0:
+            amount_ban = Decimal("0")
+        # Scale and truncate (quantize then int)
+        scaled = (amount_ban * Decimal(self._raw_per_ban)).to_integral_value(rounding=ROUND_DOWN)
+        return str(int(scaled))
 
     def raw_to_ban(self, amount_raw: str | int) -> float:
         try:

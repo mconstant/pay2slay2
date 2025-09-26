@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 
 from prometheus_client import Counter
 from sqlalchemy.orm import Session
@@ -57,7 +57,7 @@ class AbuseAnalyticsService:
             return False
         from src.models.models import AbuseFlag, RewardAccrual
 
-        cutoff = datetime.utcnow() - timedelta(minutes=recent_window_min)
+        cutoff = datetime.now(UTC) - timedelta(minutes=recent_window_min)
         q = self.session.query(RewardAccrual.kills).filter(
             RewardAccrual.user_id == user_id, RewardAccrual.created_at >= cutoff
         )
@@ -78,9 +78,9 @@ class AbuseAnalyticsService:
 
 
 __all__ = [
-    "AbuseAnalyticsService",
-    "AbuseStats",
+    "FLAGGED_USERS_TOTAL",
     "KILLS_BY_REGION",
     "PAYOUTS_BY_REGION",
-    "FLAGGED_USERS_TOTAL",
+    "AbuseAnalyticsService",
+    "AbuseStats",
 ]

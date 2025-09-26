@@ -11,14 +11,27 @@ Create and activate a virtual environment (example):
     - `pip install -e .[dev]`
 
 ## 2) Environment
-Set any of these (defaults shown):
+Copy `.env.example` to `.env` and adjust as needed, or export variables manually.
+
+Core (defaults):
   - `DATABASE_URL=sqlite:///pay2slay.db`
-  - `SESSION_SECRET=dev-secret`
-  - `P2S_DRY_RUN=true`
-  - `P2S_MIN_OPERATOR_BALANCE_BAN=50`
-  - `P2S_INTERVAL_SECONDS=1200`
-  - `P2S_OPERATOR_ACCOUNT=` (required only when not dry-run)
+  - `SESSION_SECRET=dev-secret` (CHANGE in prod)
+  - `P2S_DRY_RUN=true` (set to `false` to use real APIs)
+  - `P2S_OPERATOR_ACCOUNT=` (required only when not dry-run for balance check)
   - `P2S_METRICS_PORT=8001`
+  - `P2S_INTERVAL_SECONDS=1200` (scheduler loop)
+
+External integrations (required once dry-run=false):
+  - `YUNITE_API_KEY=`
+  - `YUNITE_GUILD_ID=`
+  - `FORTNITE_API_KEY=`
+  - `DISCORD_CLIENT_ID=`
+  - `DISCORD_CLIENT_SECRET=`
+  - `DISCORD_REDIRECT_URI=http://localhost:3000/auth/discord/callback`
+
+Optional observability:
+  - `OTEL_EXPORTER_OTLP_ENDPOINT=` or `PAY2SLAY_OTLP_ENDPOINT=`
+  - `PAY2SLAY_METRICS_EXEMPLARS=1`
 
 ## 3) Run the API
   - `uvicorn src.api.app:create_app --reload --port 8000`
@@ -36,10 +49,47 @@ Set any of these (defaults shown):
   - Lint: `ruff check .`
   - Types: `mypy`
 
-## 6) Makefile shortcuts
+## 6) Database migrations
+If using Alembic (Postgres / persistent DB) you can apply migrations:
+```
+PAY2SLAY_AUTO_MIGRATE=1 python -m src.api.app  # triggers upgrade on start
+```
+Or manually:
+```
+alembic upgrade head
+```
+
+## 7) Image build & signing (supply chain)
+Build container image locally:
+```
+docker build -t pay2slay:local .
+```
+Generate SBOM (Syft) and sign (Cosign) (example):
+```
+syft packages pay2slay:local -o spdx-json > sbom.json
+cosign sign --key cosign.key pay2slay:local
+cosign attest --predicate sbom.json --type spdxjson pay2slay:local
+```
+Verify:
+```
+cosign verify pay2slay:local
+```
+
+## 8) Deployment (Akash example snippet)
+Values to template into `infra/akash/*.tf` or manifests:
+- Image reference (signed) + digest
+- Environment secrets via provider (never bake secrets in image)
+- Expose port 8000 (API) and metrics port if required
+
+## 9) Makefile shortcuts
   - `make api` — start API (reload)
   - `make scheduler` — start scheduler (reads env)
   - `make test` — run tests
   - `make lint` — lint
   - `make type` — type-check
   - `make all` — lint + type + tests
+
+## 10) Next steps
+- Review `SECURITY.md` for supply chain & provenance guidelines.
+- Fill out `research.md`, `data-model.md`, and `contracts/` docs (tasks T046–T048).
+- Switch monetary fields to Decimal before production payouts (T052).

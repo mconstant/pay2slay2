@@ -301,7 +301,7 @@ def instrument_http_call(
 __all__ = [
     "get_logger",
     "get_tracer",
-    "setup_structlog",
     "instrument_http_call",
     "instrument_sqlalchemy",
+    "setup_structlog",
 ]
