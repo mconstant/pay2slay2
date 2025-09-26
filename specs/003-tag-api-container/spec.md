@@ -2,7 +2,7 @@
 
 **Feature Branch**: `[003-tag-api-container]`  
 **Created**: 2025-09-26  
-**Status**: Draft  
+**Status**: Active  
 **Input**: User description: "Tag API container images with git SHA and deploy using that immutable reference on Akash workflows"
 
 ## Clarifications
@@ -65,7 +65,7 @@ Not user-facing UI; operator experience criteria:
 ## Security Considerations *(mandatory)*
 - Threat model: Prevent unauthorized image tampering or ambiguous version deployment.
 - Immutable tag usage removes risk of mutable tag drift (e.g., latest) causing unexpected code changes.
-- Supply chain: Requires verifying digest printed in logs; future enhancement: enforce signature verification prior to deploy.
+- Supply chain: Digest integrity enforced via dual guard: build-time (T041/T042) and deployment-time (T028) verification.
 - Signature policy (current iteration): Soft verification only (warn on missing/invalid signature) per Clarification Q3 (FR-014). Risk: Potential unsigned image deploy; mitigation: immutable SHA + digest logging + plan to escalate to mandatory.
 - Branch isolation: Staging namespace separation (FR-016) limits risk of accidental promotion of unreviewed branch images; deploy workflows MUST validate repository origin before accepting an IMAGE_SHA.
 - Cache integrity: Clean build policy (FR-017) reduces attack surface of cache poisoning & ensures deterministic layer composition at cost of longer build times.

@@ -65,10 +65,10 @@ Guiding Principles: TDD-first (contract tests before workflow edits), immutabili
  - [x] T022 Add metrics emission (optional) gauge/counter via existing observability: `image_build_total`, `rollback_total` + ensure counters labeled by repository_type (canonical|staging) (guarded to avoid noise if metrics disabled).
 
 ## Phase 3.6: Documentation & Governance
-- [ ] T023 Expand `docs/distribution.md` with Immutable Tagging section referencing FR-001..FR-017, including rollback procedure and signature escalation path.
-- [ ] T024 Add `docs/operations/rollback.md` runbook with examples (workflow_dispatch JSON, expected logs, troubleshooting missing tag).
-- [ ] T025 Update `CHANGELOG.md` with new feature entry (Added: Immutable SHA-based image tagging & rollback workflows).
-- [ ] T026 Update `README.md` quick start snippet with note on immutable image tags & rollback command.
+- [x] T023 Expand `docs/distribution.md` with Immutable Tagging section referencing FR-001..FR-017, including rollback procedure and signature escalation path.
+- [x] T024 Add `docs/operations/rollback.md` runbook with examples (workflow_dispatch JSON, expected logs, troubleshooting missing tag).
+- [x] T025 Update `CHANGELOG.md` with new feature entry (Added: Immutable SHA-based image tagging & rollback workflows).
+- [x] T026 Update `README.md` quick start snippet with note on immutable image tags & rollback command.
 - [ ] T027 Generate / refine `specs/003-tag-api-container/quickstart.md` if not finalized after workflow specifics (ensure examples match final file names).
 
 ## Phase 3.7: Security & Compliance Enhancements

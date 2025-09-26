@@ -57,6 +57,13 @@ Makefile shortcuts are available:
 - Metrics default to port 8001; set `P2S_METRICS_PORT` to change.
 
 ## Deploy
+### Digest Integrity Guards (T057)
+Two layers enforce image immutability and provenance alignment:
+1. Build-time pre/post digest verification (scripts/ci/check_digest_post_push.py) ensures the pushed registry digest matches the locally built image (FR-009).
+2. Deployment-time guard (scripts/ci/check_existing_digest.py) validates repository mapping and (future: live digest) before applying an immutable SHA reference (FR-004, FR-016).
+
+Rollback uses a dedicated workflow (`api-rollback.yml`) that never rebuilds (FR-013). All deploys reference full 40-char commit SHAs; floating tags are rejected.
+
 - Docker (local): `docker build -t pay2slay2:dev .` then `docker-compose up --build`
 - CI: GitHub Actions workflow `.github/workflows/ci.yml` runs lint, type, tests, SBOM/scan.
 - Akash (Terraform):
