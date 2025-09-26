@@ -8,7 +8,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write  # allow updating deploy workflow defaults
       packages: write
     env:
       REGISTRY_CANONICAL: ghcr.io/mconstant/pay2slay-api
@@ -120,3 +120,22 @@ jobs:
           echo "Built image ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} pre_digest=${{ steps.digest.outputs.pre_push_digest }}" \
                "verification=$(jq -r .digest_verification metadata.json) post_digest=$(jq -r .post_push_digest metadata.json)" \
                "signature=${{ steps.sign.outputs.signature_status }}"
+
+      - name: Update Deploy Workflow Defaults
+        if: ${{ (github.ref_name == 'main' || github.ref_name == 'master') && ! contains(github.event.head_commit.message, '[skip-deploy-defaults]') }}
+        env:
+          BUILD_SHA: ${{ steps.vars.outputs.git_sha }}
+          BUILD_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          python scripts/ci/update_deploy_defaults.py \
+            --file .github/workflows/api-deploy.yml \
+            --sha "$BUILD_SHA" \
+            --run-id "$BUILD_RUN_ID"
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          if git diff --quiet .github/workflows/api-deploy.yml; then
+            echo "No changes to deploy workflow defaults"; exit 0; fi
+          git add .github/workflows/api-deploy.yml
+          git commit -m "chore(ci): update api-deploy defaults to $BUILD_SHA [skip-deploy-defaults]"
+          git push

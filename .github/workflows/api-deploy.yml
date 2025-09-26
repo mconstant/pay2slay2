@@ -5,10 +5,12 @@ on:
     inputs:
       image_sha:
         description: 40-char immutable image SHA to deploy
+        default: 1234567890abcdef1234567890abcdef12345678
         required: true
         type: string
       build_run_id:
         description: Run ID of the corresponding API Build workflow (produced artifacts)
+        default: 999999
         required: true
         type: string
 
