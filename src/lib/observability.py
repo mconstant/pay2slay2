@@ -4,7 +4,7 @@ import logging
 import os
 import time
 from collections.abc import Callable
-from typing import Any, no_type_check
+from typing import TYPE_CHECKING, Any, no_type_check
 
 import structlog
 
@@ -21,25 +21,29 @@ Resource: Any | None = None
 TracerProvider: Any | None = None
 BatchSpanProcessor: Any | None = None
 ConsoleSpanExporter: Any | None = None
-try:  # Optional OpenTelemetry dependency
-    from opentelemetry import trace as _trace_mod  # type: ignore
-    from opentelemetry.sdk.resources import Resource as _Resource  # type: ignore
-    from opentelemetry.sdk.trace import TracerProvider as _TracerProvider  # type: ignore
-    from opentelemetry.sdk.trace.export import (  # type: ignore
-        BatchSpanProcessor as _BatchSpanProcessor,
-    )
-    from opentelemetry.sdk.trace.export import (
-        ConsoleSpanExporter as _ConsoleSpanExporter,
-    )
+_OTEL_AVAILABLE = False
+if not TYPE_CHECKING:  # Prevent mypy from requiring these optional deps
+    try:  # Optional OpenTelemetry dependency
+        from opentelemetry import trace as _trace_mod
+        from opentelemetry.sdk.resources import Resource as _Resource
+        from opentelemetry.sdk.trace import (
+            TracerProvider as _TracerProvider,
+        )
+        from opentelemetry.sdk.trace.export import (
+            BatchSpanProcessor as _BatchSpanProcessor,
+        )
+        from opentelemetry.sdk.trace.export import (
+            ConsoleSpanExporter as _ConsoleSpanExporter,
+        )
 
-    _TRACE_MOD = _trace_mod
-    Resource = _Resource
-    TracerProvider = _TracerProvider
-    BatchSpanProcessor = _BatchSpanProcessor
-    ConsoleSpanExporter = _ConsoleSpanExporter
-    _OTEL_AVAILABLE = True
-except Exception:  # pragma: no cover
-    _OTEL_AVAILABLE = False
+        _TRACE_MOD = _trace_mod
+        Resource = _Resource
+        TracerProvider = _TracerProvider
+        BatchSpanProcessor = _BatchSpanProcessor
+        ConsoleSpanExporter = _ConsoleSpanExporter
+        _OTEL_AVAILABLE = True
+    except Exception:  # pragma: no cover
+        _OTEL_AVAILABLE = False
 
 event: Any | None = None
 try:  # Optional SQLAlchemy dependency
@@ -52,7 +56,7 @@ except Exception:  # pragma: no cover
 
 OTLPSpanExporter: Any | None = None  # Populated if OTLP exporter dependency available
 try:  # Optional OTLP exporter (http/proto) dependency
-    from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # type: ignore
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # type: ignore[import-not-found]
         OTLPSpanExporter as _OTLPSpanExporter,
     )
 
