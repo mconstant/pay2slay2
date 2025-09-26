@@ -72,7 +72,7 @@ Guiding Principles: TDD-first (contract tests before workflow edits), immutabili
 - [ ] T027 Generate / refine `specs/003-tag-api-container/quickstart.md` if not finalized after workflow specifics (ensure examples match final file names).
 
 ## Phase 3.7: Security & Compliance Enhancements
- - [ ] T028 Add simple digest mismatch guard script `scripts/ci/check_existing_digest.py` (compares registry digest vs recorded; if mismatch → fail) fulfilling FR-009 safety (deployment-time) and confirm repository matches expected canonical/staging mapping.
+ - [ ] T028 Add deployment-time digest & repo guard script `scripts/ci/check_existing_digest.py` (compares live registry digest for IMAGE_SHA against recorded metadata artifact; if mismatch → fail) and enforce repository mapping (canonical main, staging feature) — distinct from build-time post-push verification (T041/T042). (Refined by T043)
 - [ ] T029 Add policy check pre-deploy ensuring no floating tag pattern (regex guard) even if misconfigured (defense-in-depth) in `src/lib/deploy_validate.py`.
 - [ ] T030 Add unit tests for deploy_validate & rollback modules in `tests/unit/test_deploy_validate.py` and `tests/unit/test_rollback.py`.
  - [ ] T031 Add SBOM linkage step update in build workflow referencing SHA tag (FR-008); if SBOM generation not yet implemented, create explicit TODO plus link to new `sbom-linkage.yaml` contract (T047) rather than generic comment.
@@ -93,7 +93,7 @@ Rationale: Close high severity analysis gaps for FR-009 (digest mismatch safety)
 - [x] T040 Add sentinel in `src/lib/rollback.py` (e.g., module-level flag or injected callback) to detect unintended build invocation; used only in tests (guarded by ENV var) to keep production path clean.
 - [x] T041 Introduce script `scripts/ci/check_digest_post_push.py` performing: (a) load recorded digest from metadata artifact, (b) query registry (placeholder stub), (c) compare; exit non-zero on mismatch.
 - [x] T042 Update build workflow (T016) adding steps: compute local image digest BEFORE push (docker image inspect), store in metadata; AFTER push run `check_digest_post_push.py` to enforce FR-009; ensure both digests logged with structured context.
-- [ ] T043 Refine existing digest guard task T028: clarify it now covers deployment-time verification (pre-deploy) while T041 handles build-time post-push; update its description inline (do not renumber) to avoid duplication.
+- [x] T043 Refine existing digest guard task T028: clarify it now covers deployment-time verification (pre-deploy) while T041 handles build-time post-push; update its description inline (do not renumber) to avoid duplication.
 - [ ] T044 Amend `rollback-workflow.yaml` (T003) to explicitly declare invariants: must not build, must not alter digest, must reference existing tag only.
 - [ ] T045 Extend integration test `tests/integration/test_build_deploy_rollback_flow.py` (T010/T021) to assert digest remains unchanged across rollback and that attempting a forced rebuild path would raise/flag (simulate by setting sentinel and expecting no trigger).
 - [ ] T046 Update `docs/distribution.md` & `specs/003-tag-api-container/spec.md` to explicitly call out digest integrity and rollback no-build guarantees (reference FR-009, FR-013) and link to new contract file.
