@@ -55,9 +55,9 @@ def infer_region_from_request(request: Request) -> str | None:  # pragma: no cov
 
 
 __all__ = [
-    "infer_region_from_request",
     "REGION_HEADER",
     "REGION_HEADER_PRESENT",
     "REGION_INFERRED",
     "REGION_UNKNOWN",
+    "infer_region_from_request",
 ]

@@ -78,9 +78,9 @@ class AbuseAnalyticsService:
 
 
 __all__ = [
-    "AbuseAnalyticsService",
-    "AbuseStats",
+    "FLAGGED_USERS_TOTAL",
     "KILLS_BY_REGION",
     "PAYOUTS_BY_REGION",
-    "FLAGGED_USERS_TOTAL",
+    "AbuseAnalyticsService",
+    "AbuseStats",
 ]
