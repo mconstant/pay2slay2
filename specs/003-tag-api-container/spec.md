@@ -8,6 +8,7 @@
 ## Clarifications
 ### Session 2025-09-26
 - Q: Which registry and naming convention should be the canonical source of truth for SHA-tagged API images? → A: GitHub Container Registry (ghcr.io/mconstant/pay2slay-api)
+- Q: How should operators initiate a rollback to a prior git SHA image? → A: Dedicated rollback workflow with IMAGE_SHA input (separate from normal deploy)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -46,6 +47,7 @@ Not user-facing UI; operator experience criteria:
 - **FR-010**: System SHOULD optionally sign (cosign) the SHA-tagged image (if signing pipeline present) without altering tag semantics.
 - **FR-011**: System MUST document the workflow steps for building, tagging, deploying, and rolling back.
 - **FR-012**: Canonical image repository MUST be `ghcr.io/mconstant/pay2slay-api`; all SHA tags published there first (any future mirrors are secondary and MUST NOT drive deploy references).
+- **FR-013**: A dedicated rollback workflow MUST exist that accepts an `IMAGE_SHA` parameter and redeploys using that immutable tag without rebuilding; normal deploy workflow MUST NOT perform rollback implicitly.
 
 ### Key Entities
 - **Image Artifact**: Immutable container image identified by (registry, name, digest) and tagged with git SHA.
