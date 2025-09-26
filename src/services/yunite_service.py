@@ -4,6 +4,8 @@ from http import HTTPStatus
 
 import httpx
 
+from src.lib.observability import instrument_http_call
+
 
 class YuniteService:
     """Yunite API to resolve Epic account IDs from Discord users."""
@@ -25,10 +27,24 @@ class YuniteService:
         if self.dry_run:
             # Deterministic fake mapping for tests
             return f"epic_{discord_user_id}"
-        assert self.http is not None
-        headers = {"Authorization": f"Bot {self.api_key}"}
+        client = self.http
+        assert client is not None
+        headers: dict[str, str] = {"Authorization": f"Bot {self.api_key}"}
         url = f"{self.base_url}/v3/guilds/{self.guild_id}/members/{discord_user_id}"
-        resp = self.http.get(url, headers=headers)
+
+        def _do(url: str = url, headers: dict[str, str] = headers) -> httpx.Response:
+            return client.get(url, headers=headers)
+
+        resp = instrument_http_call(
+            "yunite.get_member",
+            _do,
+            attrs={
+                "http.url": url,
+                "http.method": "GET",
+                "service.component": "yunite",
+                "discord.user_id": discord_user_id,
+            },
+        )
         if resp.status_code == HTTPStatus.NOT_FOUND:
             return None
         resp.raise_for_status()

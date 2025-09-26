@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import logging
+import time
+from collections.abc import Callable
 from typing import Any
 
 import structlog
@@ -54,8 +56,39 @@ def get_tracer(name: str = "app") -> Any:
     return trace.get_tracer(name)
 
 
-__all__ = [
-    "get_logger",
-    "get_tracer",
-    "setup_structlog",
-]
+def instrument_http_call(
+    name: str,
+    func: Callable[[], Any],
+    attrs: dict[str, Any] | None = None,
+    record_exception: bool = True,
+) -> Any:
+    """Wrap a synchronous HTTP call in a span.
+
+    Parameters:
+        name: span name (e.g., "yunite.get_member")
+        func: thunk performing the HTTP request and returning a value
+        attrs: optional span attributes
+        record_exception: whether to record exceptions
+    Returns:
+        Value returned by func
+    """
+    tracer = get_tracer("http-client")
+    span = tracer.start_span(name, attributes=attrs or {})
+    start = time.time()
+    try:
+        result = func()
+        span.set_attribute("http.duration_ms", (time.time() - start) * 1000.0)
+        return result
+    except Exception as exc:  # pragma: no cover - network variability
+        if record_exception:
+            try:
+                span.record_exception(exc)
+            except Exception:  # pragma: no cover
+                pass
+        span.set_attribute("error", True)
+        raise
+    finally:
+        span.end()
+
+
+__all__ = ["get_logger", "get_tracer", "setup_structlog", "instrument_http_call"]

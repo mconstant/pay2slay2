@@ -10,6 +10,8 @@ from typing import Any
 import httpx
 from prometheus_client import Counter, Histogram
 
+from src.lib.observability import instrument_http_call
+
 HTTP_OK = 200
 
 
@@ -117,9 +119,24 @@ class FortniteService:
             try:
                 with self._client_factory() as client:
                     headers = {self._auth_header_name: f"{self._auth_scheme} {self.api_key}"}
-                    resp = client.get(
-                        f"{self.base_url}/players/{epic_account_id}/stats",
-                        headers=headers,
+                    url = f"{self.base_url}/players/{epic_account_id}/stats"
+
+                    def _do(
+                        url: str = url,
+                        headers: dict[str, str] = headers,
+                        client: httpx.Client = client,
+                    ) -> httpx.Response:
+                        return client.get(url, headers=headers)
+
+                    resp = instrument_http_call(
+                        "fortnite.get_player_stats",
+                        _do,
+                        attrs={
+                            "http.url": url,
+                            "http.method": "GET",
+                            "service.component": "fortnite",
+                            "epic.account_id": epic_account_id,
+                        },
                     )
                     FORTNITE_LATENCY.observe(time.monotonic() - start)
                     if resp.status_code == HTTP_OK:
