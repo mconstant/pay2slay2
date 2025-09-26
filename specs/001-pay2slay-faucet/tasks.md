@@ -51,7 +51,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T026 Implement /me/reverify endpoint (returns accepted + creates VerificationRecord)
 - [x] T027 Implement /config/product endpoint (src/api/config.py)
 - [x] T028 Implement /me/payouts endpoint (paginated)
-- [~] T029 Region analytics middleware (header-based region capture; pending GeoIP + metrics)
+- [x] T029 Region analytics middleware (header capture + IP stub inference + metrics counters)
 - [x] T030 AdminAudit model + migration + persistence utilities
 - [x] T031 Verification refresh background job (src/jobs/verification_refresh.py)
 - [x] T032 FortniteService real kill delta retrieval + rate limiting
