@@ -88,10 +88,19 @@ jobs:
           python scripts/ci/check_digest_post_push.py metadata.json ${{ steps.repo.outputs.repository }} ${{ steps.vars.outputs.git_sha }}
           echo "metadata_path=metadata.json" >> $GITHUB_OUTPUT
 
-      - name: SBOM Linkage Placeholder (T031)
+      - name: Generate SBOM (Syft)
         run: |
-          echo "TODO: Generate SBOM and attach reference (contract: sbom-linkage.yaml)" | tee sbom-linkage.log
-          echo "sbom_status=placeholder" >> $GITHUB_OUTPUT
+          echo "Installing syft for SBOM generation" >&2
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin > /dev/null
+          syft ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} -o spdx-json=sbom.json
+          python -c "import json; d=json.load(open('metadata.json')); d['sbom_ref']='sbom.json'; json.dump(d, open('metadata.json','w')); print('SBOM linked: sbom.json')"
+          echo "sbom_status=generated" >> $GITHUB_OUTPUT
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
 
       - name: Upload Metadata Artifact
         uses: actions/upload-artifact@v4
