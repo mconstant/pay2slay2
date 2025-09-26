@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -36,6 +37,23 @@ class PayoutService:
         address = self._get_primary_address(user)
         if not address:
             return None
+        # Idempotency: hash sorted accrual IDs; if existing payout with same hash & sent, short-circuit
+        accrual_ids = sorted(a.id for a in accruals)
+        raw_key = ",".join(str(i) for i in accrual_ids).encode("utf-8")
+        idem_key = hashlib.sha256(raw_key).hexdigest()
+        existing = (
+            self.session.query(Payout)
+            .filter(Payout.user_id == user.id, Payout.idempotency_key == idem_key)
+            .one_or_none()
+        )
+        if existing and existing.status == "sent":
+            return PayoutResult(
+                user_id=user.id,
+                payout_id=existing.id,
+                amount_ban=float(existing.amount_ban),
+                tx_hash=existing.tx_hash,
+                status=existing.status,
+            )
         now = datetime.now(UTC)
         payout = Payout(
             user_id=user.id,
@@ -44,6 +62,7 @@ class PayoutService:
             status="pending",
             first_attempt_at=now,
             last_attempt_at=now,
+            idempotency_key=idem_key,
         )
         self.session.add(payout)
         # Mark accruals as settled and link to payout

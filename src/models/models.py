@@ -120,6 +120,8 @@ class Payout(Base, TimestampMixin):
     tx_hash: Mapped[str | None] = mapped_column(String(128))
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending/sent/failed
     error_detail: Mapped[str | None] = mapped_column(String(500))
+    # Idempotency: hash of sorted accrual ids included in this payout
+    idempotency_key: Mapped[str | None] = mapped_column(String(128), index=True)
     # Retry / audit metadata
     attempt_count: Mapped[int] = mapped_column(default=1)
     first_attempt_at: Mapped[datetime | None] = mapped_column()

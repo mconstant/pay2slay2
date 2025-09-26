@@ -64,7 +64,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 	- DONE: Integration test covering positive delta + rate limit exhaustion fallback (test_fortnite_rate_limit.py)
 - [x] T033 Accrual batch job (src/jobs/accrual.py) iterating verified users (implemented + unit test)
 - [ ] T034 BananoClient real RPC (balance/send/raw conversion)
-- [ ] T035 Payout idempotency key (hash unsettled accrual IDs) & duplicate guard
+- [x] T035 Payout idempotency key (hash unsettled accrual IDs) & duplicate guard
 - [ ] T036 Payout retry logic (attempt_count, last_attempt_at) + exponential backoff placeholder
 
 ## Phase 3.4: Integration & Observability
