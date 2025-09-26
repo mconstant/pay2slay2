@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
-"""Post-push digest verification (T041, enhanced T042).
+"""Post-push digest verification (T041, refined).
 
-Responsibilities:
+Previous version compared the local image config digest (.Id) gathered pre-push with the
+registry *manifest* digest (from RepoDigests). Those two digests refer to different objects
+and will never match for a normal image, causing false-negative mismatches.
+
+Refined Responsibilities:
  1. Load existing metadata (must include at minimum image_digest or pre_push_digest).
- 2. Derive remote digest for pushed image (lightweight approximation using local Docker metadata
-     after push: the RepoDigests field now contains the remote registry digest reference).
- 3. Compare pre vs post digest; on mismatch exit with code 2.
- 4. Mutate metadata file in-place adding:
-        post_push_digest
-        digest_verification = ok|mismatch
+ 2. Re-inspect the image config digest (.Id) after push and assert it is unchanged from pre.
+     This guards against an accidental rebuild or tag re-assignment within the workflow.
+ 3. Capture the registry manifest digest (RepoDigests first entry) and store it as
+     post_push_digest for downstream consumers (deploy guard, provenance, etc.).
+ 4. Set digest_verification = "ok" if config digest stable, else "mismatch" (exit 2 on mismatch).
 
 Notes / Future Hardening:
- - For true remote verification we will later integrate "crane digest" or GHCR HTTP API query.
- - This script intentionally avoids non-stdlib deps for portability inside GitHub Actions runner.
- - A future negative test (T038) can monkeypatch subprocess output to simulate mismatch.
+ - A future enhancement may store both config_digest and manifest_digest distinctly; we retain
+    the legacy field names to avoid breaking existing contracts/tests.
+ - True remote verification (querying registry API) can supplement this local inspection.
 """
 
 from __future__ import annotations
@@ -41,10 +44,10 @@ def write_metadata(path: Path, data: dict[str, Any]) -> None:
 
 
 def _inspect_repo_digest(image_ref: str) -> str | None:
-    """Return repo digest (sha256:...) using docker image inspect RepoDigests.
+    """Return registry manifest digest (sha256:...) via RepoDigests field.
 
-    We parse the first RepoDigest entry (format: repository@sha256:HASH) and return the digest
-    component. Returns None if inspection fails or field missing.
+    We parse the first RepoDigest entry (format: repository@sha256:HASH) and return only the
+    digest component. Returns None if inspection fails or field missing.
     """
     try:
         out = subprocess.check_output(
@@ -72,6 +75,25 @@ def _inspect_repo_digest(image_ref: str) -> str | None:
         return None
 
 
+def _inspect_config_digest(image_ref: str) -> str | None:
+    """Return the image config digest (.Id) for the local image reference."""
+    try:
+        out = subprocess.check_output(
+            [
+                "docker",
+                "image",
+                "inspect",
+                image_ref,
+                "--format",
+                "{{.Id}}",
+            ],
+            text=True,
+        ).strip()
+        return out or None
+    except Exception:  # pragma: no cover
+        return None
+
+
 def main(argv: list[str]) -> int:
     # Minimal arg parsing (argv: [metadata_path, repository, git_sha])
     if len(argv) < REQUIRED_ARGS:
@@ -92,22 +114,35 @@ def main(argv: list[str]) -> int:
         print("pre-push digest missing in metadata", file=sys.stderr)
         return 1
     image_ref = f"{repository}:{git_sha}"
-    remote = _inspect_repo_digest(image_ref) or pre  # fallback to pre if cannot determine
-    data["post_push_digest"] = remote
-    if pre == remote:
-        status = "ok"
-        rc = 0
-    else:
-        status = "mismatch"
-        rc = 2
+    # Re-inspect config digest post-push
+    current_config = _inspect_config_digest(image_ref)
+    manifest_digest = _inspect_repo_digest(image_ref)  # may be None if not yet populated
+
+    if current_config is None:
+        print("Unable to re-inspect image config digest post-push", file=sys.stderr)
+        return 1
+
+    if current_config != pre:
+        # True mismatch: local image mutated (unexpected rebuild or tag repointed)
+        data["post_push_digest"] = manifest_digest or current_config
+        data.setdefault("pre_push_digest", pre)
+        data["digest_verification"] = "mismatch"
+        write_metadata(metadata_path, data)
+        print(
+            f"Digest mismatch (config changed) pre={pre} current={current_config} manifest={manifest_digest}",
+            file=sys.stderr,
+        )
+        return 2
+
+    # Config digest stable; record manifest digest (may differ by design) and mark ok
     data.setdefault("pre_push_digest", pre)
-    data["digest_verification"] = status
+    data["post_push_digest"] = manifest_digest or current_config
+    data["digest_verification"] = "ok"
     write_metadata(metadata_path, data)
-    if rc == 0:
-        print(f"Digest verification ok pre={pre} post={remote}")
-    else:
-        print(f"Digest mismatch pre={pre} post={remote}", file=sys.stderr)
-    return rc
+    print(
+        f"Digest verification ok config_digest={pre} manifest_digest={manifest_digest or 'n/a'}",
+    )
+    return 0
 
 
 if __name__ == "__main__":  # pragma: no cover
