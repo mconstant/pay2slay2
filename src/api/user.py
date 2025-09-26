@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from decimal import Decimal
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -118,7 +119,7 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
     # compute accrued rewards sum
-    total_accrued = sum(float(a.amount_ban) for a in user.accruals)
+    total_accrued = sum(Decimal(a.amount_ban) for a in user.accruals)
     # latest verification timestamp
     latest_ver = (
         db.query(VerificationRecord)

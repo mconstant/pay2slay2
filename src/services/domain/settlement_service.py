@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -14,9 +15,9 @@ from ...models.models import RewardAccrual, User
 class SettlementCandidate:
     user: User
     total_kills: int  # kills represented by unsettled accrual rows
-    total_amount_ban: float
+    total_amount_ban: Decimal
     payable_kills: int | None = None  # after caps
-    payable_amount_ban: float | None = None
+    payable_amount_ban: Decimal | None = None
 
 
 class SettlementService:
@@ -48,7 +49,7 @@ class SettlementService:
                 SettlementCandidate(
                     user=user,
                     total_kills=int(kills_sum or 0),
-                    total_amount_ban=float(amt_sum or 0.0),
+                    total_amount_ban=Decimal(str(amt_sum or 0)),
                 )
             )
         random.shuffle(candidates)
@@ -84,7 +85,7 @@ class SettlementService:
                 total_kills=candidate.total_kills,
                 total_amount_ban=candidate.total_amount_ban,
                 payable_kills=0,
-                payable_amount_ban=0.0,
+                payable_amount_ban=Decimal("0"),
             )
         # For now, either full amount or zero (no partial monetary cap). Keep fields explicit.
         return SettlementCandidate(

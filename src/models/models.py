@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy import BigInteger, Boolean, ForeignKey, Index, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -93,7 +94,7 @@ class RewardAccrual(Base, TimestampMixin):
     # count of kills accrued since last cursor for user
     kills: Mapped[int] = mapped_column()
     # snapshot value = kills * payout_per_kill at time of accrual (BAN)
-    amount_ban: Mapped[float] = mapped_column(Numeric(18, 8))
+    amount_ban: Mapped[Decimal] = mapped_column(Numeric(18, 8, asdecimal=True))
     epoch_minute: Mapped[int] = mapped_column(BigInteger)  # aggregation slot or cursor minute
 
     settled: Mapped[bool] = mapped_column(default=False)
@@ -115,7 +116,7 @@ class Payout(Base, TimestampMixin):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     address: Mapped[str] = mapped_column(String(70))
     # Sum of included accruals (BAN)
-    amount_ban: Mapped[float] = mapped_column(Numeric(18, 8))
+    amount_ban: Mapped[Decimal] = mapped_column(Numeric(18, 8, asdecimal=True))
     # Blockchain fields
     tx_hash: Mapped[str | None] = mapped_column(String(128))
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending/sent/failed

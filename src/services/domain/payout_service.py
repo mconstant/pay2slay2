@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from decimal import Decimal
 
 from prometheus_client import Counter, Histogram
 from sqlalchemy import select
@@ -16,7 +17,7 @@ from ..banano_client import BananoClient
 class PayoutResult:
     user_id: int
     payout_id: int
-    amount_ban: float
+    amount_ban: Decimal
     tx_hash: str | None
     status: str
 
@@ -35,7 +36,7 @@ class PayoutService:
     def create_payout(
         self,
         user: User,
-        amount_ban: float,
+        amount_ban: Decimal,
         accruals: list[RewardAccrual],
         max_retries: int = 2,
         backoff_base: float = 0.5,
@@ -56,7 +57,7 @@ class PayoutService:
             return PayoutResult(
                 user_id=user.id,
                 payout_id=existing.id,
-                amount_ban=float(existing.amount_ban),
+                amount_ban=Decimal(existing.amount_ban),
                 tx_hash=existing.tx_hash,
                 status=existing.status,
             )

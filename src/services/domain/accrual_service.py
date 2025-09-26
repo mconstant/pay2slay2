@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from decimal import ROUND_DOWN, Decimal, getcontext
 from math import floor
 
 from sqlalchemy.orm import Session
@@ -14,7 +15,7 @@ from ..fortnite_service import FortniteService
 class AccrualResult:
     user_id: int
     kills_delta: int
-    amount_ban: float
+    amount_ban: Decimal
     epoch_minute: int
     created: bool
 
@@ -28,7 +29,7 @@ class AccrualService:
     """
 
     def __init__(
-        self, session: Session, fortnite: FortniteService, payout_amount_per_kill: float
+        self, session: Session, fortnite: FortniteService, payout_amount_per_kill: float | Decimal
     ) -> None:
         self.session = session
         self.fortnite = fortnite
@@ -47,13 +48,22 @@ class AccrualService:
             return AccrualResult(
                 user_id=user.id,
                 kills_delta=0,
-                amount_ban=0.0,
+                amount_ban=Decimal("0"),
                 epoch_minute=epoch_minute_zero,
                 created=False,
             )
         ts = now or datetime.now(UTC)
         epoch_minute = floor(ts.timestamp() / 60)
-        amount = delta_kills * self.payout_amount_per_kill
+        # Monetary computation with Decimal for determinism
+        getcontext().prec = 28
+        per_kill = (
+            self.payout_amount_per_kill
+            if isinstance(self.payout_amount_per_kill, Decimal)
+            else Decimal(str(self.payout_amount_per_kill))
+        )
+        amount = (Decimal(delta_kills) * per_kill).quantize(
+            Decimal("0.00000001"), rounding=ROUND_DOWN
+        )
         existing = (
             self.session.query(RewardAccrual)
             .filter(RewardAccrual.user_id == user.id, RewardAccrual.epoch_minute == epoch_minute)
@@ -63,7 +73,7 @@ class AccrualService:
             return AccrualResult(
                 user_id=user.id,
                 kills_delta=0,
-                amount_ban=float(existing.amount_ban),
+                amount_ban=Decimal(existing.amount_ban),
                 epoch_minute=epoch_minute,
                 created=False,
             )
