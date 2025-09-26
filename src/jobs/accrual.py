@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from src.lib.config import get_config
 from src.lib.observability import get_tracer
 from src.models.models import User, WalletLink
+from src.services.domain.abuse_analytics_service import AbuseAnalyticsService
 from src.services.domain.accrual_service import AccrualService
 from src.services.fortnite_service import FortniteService
 
@@ -80,6 +81,7 @@ def run_accrual(
         "total_kills": 0,
     }
     tracer = get_tracer("accrual_job")
+    analytics = AbuseAnalyticsService()
     for user in _eligible_users(session, cfg):
         counters["users_considered"] += 1
         with tracer.start_as_current_span(
@@ -92,8 +94,12 @@ def run_accrual(
         if res.kills_delta <= 0:
             counters["zero_delta"] += 1
             continue
-        counters["accruals_created"] += 1 if res.created else 0
+        # res is not None here; update counters and metrics per user
+        if res.created:
+            counters["accruals_created"] += 1
         counters["total_kills"] += res.kills_delta
+        region = getattr(user, "region_code", None)
+        analytics.capture_region_kill(region, res.kills_delta)
 
     session.commit()
     METRIC_ACCRUAL_USERS.inc(float(counters["users_considered"]))

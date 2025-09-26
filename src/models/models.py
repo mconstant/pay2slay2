@@ -142,3 +142,14 @@ class AdminAudit(Base, TimestampMixin):
     summary: Mapped[str | None] = mapped_column(String(200))
     detail: Mapped[str | None] = mapped_column(String(2000))
     ip_address: Mapped[str | None] = mapped_column(String(64))
+
+
+class AbuseFlag(Base, TimestampMixin):
+    __tablename__ = "abuse_flags"
+    __table_args__ = (Index("ix_abuse_user_created", "user_id", "created_at"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    flag_type: Mapped[str] = mapped_column(String(64))  # e.g., kill_rate_spike
+    severity: Mapped[str] = mapped_column(String(16), default="low")  # low/med/high
+    detail: Mapped[str | None] = mapped_column(String(500))

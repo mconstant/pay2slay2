@@ -35,6 +35,8 @@ def main() -> None:
     def session_factory() -> Session:
         return session_local()
 
+    cfg_obj = get_config()
+    integrations = cfg_obj.integrations
     cfg = SchedulerConfig(
         min_operator_balance_ban=min_balance,
         batch_size=None,
@@ -43,10 +45,8 @@ def main() -> None:
         dry_run=dry_run,
         interval_seconds=interval,
         operator_account=operator_account,
+        node_url=integrations.node_rpc,
     )
-
-    cfg_obj = get_config()
-    integrations = cfg_obj.integrations
     fortnite = FortniteService(
         api_key=integrations.fortnite_api_key,
         base_url=getattr(integrations, "fortnite_base_url", "https://fortnite.example.api/v1"),

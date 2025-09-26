@@ -10,6 +10,7 @@ from prometheus_client import Counter
 from sqlalchemy.orm import Session
 
 from src.services.banano_client import BananoClient
+from src.services.domain.abuse_analytics_service import AbuseAnalyticsService
 from src.services.domain.payout_service import PayoutService
 from src.services.domain.settlement_service import SettlementService
 
@@ -23,6 +24,7 @@ class SchedulerConfig:
     dry_run: bool
     interval_seconds: int = 1200  # default 20 minutes
     operator_account: str | None = None
+    node_url: str = ""  # Banano node RPC endpoint
 
 
 def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
@@ -31,12 +33,13 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
     Note: caps and operator balance checks to be fleshed out in later tasks.
     """
     settlement = SettlementService(session, daily_cap=cfg.daily_cap, weekly_cap=cfg.weekly_cap)
-    banano = BananoClient(node_url="", dry_run=cfg.dry_run)
+    banano = BananoClient(node_url=cfg.node_url, dry_run=cfg.dry_run)
     payout_svc = PayoutService(session, banano=banano, dry_run=cfg.dry_run)
 
     counters = {"candidates": 0, "payouts": 0, "accruals_settled": 0}
     candidates = settlement.select_candidates(limit=cfg.batch_size)
     counters["candidates"] = len(candidates)
+    analytics = AbuseAnalyticsService()
     for cand in candidates:
         payable_amt = (
             cand.payable_amount_ban
@@ -54,6 +57,9 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
         if res:
             counters["payouts"] += 1
             counters["accruals_settled"] += len(accruals)
+            # Record payout by region (user.region_code may be None)
+            region = getattr(cand.user, "region_code", None)
+            analytics.record_payout(region)
     session.commit()
     # Export metrics
     METRIC_CANDIDATES.inc(float(counters["candidates"]))
@@ -94,7 +100,7 @@ def run_scheduler(
         while not local_event.is_set():
             session: Session = session_factory()
             try:
-                banano = BananoClient(node_url="", dry_run=cfg.dry_run)
+                banano = BananoClient(node_url=cfg.node_url, dry_run=cfg.dry_run)
                 if not banano.has_min_balance(cfg.min_operator_balance_ban, cfg.operator_account):
                     # Insufficient operator funds; skip this cycle
                     local_event.wait(cfg.interval_seconds)

@@ -63,7 +63,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 	- TODO: Persist observed (unsettled) kill cursor separately if needed for reconciliation
 	- DONE: Integration test covering positive delta + rate limit exhaustion fallback (test_fortnite_rate_limit.py)
 - [x] T033 Accrual batch job (src/jobs/accrual.py) iterating verified users (implemented + unit test)
-- [ ] T034 BananoClient real RPC (balance/send/raw conversion)
+- [x] T034 BananoClient real RPC (balance/send/raw conversion)
 - [x] T035 Payout idempotency key (hash unsettled accrual IDs) & duplicate guard
 - [x] T036 Payout retry logic (attempt_count, last_attempt_at) + exponential backoff placeholder
 
@@ -71,10 +71,10 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [~] T037 Tracing setup (OpenTelemetry) in src/lib/observability.py (console + optional OTLP exporter; added span attrs in scheduler & accrual; pending: HTTP span enrichment, DB spans, metrics correlation)
 - [x] T038 Correlation & trace ID logging middleware (src/lib/http.py)
 - [x] T039 Rate limiting middleware (src/lib/ratelimit.py) using in-memory token bucket (extensible)
-- [ ] T040 Abuse heuristic service (enrich accrual / flag abnormal kill rates)
-- [ ] T041 Metrics: payouts_by_region, kills_by_region, flagged_users_total
-- [ ] T042 Operator balance check (real BananoClient) integrated into scheduler
-- [~] T043 Alembic migration for AdminAudit and any new analytics columns (AdminAudit done; analytics pending)
+- [~] T040 Abuse heuristic service (enrich accrual / flag abnormal kill rates) (model + metrics foundation added)
+- [x] T041 Metrics: payouts_by_region, kills_by_region, flagged_users_total
+- [x] T042 Operator balance check (real BananoClient) integrated into scheduler
+- [~] T043 Alembic migration for AdminAudit and any new analytics columns (AdminAudit done; abuse_flags table added; remaining: any future analytics columns)
 - [ ] T044 Secrets handling review + docs update (no plaintext, env var mapping)
 
 ## Phase 3.5: Docs & Polish
