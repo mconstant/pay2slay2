@@ -75,8 +75,8 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T041 Metrics: payouts_by_region, kills_by_region, flagged_users_total
 	- Added: http_requests_total & http_request_duration_seconds (with optional trace exemplar labels) + /metrics endpoint
 - [x] T042 Operator balance check (real BananoClient) integrated into scheduler
-- [~] T043 Alembic migration for AdminAudit and any new analytics columns (AdminAudit done; abuse_flags table added; remaining: any future analytics columns)
-- [~] T044 Secrets handling review + docs update (masking helper added in config.safe_dict; pending docs + env var convention section)
+- [x] T043 Alembic migration for AdminAudit and analytics columns (AdminAudit done; abuse_flags table added; region_code present on users; no further columns required now)
+- [x] T044 Secrets handling review + docs update (masking helper, secrets.md doc, startup masked log, unit tests)
 
 ## Phase 3.5: Docs & Polish
 - [ ] T045 quickstart.md (operator deploy + Akash + migrations + signing)
