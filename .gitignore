@@ -35,6 +35,7 @@ logs/
 # Local environment & secrets
 .env
 .env.*
+!/.env.example
 *.local
 *.secret
 secrets.*

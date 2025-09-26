@@ -43,4 +43,4 @@ def record_admin_audit(session: Session, payload: AdminAuditPayload) -> None:
     session.add(audit)
 
 
-__all__ = ["record_admin_audit", "AdminAuditPayload"]
+__all__ = ["AdminAuditPayload", "record_admin_audit"]

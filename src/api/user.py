@@ -1,11 +1,16 @@
 from collections.abc import Generator
+from decimal import Decimal
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.lib.auth import session_secret, verify_session
-from src.models.models import Payout, User, VerificationRecord, WalletLink
+from src.models.models import Payout, RewardAccrual, User, VerificationRecord, WalletLink
+
+# Banano address heuristic length bounds
+BANANO_ADDR_MIN_LEN = 20
+BANANO_ADDR_MAX_LEN = 120
 
 router = APIRouter()
 
@@ -27,6 +32,11 @@ def link_wallet(
 ) -> JSONResponse:
     # rudimentary validation: must start with 'ban_'
     if not isinstance(banano_address, str) or not banano_address.startswith("ban_"):
+        raise HTTPException(status_code=400, detail="Invalid Banano address")
+    # Additional basic sanitation: no whitespace and reasonable length bounds
+    if any(c.isspace() for c in banano_address) or not (
+        BANANO_ADDR_MIN_LEN <= len(banano_address) <= BANANO_ADDR_MAX_LEN
+    ):
         raise HTTPException(status_code=400, detail="Invalid Banano address")
     # Identify user from session cookie
     token = request.cookies.get("p2s_session") if request else None
@@ -109,7 +119,7 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
     # compute accrued rewards sum
-    total_accrued = sum(float(a.amount_ban) for a in user.accruals)
+    total_accrued = sum(Decimal(a.amount_ban) for a in user.accruals)
     # latest verification timestamp
     latest_ver = (
         db.query(VerificationRecord)
@@ -134,11 +144,13 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
 
 
 @router.get("/me/payouts")
-def me_payouts(
+def me_payouts(  # noqa: PLR0913 - explicit filter params acceptable for clarity
     request: Request,
     db: Session = Depends(_get_db),  # noqa: B008
     limit: int = 20,
     offset: int = 0,
+    status: str | None = None,
+    sort: str = "-created_at",
 ) -> JSONResponse:
     token = request.cookies.get("p2s_session") if request else None
     uid = verify_session(token, session_secret()) if token else None
@@ -147,13 +159,17 @@ def me_payouts(
     user = db.query(User).filter(User.discord_user_id == uid).one_or_none()
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    q = (
-        db.query(Payout)
-        .filter(Payout.user_id == user.id)
-        .order_by(Payout.created_at.desc())
-        .offset(offset)
-        .limit(min(limit, 100))
-    )
+    q = db.query(Payout).filter(Payout.user_id == user.id)
+    if status:
+        q = q.filter(Payout.status == status)
+    # sorting
+    if sort.lstrip("-") not in {"created_at", "amount_ban", "status"}:
+        raise HTTPException(status_code=400, detail="invalid sort field")
+    desc = sort.startswith("-")
+    field = sort.lstrip("-")
+    col = getattr(Payout, field)
+    q = q.order_by(col.desc() if desc else col.asc())
+    q = q.offset(offset).limit(min(limit, 100))
     rows = q.all()
     return JSONResponse(
         {
@@ -166,6 +182,46 @@ def me_payouts(
                     "created_at": p.created_at.isoformat() if p.created_at else None,
                 }
                 for p in rows
+            ],
+            "count": len(rows),
+            "limit": limit,
+            "offset": offset,
+        }
+    )
+
+
+@router.get("/me/accruals")
+def me_accruals(
+    request: Request,
+    db: Session = Depends(_get_db),  # noqa: B008
+    limit: int = 50,
+    offset: int = 0,
+    settled: bool | None = None,
+) -> JSONResponse:
+    token = request.cookies.get("p2s_session") if request else None
+    uid = verify_session(token, session_secret()) if token else None
+    if not uid:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    user = db.query(User).filter(User.discord_user_id == uid).one_or_none()
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    q = db.query(RewardAccrual).filter(RewardAccrual.user_id == user.id)
+    if settled is not None:
+        q = q.filter(RewardAccrual.settled.is_(settled))
+    q = q.order_by(RewardAccrual.created_at.desc()).offset(offset).limit(min(limit, 200))
+    rows = q.all()
+    return JSONResponse(
+        {
+            "accruals": [
+                {
+                    "id": a.id,
+                    "kills": a.kills,
+                    "amount_ban": float(a.amount_ban),
+                    "settled": a.settled,
+                    "epoch_minute": a.epoch_minute,
+                    "created_at": a.created_at.isoformat() if a.created_at else None,
+                }
+                for a in rows
             ],
             "count": len(rows),
             "limit": limit,

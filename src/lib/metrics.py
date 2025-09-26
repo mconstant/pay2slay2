@@ -41,4 +41,4 @@ def observe_http(
         pass
 
 
-__all__ = ["observe_http", "REQUEST_COUNTER", "REQUEST_LATENCY"]
+__all__ = ["REQUEST_COUNTER", "REQUEST_LATENCY", "observe_http"]

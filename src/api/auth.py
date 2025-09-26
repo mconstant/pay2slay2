@@ -4,7 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
-from src.lib.auth import issue_session, session_secret, verify_oauth_state
+from src.lib.auth import (
+    consume_oauth_state,
+    issue_session,
+    session_secret,
+)
 from src.models.models import User, VerificationRecord
 from src.services.discord_auth_service import DiscordAuthService
 from src.services.yunite_service import YuniteService
@@ -32,8 +36,10 @@ def discord_callback(
         raise HTTPException(status_code=400, detail="Missing state or code")
     # Basic state token validation (accept legacy 'xyz' in dry-run for backward compat tests)
     secret = session_secret()
-    if state != "xyz" and not verify_oauth_state(state, secret):
-        raise HTTPException(status_code=400, detail="Invalid state")
+    if state != "xyz":
+        # Enforce single-use state tokens for non-legacy flows
+        if not consume_oauth_state(state, secret, enforce_single_use=True):
+            raise HTTPException(status_code=400, detail="Invalid state")
 
     # Build services from config; default to dry_run in local
     config = request.app.state.config

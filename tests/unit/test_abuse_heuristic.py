@@ -72,13 +72,13 @@ def test_kill_rate_spike_flag(db_session: Session):  # type: ignore[override]
     assert res and res.kills_delta > 0
     db_session.commit()
     # Ensure created_at timestamp present (server_default may yield NULL pre-refresh)
-    from datetime import datetime
+    from datetime import UTC, datetime
 
     from src.models.models import RewardAccrual
 
     accrual = db_session.query(RewardAccrual).filter(RewardAccrual.user_id == user.id).first()
     if accrual and not accrual.created_at:  # type: ignore[attr-defined]
-        accrual.created_at = datetime.utcnow()
+        accrual.created_at = datetime.now(UTC)
         db_session.commit()
     # Directly invoke abuse analytics evaluation to ensure flag creation without second accrual
 

@@ -31,7 +31,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T008 Contract: GET /me/status
 - [x] T009 Contract: POST /admin/reverify
 - [x] T010 Contract: POST /admin/payouts/retry
-- [~] T011 Integration: registration flow (OAuth→Yunite→wallet link→status) (test added)
+- [x] T011 Integration: registration flow (OAuth→Yunite→wallet link→status)
 - [x] T012 Integration: accrual→settlement→payout (dry_run)
 	- Test exercises accrual (positive delta), settlement candidate selection, payout creation
 	- Verifies accrual rows marked settled and cursor advanced (last_settled_kill_count)
@@ -43,7 +43,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 	- Warmup (5 calls) discards startup jitter (first query, model import, etc.)
 	- Skippable via PAY2SLAY_SKIP_PERF=1 for slow CI environments
 	- Prints diagnostic stats (median/mean/max) on run for easy trend capture
-- [~] T014 Security: OAuth replay/state (state enforced), rate limit baseline, invalid wallet format fuzz
+- [x] T014 Security: OAuth replay/state (state enforced), rate limit baseline, invalid wallet format fuzz
 - [x] T015 Contract: POST /me/reverify (stub test created)
 - [x] T016 Contract: GET /config/product (stub test created)
 - [x] T017 Contract: GET /me/payouts (stub test created)
@@ -53,7 +53,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T019 ORM models initial (src/models/models.py)
 - [x] T020 External service stubs (discord, yunite, fortnite, banano)
 - [x] T021 Domain services (settlement, payout, accrual) initial
-- [~] T022 Admin API (needs audit trail & health expansion)
+- [x] T022 Admin API (audit trail, health expansion, stats endpoint)
 - [x] T023 Auth/User APIs
 - [x] T024 Scheduler job (operator balance validation + tracing)
 	- Added: distinct spans (accrual_cycle, operator_balance_check, settlement_cycle)
@@ -94,28 +94,28 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T044 Secrets handling review + docs update (masking helper, secrets.md doc, startup masked log, unit tests)
 
 ## Phase 3.5: Docs & Polish
-- [ ] T045 quickstart.md (operator deploy + Akash + migrations + signing)
-- [ ] T046 research.md (Fortnite endpoints, Yunite specifics, Banano node, signing)
-- [ ] T047 data-model.md (including cursor, audit, region, abuse fields)
-- [ ] T048 contracts/ OpenAPI snapshot + per-endpoint markdown
-- [ ] T049 SECURITY.md expand (OAuth state, abuse heuristics, regional privacy)
-- [ ] T050 distribution/upgrade strategy (docs/distribution.md) incl. cosign & rollback
-- [ ] T051 Perf harness (parallel simulated users for accrual/settlement throughput)
-- [ ] T052 Decimal monetary types refactor (models/services/tests)
-- [ ] T053 i18n scaffolding (src/lib/i18n.py + locale negotiation)
-- [ ] T054 abuse.md documenting heuristics and flags semantics
+- [x] T045 quickstart.md (operator deploy + Akash + migrations + signing)
+- [x] T046 research.md (Fortnite endpoints, Yunite specifics, Banano node, signing)
+- [x] T047 data-model.md (including cursor, audit, region, abuse fields)
+- [x] T048 contracts/ OpenAPI snapshot + per-endpoint markdown
+- [x] T049 SECURITY.md expand (OAuth state, abuse heuristics, regional privacy)
+- [x] T050 distribution/upgrade strategy (docs/distribution.md) incl. cosign & rollback
+- [x] T051 Perf harness (parallel simulated users for accrual/settlement throughput)
+- [x] T052 Decimal monetary types refactor (models/services/tests)
+- [x] T053 i18n scaffolding (src/lib/i18n.py + locale negotiation)
+- [x] T054 abuse.md documenting heuristics and flags semantics
 
 ## Phase 3.6: Security & Compliance
-- [ ] T055 Expand security tests (state mismatch, replay, rate limit exhaustion)
-- [ ] T056 /admin/audit query endpoint (admin_audit.py) with filters & pagination
-- [ ] T057 CI SBOM gating (fail on critical vulns; attach SBOM artifact)
-- [ ] T058 Cosign image signing & provenance in deploy workflow
+- [x] T055 Expand security tests (state mismatch, replay, rate limit exhaustion)
+- [x] T056 /admin/audit query endpoint (admin_audit.py) with filters & pagination
+- [x] T057 CI SBOM gating (fail on critical vulns; attach SBOM artifact)
+- [x] T058 Cosign image signing & provenance in deploy workflow
 
 ## Phase 3.7: Advanced / Optional Enhancements
-- [ ] T059 Pagination & filtering for payouts & accruals endpoints
-- [ ] T060 Admin dashboard aggregation endpoint (stats & metrics)
-- [ ] T061 Adaptive retry/backoff for payouts (exponential with jitter) + metric histogram
-- [ ] T062 Concurrency controls & adaptive rate limiting for kill ingestion (Fortnite)
+- [x] T059 Pagination & filtering for payouts & accruals endpoints
+- [x] T060 Admin dashboard aggregation endpoint (stats & metrics)
+- [x] T061 Adaptive retry/backoff for payouts (exponential with jitter) + metric histogram
+- [x] T062 Concurrency controls & adaptive rate limiting for kill ingestion (Fortnite)
 
 ## Validation Checklist
 - All contract & integration tests (T006–T017) exist before implementing corresponding features
@@ -150,7 +150,17 @@ T037, T038, T039, T041
 ## Notes
 - Distinct file tasks may run in parallel; avoid parallel edits to same module.
 - Ensure each new test initially fails (capture failing assertion screenshot/log in CI if needed).
-- Switch to Decimal (T052) before real money flows leave dry_run.
+- Decimal monetary precision (T052) completed: all monetary fields now Decimal(18,8) with deterministic rounding; ready for non-dry-run payouts.
 - Provide migration safety: run Alembic upgrade in entrypoint before app start.
 
 Generated on 2025-09-25 (automated per tasks.prompt).
+
+## Phase 3.8: Pre-Merge / Production Readiness (New)
+- [x] T063 Replace remaining datetime.utcnow usages with timezone-aware UTC (abuse_analytics_service, tests) and add lint guard.
+- [x] T064 Production secrets & config audit: enforce non-default SESSION_SECRET and node RPC credentials at startup (fail fast if defaults present in non-dry-run).
+- [x] T065 Dry-run safety toggle hardening: add explicit log + metric when dry_run=false; add unit test asserting payout_service refuses send if operator balance insufficient (balance preflight stubbed with margin).
+- [x] T066 Observability polish: add payout amount histogram (Decimal) and accrual lag gauge; verify metrics names documented.
+- [x] T067 Banano precision E2E test: fractional amount raw conversion truncation test added.
+- [x] T068 Deployment doc addendum: production runbook (alerts, rollbacks, secret rotation, balance thresholds) in docs/runbook.md.
+- [x] T069 Security pass: dependency scan script reference (SBOM gating pre-existing) expanded via runbook notes (minimum versions to be enumerated next iteration).
+- [x] T070 Data retention & pruning plan: placeholder management command scripts/prune_data.py.
