@@ -6,6 +6,7 @@ from collections.abc import Awaitable, Callable
 
 from fastapi import Request, Response
 
+from .metrics import observe_http
 from .observability import get_logger, get_tracer
 
 log = get_logger("http")
@@ -17,13 +18,14 @@ async def correlation_middleware(
 ) -> Response:  # pragma: no cover
     start = time.time()
     corr_id = request.headers.get("X-Correlation-ID") or str(uuid.uuid4())
-    trace_id = None
+    trace_id: str | None = None
     span = tracer.start_span("http_request", attributes={"http.target": request.url.path})
-    try:
-        trace_id = getattr(
-            getattr(span.get_span_context(), "trace_id", None), "to_bytes", lambda: None
-        )()
-    except Exception:
+    try:  # Extract hex trace id if available
+        ctx = span.get_span_context()
+        raw_tid = getattr(ctx, "trace_id", 0)
+        if raw_tid:
+            trace_id = f"{raw_tid:032x}"
+    except Exception:  # pragma: no cover
         trace_id = None
     log.bind(correlation_id=corr_id, path=request.url.path, method=request.method)
     response: Response
@@ -32,15 +34,20 @@ async def correlation_middleware(
         return response
     finally:
         duration = time.time() - start
+        status = getattr(locals().get("response", None), "status_code", "n/a")
         log.info(
             "http_request",
             correlation_id=corr_id,
             path=request.url.path,
             method=request.method,
-            status=getattr(locals().get("response", None), "status_code", "n/a"),
+            status=status,
             duration_ms=round(duration * 1000, 2),
             trace_id=trace_id,
         )
+        try:  # metrics
+            observe_http(request.method, request.url.path, status, duration, trace_id)
+        except Exception:  # pragma: no cover
+            pass
         span.end()
 
 

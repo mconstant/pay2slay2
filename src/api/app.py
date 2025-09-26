@@ -3,6 +3,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from fastapi import FastAPI, Request, Response
+from fastapi.responses import PlainTextResponse
 
 from src.lib.http import correlation_middleware
 from src.lib.observability import get_logger, setup_structlog
@@ -42,6 +43,20 @@ def _init_db(app: FastAPI, log: Any) -> None:
             log.info("alembic_upgrade_complete")
         except Exception as mig_exc:  # pragma: no cover
             log.warning("alembic_upgrade_failed", error=str(mig_exc))
+
+
+def _register_metrics(app: FastAPI) -> None:
+    """Attach /metrics endpoint (kept separate to reduce create_app complexity)."""
+
+    @app.get("/metrics")
+    def metrics() -> PlainTextResponse:  # pragma: no cover - scraped externally
+        try:
+            from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
+
+            data = generate_latest()
+            return PlainTextResponse(data.decode("utf-8"), media_type=CONTENT_TYPE_LATEST)
+        except Exception as exc:  # pragma: no cover
+            return PlainTextResponse(f"error generating metrics: {exc}", status_code=500)
 
 
 def create_app() -> FastAPI:
@@ -117,5 +132,7 @@ def create_app() -> FastAPI:
             return {"status": "ready"}
         except Exception:
             return {"status": "not_ready"}
+
+    _register_metrics(app)
 
     return app
