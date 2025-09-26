@@ -9,6 +9,7 @@
 ### Session 2025-09-26
 - Q: Which registry and naming convention should be the canonical source of truth for SHA-tagged API images? → A: GitHub Container Registry (ghcr.io/mconstant/pay2slay-api)
 - Q: How should operators initiate a rollback to a prior git SHA image? → A: Dedicated rollback workflow with IMAGE_SHA input (separate from normal deploy)
+- Q: What is the required policy for image signature / provenance verification prior to deploy? → A: Soft verify (attempt cosign verification; if signature or SLSA provenance missing or invalid, log structured WARNING and proceed). Future iteration will elevate to mandatory enforcement once signing coverage reaches >90% of deployed SHAs.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -48,6 +49,7 @@ Not user-facing UI; operator experience criteria:
 - **FR-011**: System MUST document the workflow steps for building, tagging, deploying, and rolling back.
 - **FR-012**: Canonical image repository MUST be `ghcr.io/mconstant/pay2slay-api`; all SHA tags published there first (any future mirrors are secondary and MUST NOT drive deploy references).
 - **FR-013**: A dedicated rollback workflow MUST exist that accepts an `IMAGE_SHA` parameter and redeploys using that immutable tag without rebuilding; normal deploy workflow MUST NOT perform rollback implicitly.
+- **FR-014**: Deploy workflow SHOULD perform a cosign (or equivalent) signature & provenance verification step for the target SHA image; if verification passes, MUST log `signature_status=verified`; if missing/invalid, MUST log `signature_status=unverified` with reason and STILL proceed (non-blocking); ONLY fail the job if the verification tooling itself errors (e.g., network/tool crash) without a determinable pass/fail result.
 
 ### Key Entities
 - **Image Artifact**: Immutable container image identified by (registry, name, digest) and tagged with git SHA.
@@ -58,6 +60,7 @@ Not user-facing UI; operator experience criteria:
 - Threat model: Prevent unauthorized image tampering or ambiguous version deployment.
 - Immutable tag usage removes risk of mutable tag drift (e.g., latest) causing unexpected code changes.
 - Supply chain: Requires verifying digest printed in logs; future enhancement: enforce signature verification prior to deploy.
+- Signature policy (current iteration): Soft verification only (warn on missing/invalid signature) per Clarification Q3 (FR-014). Risk: Potential unsigned image deploy; mitigation: immutable SHA + digest logging + plan to escalate to mandatory.
 - Secrets: Build process MUST avoid leaking registry credentials in logs.
 - Abuse/Misuse: Prevent deploying unreviewed commit by limiting production deploy triggers to protected branches.
 - Automation / AI Execution Constraints: Automated agent MUST NOT delete or overwrite existing SHA tags unless explicitly instructed; MUST escalate if digest mismatch is detected for an existing SHA tag.
