@@ -109,6 +109,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [ ] T055 Expand security tests (state mismatch, replay, rate limit exhaustion)
 - [ ] T056 /admin/audit query endpoint (admin_audit.py) with filters & pagination
 - [ ] T057 CI SBOM gating (fail on critical vulns; attach SBOM artifact)
+- [x] T057 CI SBOM gating (fail on critical vulns; attach SBOM artifact)
 - [ ] T058 Cosign image signing & provenance in deploy workflow
 
 ## Phase 3.7: Advanced / Optional Enhancements

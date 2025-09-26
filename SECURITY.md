@@ -24,5 +24,21 @@ We aim to acknowledge within 48h and provide a fix or mitigation timeline within
 - Secrets management audit (T044)
 - SBOM + provenance (T057, T058)
 
+## Supply Chain & SBOM
+The CI pipeline (T057) generates an SPDX JSON SBOM using Syft and scans it with Grype.
+
+Gating policy:
+- Build fails if any Critical severity vulnerability is detected (action: anchore/scan-action).
+- SBOM artifact (sbom.spdx.json) is uploaded for each CI run for downstream tooling and provenance workflows (T058).
+
+Planned enhancements (future):
+- Allow temporary suppression via signed allowlist file checked into `security/allowlist.yaml` (not yet implemented).
+- Integrate image digest + SBOM attestation signing (cosign) once T058 lands.
+
+If a build fails due to a newly disclosed vulnerability, contributors should:
+1. Review the failing Grype step logs.
+2. Attempt to bump the impacted dependency (raise PR).
+3. If immediate remediation is not possible, open a security advisory to discuss a temporary mitigation.
+
 ## Disclosure
 Please practice coordinated disclosure; do not publicize issues before a patch release.

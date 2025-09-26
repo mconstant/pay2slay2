@@ -128,15 +128,14 @@ def consume_oauth_state(token: str, secret: str, enforce_single_use: bool = True
 
 
 __all__ = [
-    # existing exports
-    "issue_session",
-    "verify_session",
-    "session_secret",
-    "issue_oauth_state",
-    "verify_oauth_state",
     "consume_oauth_state",
     "issue_admin_session",
+    "issue_oauth_state",
+    "issue_session",
+    "session_secret",
     "verify_admin_session",
+    "verify_oauth_state",
+    "verify_session",
 ]
 
 

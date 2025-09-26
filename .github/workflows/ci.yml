@@ -34,8 +34,16 @@ jobs:
           artifact-name: sbom.spdx.json
           format: spdx-json
           upload-artifact: true
+      - name: Upload SBOM summary
+        run: |
+          echo "SBOM generated (spdx-json). Will gate on critical vulns." >> $GITHUB_STEP_SUMMARY
       - name: Scan (Grype)
         uses: anchore/scan-action@v5
         with:
-          fail-build: false
-          severity-cutoff: high
+          fail-build: true
+          severity-cutoff: critical
+      - name: Vulnerability summary (non-blocking informational)
+        if: always()
+        run: |
+          echo 'For detailed vulnerability report see action artifacts and the Grype step logs.' >> $GITHUB_STEP_SUMMARY
+          echo 'Gating policy: build fails if any CRITICAL vulnerabilities are detected in direct or transitive dependencies.' >> $GITHUB_STEP_SUMMARY
