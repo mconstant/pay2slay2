@@ -35,6 +35,23 @@ jobs:
         run: |
           docker build -t ${IMAGE_REPO}:${IMAGE_TAG} .
           docker push ${IMAGE_REPO}:${IMAGE_TAG}
+      - name: Install Syft (SBOM) & Cosign
+        uses: sigstore/cosign-installer@v3.6.0
+      - name: Generate image SBOM
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b ./bin v1.14.0
+          ./bin/syft ${IMAGE_REPO}:${IMAGE_TAG} -o spdx-json > image.sbom.spdx.json
+          echo "Generated SBOM (image.sbom.spdx.json)" >> $GITHUB_STEP_SUMMARY
+      - name: Cosign sign image (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+            cosign sign --yes ${IMAGE_REPO}:${IMAGE_TAG}
+      - name: Cosign attest SBOM
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+            cosign attest --yes --predicate image.sbom.spdx.json --type spdxjson ${IMAGE_REPO}:${IMAGE_TAG}
       - name: Set outputs
         id: meta
         run: |

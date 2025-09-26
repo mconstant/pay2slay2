@@ -31,9 +31,14 @@ Gating policy:
 - Build fails if any Critical severity vulnerability is detected (action: anchore/scan-action).
 - SBOM artifact (sbom.spdx.json) is uploaded for each CI run for downstream tooling and provenance workflows (T058).
 
+Provenance & Signing (T058):
+- Deployment workflow builds container image and performs keyless Cosign signing.
+- SBOM for the pushed image is generated (Syft) and attached as a Cosign attestation (predicate type spdxjson).
+- This enables downstream verification (cosign verify --certificate-identity ... --certificate-oidc-issuer ...).
+
 Planned enhancements (future):
 - Allow temporary suppression via signed allowlist file checked into `security/allowlist.yaml` (not yet implemented).
-- Integrate image digest + SBOM attestation signing (cosign) once T058 lands.
+- Policy controller / admission checks verifying SBOM + signature (OCI attestations) before deploy.
 
 If a build fails due to a newly disclosed vulnerability, contributors should:
 1. Review the failing Grype step logs.

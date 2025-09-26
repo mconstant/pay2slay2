@@ -4,12 +4,13 @@ from collections.abc import Generator
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from prometheus_client import Counter
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.lib.admin_audit import AdminAuditPayload, record_admin_audit
 from src.lib.auth import issue_admin_session, session_secret, verify_admin_session
 from src.lib.observability import get_logger
-from src.models.models import AdminUser, Payout, User, VerificationRecord
+from src.models.models import AdminAudit, AdminUser, Payout, User, VerificationRecord
 from src.services.banano_client import BananoClient
 from src.services.yunite_service import YuniteService
 
@@ -174,4 +175,48 @@ def admin_payouts_retry(
     db.commit()
     return JSONResponse(
         {"status": payout.status, "payout_id": payout_id, "tx_hash": payout.tx_hash}
+    )
+
+
+@router.get("/audit")
+def admin_audit_query(  # noqa: PLR0913 - explicit filter params acceptable here
+    request: Request,
+    action: str | None = None,
+    actor_email: str | None = None,
+    target_type: str | None = None,
+    limit: int = 50,
+    offset: int = 0,
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Query admin audit events with optional filters."""
+    limit = min(max(limit, 1), 200)
+    stmt = select(AdminAudit).order_by(AdminAudit.created_at.desc()).offset(offset).limit(limit)
+    if action:
+        stmt = stmt.filter(AdminAudit.action == action)
+    if actor_email:
+        stmt = stmt.filter(AdminAudit.actor_email == actor_email)
+    if target_type:
+        stmt = stmt.filter(AdminAudit.target_type == target_type)
+    rows = db.execute(stmt).scalars().all()
+    return JSONResponse(
+        {
+            "count": len(rows),
+            "limit": limit,
+            "offset": offset,
+            "events": [
+                {
+                    "id": r.id,
+                    "created_at": r.created_at.isoformat()
+                    if getattr(r, "created_at", None)
+                    else None,
+                    "action": r.action,
+                    "actor_email": r.actor_email,
+                    "target_type": r.target_type,
+                    "target_id": r.target_id,
+                    "summary": r.summary,
+                }
+                for r in rows
+            ],
+        }
     )

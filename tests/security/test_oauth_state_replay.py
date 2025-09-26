@@ -2,10 +2,23 @@ from http import HTTPStatus
 
 
 def test_oauth_state_single_use(client):
-    # Deferred import to ensure conftest sys.path modifications are in effect
-    import pytest
+    """Valid state may be used once (second attempt rejected)."""
+    from src.lib.auth import issue_oauth_state, session_secret  # type: ignore
 
-    pytest.skip("Temporarily skipped: investigation needed for state token rejection path.")
+    secret = session_secret()
+    state = issue_oauth_state(secret, ttl_seconds=60)
+    # First call succeeds
+    first = client.post(f"/auth/discord/callback?state={state}&code=dummy")
+    assert first.status_code == HTTPStatus.OK, first.text
+    # Replay attempt with same state now rejected
+    second = client.post(f"/auth/discord/callback?state={state}&code=dummy")
+    assert second.status_code == HTTPStatus.BAD_REQUEST
+
+
+def test_oauth_state_mismatch(client):
+    """Completely malformed / random state rejected."""
+    resp = client.post("/auth/discord/callback?state=not_a_valid_state&code=dummy")
+    assert resp.status_code == HTTPStatus.BAD_REQUEST
 
 
 def test_oauth_state_tampered_signature(client):

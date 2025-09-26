@@ -106,10 +106,10 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [ ] T054 abuse.md documenting heuristics and flags semantics
 
 ## Phase 3.6: Security & Compliance
-- [ ] T055 Expand security tests (state mismatch, replay, rate limit exhaustion)
-- [ ] T056 /admin/audit query endpoint (admin_audit.py) with filters & pagination
+- [x] T055 Expand security tests (state mismatch, replay, rate limit exhaustion)
+- [x] T056 /admin/audit query endpoint (admin_audit.py) with filters & pagination
 - [x] T057 CI SBOM gating (fail on critical vulns; attach SBOM artifact)
-- [ ] T058 Cosign image signing & provenance in deploy workflow
+- [x] T058 Cosign image signing & provenance in deploy workflow
 
 ## Phase 3.7: Advanced / Optional Enhancements
 - [ ] T059 Pagination & filtering for payouts & accruals endpoints
