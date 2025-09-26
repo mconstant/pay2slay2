@@ -76,7 +76,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 	- Added: http_requests_total & http_request_duration_seconds (with optional trace exemplar labels) + /metrics endpoint
 - [x] T042 Operator balance check (real BananoClient) integrated into scheduler
 - [~] T043 Alembic migration for AdminAudit and any new analytics columns (AdminAudit done; abuse_flags table added; remaining: any future analytics columns)
-- [ ] T044 Secrets handling review + docs update (no plaintext, env var mapping)
+- [~] T044 Secrets handling review + docs update (masking helper added in config.safe_dict; pending docs + env var convention section)
 
 ## Phase 3.5: Docs & Polish
 - [ ] T045 quickstart.md (operator deploy + Akash + migrations + signing)

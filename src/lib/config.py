@@ -67,6 +67,33 @@ class AppConfig(BaseModel):
     integrations: IntegrationsConfig
     product: ProductConfig
 
+    def safe_dict(self) -> dict[str, Any]:  # pragma: no cover - formatting utility
+        """Return a dictionary representation with secrets masked for safe logging.
+
+        Only exposes the shape; any field name containing common secret substrings is redacted.
+        """
+        raw = self.model_dump()
+        secret_keys = {"key", "secret", "token", "password"}
+
+        def _mask(obj: Any) -> Any:
+            if isinstance(obj, dict):
+                masked: dict[str, Any] = {}
+                for k, v in obj.items():
+                    if any(s in k.lower() for s in secret_keys):
+                        masked[k] = "***"
+                    else:
+                        masked[k] = _mask(v)
+                return masked
+            if isinstance(obj, list):
+                return [_mask(i) for i in obj]
+            return obj
+
+        masked_root = _mask(raw)
+        # Guarantee return type as dict[str, Any]
+        if isinstance(masked_root, dict):
+            return masked_root
+        raise TypeError("safe_dict produced non-dict root")
+
 
 def _read_yaml(path: Path) -> dict[str, Any]:
     if not path.exists():
