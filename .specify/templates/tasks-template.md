@@ -20,6 +20,7 @@
    → Polish: unit tests, performance, docs
    → UX: visual tests, accessibility checks (if UI present)
    → Security: threat model updates, dependency/license checks, secrets management
+   → Automation: AI execution guardrails, autonomy validation tasks (only if feature agent-driven)
    → Decentralization/Blockchain: artifact signing, topology config, audit tasks
 4. Apply task rules:
    → Different files = mark [P] for parallel
@@ -52,7 +53,7 @@
 
 **Constitution Check (pre-task generation)**
 - The /tasks generator MUST verify plan.md has a PASS for the Constitution Check. If not, it MUST fail and list missing items (linters, tests plan, UX criteria, performance targets, observability hooks).
- - Additionally verify Security Considerations exist, and if decentralized/blockchain apply, that distribution/audit items are present.
+ - Additionally verify Security Considerations exist (with Automation / AI Execution Constraints if agent-driven), and if decentralized/blockchain apply, that distribution/audit items are present.
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
@@ -96,9 +97,10 @@
 - [ ] All contract and integration tests present and failing before implementation
 - [ ] Performance tests included when targets declared
 - [ ] UX/accessibility checks included when UI present
-- [ ] Observability (logging/metrics/tracing) tasks added for critical flows
+ - [ ] Observability (logging/metrics/tracing) tasks added for critical flows
  - [ ] Security tests and dependency/license scanning tasks included
  - [ ] Decentralized distribution/signing and blockchain audit items included when applicable
+ - [ ] Automation tasks (AI autonomy guardrails) included when applicable
 
 ## Dependencies
 - Tests (T004-T007) before implementation (T008-T014)

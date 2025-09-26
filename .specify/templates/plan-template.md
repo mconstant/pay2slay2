@@ -53,6 +53,7 @@ The plan must validate the feature spec against the project constitution. At min
 - UX acceptance criteria and accessibility checks are present for user-facing work.
 - Performance targets and budgets are declared and measurable.
 - Observability hooks (logging/metrics/tracing) are identified for critical flows.
+ - AI autonomy guardrails: agent can proceed without extra prompts; any blocking ambiguity or unsafe action is explicitly surfaced.
 
 Additionally, when applicable the Constitution Check MUST verify:
 - Security considerations are present (threat model, sensitive data handling, secret storage plan).
@@ -220,6 +221,7 @@ ios/ or android/
 - [ ] Post-Design Constitution Check: PASS
 - [ ] All NEEDS CLARIFICATION resolved
 - [ ] Complexity deviations documented
+- [ ] AI autonomy guardrails evaluated (no silent skips)
 
 ---
-*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
+*Based on Constitution v2.4.0 - See `/memory/constitution.md`*

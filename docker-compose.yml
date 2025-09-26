@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  api:
+    build: .
+    image: pay2slay2:dev
+    ports:
+      - "8000:8000"
+    environment:
+      - CONFIG_DIR=/app/configs
+      - P2S_METRICS_PORT=8001
+    volumes:
+      - ./:/app
+    command: ["uvicorn", "src.api.app:create_app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+
+  scheduler:
+    build: .
+    image: pay2slay2:dev
+    environment:
+      - CONFIG_DIR=/app/configs
+      - P2S_METRICS_PORT=8002
+    volumes:
+      - ./:/app
+    command: ["python", "-m", "src.jobs"]
+    depends_on:
+      - api
