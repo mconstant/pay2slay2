@@ -58,3 +58,8 @@ configs/*.secrets.yaml
 # configs/payout.yaml
 # configs/integrations.yaml
 # configs/product.yaml
+
+# SBOM artifacts (generated in CI, not versioned)
+sbom.json
+sbom*.spdx.json
+*.sbom.json
