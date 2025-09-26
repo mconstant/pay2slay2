@@ -1,16 +1,25 @@
 import os
 from collections.abc import Generator
+from datetime import UTC, datetime
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from prometheus_client import Counter
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.lib.admin_audit import AdminAuditPayload, record_admin_audit
 from src.lib.auth import issue_admin_session, session_secret, verify_admin_session
 from src.lib.observability import get_logger
-from src.models.models import AdminAudit, AdminUser, Payout, User, VerificationRecord
+from src.models.models import (
+    AbuseFlag,
+    AdminAudit,
+    AdminUser,
+    Payout,
+    RewardAccrual,
+    User,
+    VerificationRecord,
+)
 from src.services.banano_client import BananoClient
 from src.services.yunite_service import YuniteService
 
@@ -50,6 +59,7 @@ def admin_login(email: str = Body(..., embed=True), db: Session = Depends(_get_d
         .filter(AdminUser.email == email, AdminUser.is_active.is_(True))
         .one_or_none()
     )
+
     if not admin:
         raise HTTPException(status_code=401, detail="Unauthorized")
     token = issue_admin_session(email, session_secret())
@@ -218,5 +228,72 @@ def admin_audit_query(  # noqa: PLR0913 - explicit filter params acceptable here
                 }
                 for r in rows
             ],
+        }
+    )
+
+
+@router.get("/stats")
+def admin_stats(
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Aggregate system statistics for dashboards (fast COUNT/SUM queries)."""
+    user_count = db.query(func.count(User.id)).scalar() or 0
+    verifications_ok = (
+        db.query(func.count(VerificationRecord.id))
+        .filter(VerificationRecord.status == "ok")
+        .scalar()
+        or 0
+    )
+    payouts_sent_sum = (
+        db.query(func.coalesce(func.sum(Payout.amount_ban), 0))
+        .filter(Payout.status == "sent")
+        .scalar()
+        or 0
+    )
+    accruals_sum = db.query(func.coalesce(func.sum(RewardAccrual.amount_ban), 0)).scalar() or 0
+    abuse_flags = db.query(func.count(AbuseFlag.id)).scalar() or 0
+    return JSONResponse(
+        {
+            "users_total": user_count,
+            "verifications_ok": verifications_ok,
+            "payouts_sent_ban": float(payouts_sent_sum),
+            "accruals_total_ban": float(accruals_sum),
+            "abuse_flags": abuse_flags,
+        }
+    )
+
+
+@router.get("/health/extended")
+def admin_health_extended(request: Request, _: None = Depends(_require_admin)) -> JSONResponse:
+    """Extended health with DB latency probe and uptime."""
+    started_at = getattr(request.app.state, "started_at", None)
+    now = datetime.now(UTC)
+    uptime_sec = (now - started_at).total_seconds() if started_at else None
+    session_factory = getattr(request.app.state, "session_factory", None)
+    db_ok = False
+    latency_ms: float | None = None
+    if session_factory:
+        try:  # pragma: no cover - simple probe
+            import time as _t
+
+            t0 = _t.perf_counter()
+            s = session_factory()
+            try:
+                s.execute("SELECT 1")
+                db_ok = True
+            finally:
+                s.close()
+            latency_ms = (_t.perf_counter() - t0) * 1000.0
+        except Exception:
+            db_ok = False
+    return JSONResponse(
+        {
+            "status": "ok" if db_ok else "degraded",
+            "db_ok": db_ok,
+            "db_latency_ms": latency_ms,
+            "uptime_sec": uptime_sec,
+            "config_error": getattr(request.app.state, "config_error", None),
+            "db_init_error": getattr(request.app.state, "db_init_error", None),
         }
     )

@@ -4,6 +4,7 @@ import hashlib
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
+from prometheus_client import Counter, Histogram
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -90,6 +91,12 @@ class PayoutService:
             payout.status = "sent" if tx else "failed"
             return payout.status == "sent"
 
+        attempts_counter = Counter(
+            "payout_attempts_total", "Total payout send attempts", ["result"]
+        )
+        retry_latency_hist = Histogram(
+            "payout_retry_latency_seconds", "Delay between payout retry attempts"
+        )
         success = _attempt_send()
         attempt = 1
         while not success and attempt <= max_retries:
@@ -98,8 +105,10 @@ class PayoutService:
             payout.last_attempt_at = datetime.now(UTC)
             # jittered exponential backoff (capped small since scheduler loop handles broader timing)
             sleep_for = min(backoff_base * (2 ** (attempt - 1)) * (0.5 + random.random()), 5.0)
+            retry_latency_hist.observe(sleep_for)
             time.sleep(sleep_for)
             success = _attempt_send()
+        attempts_counter.labels(result="success" if success else "failed").inc()
         # Advance cursor if payout succeeded (sum accrual kills added to cursor)
         if payout.status == "sent":
             total_kills = sum(a.kills for a in accruals)

@@ -32,6 +32,9 @@ FORTNITE_RATE_LIMITED = Counter(
 FORTNITE_KILLS_DELTA = Counter("fortnite_kills_delta_total", "Observed kill delta (post-guard)")
 FORTNITE_LATENCY = Histogram("fortnite_request_latency_seconds", "Latency of Fortnite API requests")
 
+_ADAPTIVE_MIN_LIMIT = 10
+_ADAPTIVE_MAX_LIMIT = 600
+
 
 class FortniteService:
     """Fortnite API integration (simplified).
@@ -56,6 +59,8 @@ class FortniteService:
         backoff_base: float = 0.25,
         auth_header_name: str = "Authorization",
         auth_scheme: str = "Bearer",
+        concurrency_limit: int = 4,
+        adaptive: bool = True,
     ) -> None:
         self.api_key = api_key
         self.base_url = base_url.rstrip("/")
@@ -69,6 +74,9 @@ class FortniteService:
         self._backoff_base = backoff_base
         self._auth_header_name = auth_header_name
         self._auth_scheme = auth_scheme
+        self._adaptive = adaptive
+        self._concurrency_limit = max(concurrency_limit, 1)
+        self._in_flight = 0
 
     # --- Rate limiting helpers ---
     def _refill(self) -> None:
@@ -85,14 +93,25 @@ class FortniteService:
 
     def _acquire(self) -> bool:
         with self._lock:
+            # Concurrency gate first
+            if self._in_flight >= self._concurrency_limit:
+                return False
             self._refill()
             if self._tokens > 0:
                 self._tokens -= 1
+                self._in_flight += 1
                 return True
             return False
 
+    def _release(self) -> None:
+        with self._lock:
+            if self._in_flight > 0:
+                self._in_flight -= 1
+
     # --- Public API ---
-    def get_kills_since(self, epic_account_id: str, cursor: str | None) -> KillsDelta:
+    def get_kills_since(  # noqa: PLR0912 - acceptable branch count for retry & adaptation
+        self, epic_account_id: str, cursor: str | None
+    ) -> KillsDelta:
         # Dry-run: simulate zero change (future: optionally randomize)
         if self._dry_run:
             curr_total = int(cursor) if cursor and cursor.isdigit() else 0
@@ -155,6 +174,25 @@ class FortniteService:
         else:  # exhausted
             FORTNITE_ERRORS.inc()
             lifetime_kills = int(cursor) if cursor and cursor.isdigit() else 0
+        # Adaptive tuning: if many calls produce zero delta consecutively, shrink limit; if positive deltas and spare capacity, gently increase
+        try:  # pragma: no cover - heuristic
+            if lifetime_kills == (int(cursor) if cursor and cursor.isdigit() else 0):
+                # no change
+                with self._lock:
+                    if self._adaptive and self.per_minute_limit > _ADAPTIVE_MIN_LIMIT:
+                        self.per_minute_limit = max(
+                            int(self.per_minute_limit * 0.95), _ADAPTIVE_MIN_LIMIT
+                        )
+            else:
+                with self._lock:
+                    if self._adaptive and self.per_minute_limit < _ADAPTIVE_MAX_LIMIT:
+                        self.per_minute_limit = min(
+                            int(self.per_minute_limit * 1.05) + 1, _ADAPTIVE_MAX_LIMIT
+                        )
+        except Exception:
+            pass
+        finally:
+            self._release()
 
         prev = int(cursor) if cursor and cursor.isdigit() else 0
         delta = lifetime_kills - prev

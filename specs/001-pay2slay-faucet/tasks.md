@@ -53,7 +53,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T019 ORM models initial (src/models/models.py)
 - [x] T020 External service stubs (discord, yunite, fortnite, banano)
 - [x] T021 Domain services (settlement, payout, accrual) initial
-- [~] T022 Admin API (needs audit trail & health expansion)
+- [x] T022 Admin API (audit trail, health expansion, stats endpoint)
 - [x] T023 Auth/User APIs
 - [x] T024 Scheduler job (operator balance validation + tracing)
 	- Added: distinct spans (accrual_cycle, operator_balance_check, settlement_cycle)
@@ -112,10 +112,10 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T058 Cosign image signing & provenance in deploy workflow
 
 ## Phase 3.7: Advanced / Optional Enhancements
-- [ ] T059 Pagination & filtering for payouts & accruals endpoints
-- [ ] T060 Admin dashboard aggregation endpoint (stats & metrics)
-- [ ] T061 Adaptive retry/backoff for payouts (exponential with jitter) + metric histogram
-- [ ] T062 Concurrency controls & adaptive rate limiting for kill ingestion (Fortnite)
+- [x] T059 Pagination & filtering for payouts & accruals endpoints
+- [x] T060 Admin dashboard aggregation endpoint (stats & metrics)
+- [x] T061 Adaptive retry/backoff for payouts (exponential with jitter) + metric histogram
+- [x] T062 Concurrency controls & adaptive rate limiting for kill ingestion (Fortnite)
 
 ## Validation Checklist
 - All contract & integration tests (T006–T017) exist before implementing corresponding features
