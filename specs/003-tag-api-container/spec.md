@@ -11,6 +11,7 @@
 - Q: How should operators initiate a rollback to a prior git SHA image? → A: Dedicated rollback workflow with IMAGE_SHA input (separate from normal deploy)
 - Q: What is the required policy for image signature / provenance verification prior to deploy? → A: Soft verify (attempt cosign verification; if signature or SLSA provenance missing or invalid, log structured WARNING and proceed). Future iteration will elevate to mandatory enforcement once signing coverage reaches >90% of deployed SHAs.
 - Q: What is the target architecture strategy for SHA-tagged API images? → A: Single architecture (linux/amd64 only) for this iteration; multi-arch (amd64+arm64) explicitly deferred (backlog) to reduce build time & complexity now.
+- Q: What is the policy for building images from non-main branches and pull requests? → A: Build for all branches but push non-main images only to a staging namespace `ghcr.io/mconstant/pay2slay-api-staging`; only main branch publishes to canonical `ghcr.io/mconstant/pay2slay-api` and triggers production deploy workflows.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -52,6 +53,7 @@ Not user-facing UI; operator experience criteria:
 - **FR-013**: A dedicated rollback workflow MUST exist that accepts an `IMAGE_SHA` parameter and redeploys using that immutable tag without rebuilding; normal deploy workflow MUST NOT perform rollback implicitly.
 - **FR-014**: Deploy workflow SHOULD perform a cosign (or equivalent) signature & provenance verification step for the target SHA image; if verification passes, MUST log `signature_status=verified`; if missing/invalid, MUST log `signature_status=unverified` with reason and STILL proceed (non-blocking); ONLY fail the job if the verification tooling itself errors (e.g., network/tool crash) without a determinable pass/fail result.
 - **FR-015**: Build workflow MUST produce a single-platform image targeting `linux/amd64` only; no multi-arch manifest creation in this feature. A future enhancement MAY introduce multi-arch once signing, caching, and perf baselines are stabilized.
+- **FR-016**: For non-main branches & PRs the workflow MUST push the SHA-tagged image exclusively to `ghcr.io/mconstant/pay2slay-api-staging` (staging namespace) and MUST NOT publish it to the canonical repository; only main branch commits publish to `ghcr.io/mconstant/pay2slay-api` and are eligible for deploy & rollback workflows. Staging images MUST retain identical tagging semantics (full SHA + optional short tag) to ensure reproducibility.
 
 ### Key Entities
 - **Image Artifact**: Immutable container image identified by (registry, name, digest) and tagged with git SHA.
@@ -63,6 +65,7 @@ Not user-facing UI; operator experience criteria:
 - Immutable tag usage removes risk of mutable tag drift (e.g., latest) causing unexpected code changes.
 - Supply chain: Requires verifying digest printed in logs; future enhancement: enforce signature verification prior to deploy.
 - Signature policy (current iteration): Soft verification only (warn on missing/invalid signature) per Clarification Q3 (FR-014). Risk: Potential unsigned image deploy; mitigation: immutable SHA + digest logging + plan to escalate to mandatory.
+- Branch isolation: Staging namespace separation (FR-016) limits risk of accidental promotion of unreviewed branch images; deploy workflows MUST validate repository origin before accepting an IMAGE_SHA.
 - Secrets: Build process MUST avoid leaking registry credentials in logs.
 - Abuse/Misuse: Prevent deploying unreviewed commit by limiting production deploy triggers to protected branches.
 - Automation / AI Execution Constraints: Automated agent MUST NOT delete or overwrite existing SHA tags unless explicitly instructed; MUST escalate if digest mismatch is detected for an existing SHA tag.
