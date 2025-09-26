@@ -6,6 +6,8 @@ on:
 jobs:
   banano:
     runs-on: ubuntu-latest
+    outputs:
+      banano_rpc_endpoint: ${{ steps.set-output.outputs.banano_rpc_endpoint }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,8 +18,24 @@ jobs:
       - name: Terraform Init
         working-directory: infra/akash-banano
         run: terraform init -input=false
-      - name: Terraform Apply (placeholder)
+      - name: Terraform Apply
         working-directory: infra/akash-banano
         run: terraform apply -auto-approve -input=false || true
-      - name: Discover Endpoint (placeholder)
-        run: scripts/infra/discover_banano_endpoint.sh || true
+      - name: Discover Endpoint
+        run: |
+          bash scripts/infra/discover_banano_endpoint.sh
+      - name: Show Artifact
+        if: success()
+        run: cat infra/akash-banano/endpoint.json
+      - name: Upload Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: endpoint
+          path: infra/akash-banano/endpoint.json
+      - name: Set Output
+        id: set-output
+        if: success()
+        run: |
+          value=$(jq -r '.banano_rpc_endpoint' infra/akash-banano/endpoint.json)
+          echo "banano_rpc_endpoint=$value" >> "$GITHUB_OUTPUT"

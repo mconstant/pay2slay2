@@ -38,23 +38,23 @@ Parallel `[P]` only when tasks touch different files/directories with no depende
   Depends: T007
 
 ## Phase 3.3: Core Implementation (Banano Workflow)
-- [ ] T010 Implement `scripts/infra/ak_cmd.sh` helper (common Akash CLI wrapper; idempotent)  
+- [x] T010 Implement `scripts/infra/ak_cmd.sh` helper (common Akash CLI wrapper; idempotent)  
   Depends: T006
-- [ ] T011 Implement full `discover_banano_endpoint.sh` with retry schedule (5 10 20 40) and exit behavior (no artifact on fail)  
+- [x] T011 Implement full `discover_banano_endpoint.sh` with retry schedule (5 10 20 40) and exit behavior (no artifact on fail)  
   Depends: T010
-- [ ] T012 Implement Terraform Akash SDL template for Banano (e.g. `infra/akash-banano/banano.sdl.yaml`) referencing required ports  
+- [x] T012 Implement Terraform Akash SDL template for Banano (e.g. `infra/akash-banano/banano.sdl.yaml`) referencing required ports  
   Depends: T002
-- [ ] T013 Wire Banano workflow steps: checkout → setup terraform → apply → run discovery script → validate host:port → write `infra/akash-banano/endpoint.json` → upload artifact → set GHA output  
+- [x] T013 Wire Banano workflow steps: checkout → setup terraform → apply → run discovery script → validate host:port → write `infra/akash-banano/endpoint.json` → upload artifact → set GHA output  
   Depends: T011,T012
-- [ ] T014 Add validation script `scripts/infra/validate_endpoint.py` (Python) implementing DNS/IPv4 + port rules (used by both workflows)  
+- [x] T014 Add validation script `scripts/infra/validate_endpoint.py` (Python) implementing DNS/IPv4 + port rules (used by both workflows)  
   Depends: T011
 
 ## Phase 3.4: Core Implementation (API Workflow Consumption)
-- [ ] T015 Implement artifact download + parse step in `api-deploy.yml` (uses `actions/download-artifact`) → export `BANANO_RPC_ENDPOINT` env var  
+- [x] T015 Implement artifact download + parse step in `api-deploy.yml` (uses `actions/download-artifact`) → export `BANANO_RPC_ENDPOINT` env var  
   Depends: T013,T014
-- [ ] T016 Add fail-fast step if artifact missing / parse fails / validation fails (shell + Python validator)  
+- [x] T016 Add fail-fast step if artifact missing / parse fails / validation fails (shell + Python validator)  
   Depends: T015
-- [ ] T017 Inject variable into Terraform apply for API stack (`-var="banano_rpc_endpoint=$BANANO_RPC_ENDPOINT"`)  
+- [x] T017 Inject variable into Terraform apply for API stack (`-var="banano_rpc_endpoint=$BANANO_RPC_ENDPOINT"`)  
   Depends: T016
 
 ## Phase 3.5: Integration & Observability
