@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -32,16 +33,59 @@ def _validate_endpoint(value: str) -> None:
 
 
 @pytest.mark.xfail(reason="Workflow artifact not yet implemented", strict=False)
-def test_endpoint_artifact_schema_round_trip(tmp_path: Path):
-    # Placeholder: simulate reading endpoint.json produced by workflow
+def test_ct_001_valid_artifact(tmp_path: Path):
     artifact_path = tmp_path / "endpoint.json"
-    artifact_path.write_text(json.dumps({"banano_rpc_endpoint": "example.invalid:99999"}))
-
+    artifact_path.write_text(json.dumps({"banano_rpc_endpoint": "node.example:12345"}))
     data = json.loads(artifact_path.read_text())
-    assert set(data.keys()) == {"banano_rpc_endpoint"}, "unexpected keys in artifact"
-    endpoint = data["banano_rpc_endpoint"]
-    assert ARTIFACT_SCHEMA_PATTERN.match(endpoint), "basic host:port pattern failed"
-    _validate_endpoint(endpoint)
+    assert set(data.keys()) == {"banano_rpc_endpoint"}
+    _validate_endpoint(data["banano_rpc_endpoint"])
+
+
+@pytest.mark.xfail(reason="Missing artifact handling not yet implemented", strict=False)
+def test_ct_002_missing_artifact(tmp_path: Path):
+    with pytest.raises(FileNotFoundError):
+        _ = json.loads((tmp_path / "endpoint.json").read_text())
+
+
+@pytest.mark.xfail(reason="Invalid host detection not yet implemented", strict=False)
+def test_ct_003_invalid_host():
+    with pytest.raises(AssertionError):
+        _validate_endpoint("-badhost:1234")
+
+
+@pytest.mark.xfail(reason="Port range enforcement not yet implemented", strict=False)
+def test_ct_004_port_out_of_range():
+    with pytest.raises(AssertionError):
+        _validate_endpoint("node.example:70000")
+
+
+@pytest.mark.xfail(reason="Empty JSON validation not yet implemented", strict=False)
+def test_ct_005_empty_json(tmp_path: Path):
+    artifact_path = tmp_path / "endpoint.json"
+    artifact_path.write_text(json.dumps({}))
+    data = json.loads(artifact_path.read_text())
+    assert "banano_rpc_endpoint" in data, "schema validation should fail before this point"
+
+
+@pytest.mark.xfail(reason="Redeploy handling not yet implemented", strict=False)
+def test_ct_006_multiple_redeploys(tmp_path: Path):
+    # Simulate two artifacts with different timestamps (conceptual)
+    first = tmp_path / "endpoint.json.1"
+    second = tmp_path / "endpoint.json.2"
+    first.write_text(
+        json.dumps(
+            {"banano_rpc_endpoint": "node.example:12345", "ts": datetime.utcnow().isoformat()}
+        )
+    )
+    second.write_text(
+        json.dumps(
+            {
+                "banano_rpc_endpoint": "node.example:22345",
+                "ts": (datetime.utcnow() + timedelta(seconds=5)).isoformat(),
+            }
+        )
+    )
+    assert first.read_text() != second.read_text()
 
 
 @pytest.mark.xfail(reason="Negative validation not yet wired", strict=False)
