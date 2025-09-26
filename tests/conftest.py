@@ -1,5 +1,7 @@
 import os
+import sys
 import tempfile
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -18,6 +20,12 @@ def app():
     # Provide deterministic, test-friendly low rate limits so exhaustion tests can be added later
     os.environ.setdefault("RATE_LIMIT_GLOBAL_PER_MINUTE", "120")
     os.environ.setdefault("RATE_LIMIT_PER_IP_PER_MINUTE", "60")
+    # Ensure src/ is on sys.path for direct test execution contexts
+    project_root = Path(__file__).resolve().parents[1]
+    src_dir = project_root / "src"
+    if str(src_dir) not in sys.path:
+        sys.path.insert(0, str(src_dir))
+
     from src.api.app import create_app  # type: ignore[attr-defined]
 
     return create_app()

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 
 from prometheus_client import Counter
+from sqlalchemy.orm import Session
 
 
 @dataclass
@@ -29,18 +31,50 @@ FLAGGED_USERS_TOTAL = Counter(
 
 
 class AbuseAnalyticsService:
+    def __init__(
+        self, session: Session | None = None, kill_rate_threshold: int | None = None
+    ) -> None:
+        self.session = session
+        self.kill_rate_threshold = kill_rate_threshold or 0
+
     def capture_region_kill(self, region: str | None, kills: int = 1) -> None:
-        if not region:
-            region = "unknown"
+        region = region or "unknown"
         KILLS_BY_REGION.labels(region=region).inc(kills)
 
     def record_payout(self, region: str | None) -> None:
-        if not region:
-            region = "unknown"
+        region = region or "unknown"
         PAYOUTS_BY_REGION.labels(region=region).inc()
 
     def flag_user(self) -> None:
         FLAGGED_USERS_TOTAL.inc()
+
+    def evaluate_kill_spike(self, user_id: int, recent_window_min: int = 15) -> bool:
+        """Return True and persist AbuseFlag if user kill volume in window exceeds threshold.
+
+        Disabled if session absent or threshold is 0.
+        """
+        if not self.session or not self.kill_rate_threshold:
+            return False
+        from src.models.models import AbuseFlag, RewardAccrual
+
+        cutoff = datetime.now(UTC) - timedelta(minutes=recent_window_min)
+        rows = (
+            self.session.query(RewardAccrual.kills)
+            .filter(RewardAccrual.user_id == user_id, RewardAccrual.created_at >= cutoff)
+            .all()
+        )
+        total_recent = sum(r[0] or 0 for r in rows)
+        if total_recent > self.kill_rate_threshold:
+            flag = AbuseFlag(
+                user_id=user_id,
+                flag_type="kill_rate_spike",
+                severity="med",
+                detail=f"kills={total_recent} window_min={recent_window_min}",
+            )
+            self.session.add(flag)
+            self.flag_user()
+            return True
+        return False
 
 
 __all__ = [

@@ -71,7 +71,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [~] T037 Tracing setup (OpenTelemetry) in src/lib/observability.py (console + optional OTLP exporter; added span attrs in scheduler & accrual; pending: HTTP span enrichment, DB spans, metrics correlation)
 - [x] T038 Correlation & trace ID logging middleware (src/lib/http.py)
 - [x] T039 Rate limiting middleware (src/lib/ratelimit.py) using in-memory token bucket (extensible)
-- [~] T040 Abuse heuristic service (enrich accrual / flag abnormal kill rates) (model + metrics foundation added)
+- [x] T040 Abuse heuristic service (enrich accrual / flag abnormal kill rates)
 - [x] T041 Metrics: payouts_by_region, kills_by_region, flagged_users_total
 - [x] T042 Operator balance check (real BananoClient) integrated into scheduler
 - [~] T043 Alembic migration for AdminAudit and any new analytics columns (AdminAudit done; abuse_flags table added; remaining: any future analytics columns)

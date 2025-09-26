@@ -81,7 +81,8 @@ def run_accrual(
         "total_kills": 0,
     }
     tracer = get_tracer("accrual_job")
-    analytics = AbuseAnalyticsService()
+    kill_rate_threshold = int(app_cfg.integrations.abuse_heuristics.get("kill_rate_per_min", 0))
+    analytics = AbuseAnalyticsService(session, kill_rate_threshold=kill_rate_threshold)
     for user in _eligible_users(session, cfg):
         counters["users_considered"] += 1
         with tracer.start_as_current_span(
@@ -100,6 +101,8 @@ def run_accrual(
         counters["total_kills"] += res.kills_delta
         region = getattr(user, "region_code", None)
         analytics.capture_region_kill(region, res.kills_delta)
+        # Evaluate spike (window uses threshold minute granularity; could be separate config later)
+        analytics.evaluate_kill_spike(user.id, recent_window_min=15)
 
     session.commit()
     METRIC_ACCRUAL_USERS.inc(float(counters["users_considered"]))
