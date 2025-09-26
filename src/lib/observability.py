@@ -346,7 +346,17 @@ def _inc(key: str) -> None:
 
 
 def record_image_build(repository_type: str) -> None:
-    """Increment image build counter for repository_type (T022)."""
+    """Increment image build counter for a repository type.
+
+    Metrics (T022, T060):
+        Prometheus counter: image_build_total{repository_type="canonical|staging|unknown"}
+        In-process mirror key: "image_build_total|<repository_type>"
+    Used by:
+        - Build workflow after successful image construction (tag + push)
+        - Unit test T052 validates increment and labeling.
+    Failure Handling:
+        Silently ignores Prometheus client exceptions to avoid impacting critical path.
+    """
     key = f"image_build_total|{repository_type}"
     _inc(key)
     if _PROM_AVAILABLE and _IMAGE_BUILD_COUNTER is not None:  # pragma: no branch
@@ -357,7 +367,14 @@ def record_image_build(repository_type: str) -> None:
 
 
 def record_rollback(repository_type: str) -> None:
-    """Increment rollback counter for repository_type (T022)."""
+    """Increment rollback counter for a repository type.
+
+    Metrics (T022, T060):
+        Prometheus counter: rollback_total{repository_type="canonical|staging|unknown"}
+        In-process mirror key: "rollback_total|<repository_type>"
+    Emitted when:
+        - Rollback workflow completes (future hook; tests simulate directly)
+    """
     key = f"rollback_total|{repository_type}"
     _inc(key)
     if _PROM_AVAILABLE and _ROLLBACK_COUNTER is not None:  # pragma: no branch
@@ -368,5 +385,13 @@ def record_rollback(repository_type: str) -> None:
 
 
 def get_metric_value(key: str) -> int:
-    """Return in-process metric value (used by unit tests)."""
+    """Return in-process metric value.
+
+    Purpose:
+        Deterministic inspection for unit tests without scraping an HTTP /metrics endpoint.
+    Keys:
+        image_build_total|<repository_type>
+        rollback_total|<repository_type>
+    Returns 0 if key absent (idempotent for first call / cold start).
+    """
     return _METRIC_COUNTS.get(key, 0)

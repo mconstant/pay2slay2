@@ -64,6 +64,16 @@ Two layers enforce image immutability and provenance alignment:
 
 Rollback uses a dedicated workflow (`api-rollback.yml`) that never rebuilds (FR-013). All deploys reference full 40-char commit SHAs; floating tags are rejected.
 
+### Metrics (Image Supply Chain)
+The observability module exposes counters (T022, T060):
+- `image_build_total{repository_type}` increments once per successful build (canonical vs staging).
+- `rollback_total{repository_type}` increments when a rollback is applied.
+If Prometheus is available, counters export via the default registry; tests read in-process mirrors for deterministic assertions.
+
+### Immutable Tag Badge
+![Immutable SHA Images](https://img.shields.io/badge/image%20tagging-immutable--sha-success?style=flat)
+
+
 - Docker (local): `docker build -t pay2slay2:dev .` then `docker-compose up --build`
 - CI: GitHub Actions workflow `.github/workflows/ci.yml` runs lint, type, tests, SBOM/scan.
 - Akash (Terraform):

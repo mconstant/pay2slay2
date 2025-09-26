@@ -90,9 +90,20 @@ Values to template into `infra/akash/*.tf` or manifests:
   - `make all` — lint + type + tests
 
 ## 10) Next steps
-- Review `SECURITY.md` for supply chain & provenance guidelines.
-- Fill out `research.md`, `data-model.md`, and `contracts/` docs (tasks T046–T048).
-- Switch monetary fields to Decimal before production payouts (T052).
+ - Review `SECURITY.md` for supply chain & provenance guidelines.
+ - Fill out `research.md`, `data-model.md`, and `contracts/` docs (tasks T046–T048).
+ - Switch monetary fields to Decimal before production payouts (T052).
+
+## 12) Immutable Tagging & Rollback (CI Workflows)
+Build workflow (push trigger) produces an image tagged with the full 40‑char git SHA and short 12‑char tag. Deployment & rollback workflows only accept full SHA tags (immutable) and enforce:
+ - Pre/post push digest verification (build-time) to catch tampering (FR-009).
+ - Deployment-time repository mapping + digest guard (placeholder registry lookup) (FR-004, FR-016).
+ - Dedicated rollback workflow reuses existing image without rebuild (FR-013).
+
+Reference: `docs/distribution.md` for digest integrity guards, metrics, SBOM linkage placeholder, short tag parity, and single-arch constraint.
+
+Metrics counters exposed: `image_build_total{repository_type}`, `rollback_total{repository_type}`.
+
 
 ## 11) Split Akash Deployments (Banano Node + API)
 The project supports separated Akash deployments for the Banano node and API service to decouple lifecycle and scaling.
