@@ -1,0 +1,22 @@
+# Digest Verification Contract (T036)
+version: 1
+name: digest-verification
+fr_refs: [FR-006, FR-009]
+phases:
+  pre_push:
+    capture: local_image_digest
+  post_push:
+    capture: registry_image_digest
+checks:
+  - name: digest_consistency
+    condition: local_image_digest == registry_image_digest
+    on_fail: DIGEST_MISMATCH
+log_fields:
+  - pre_push_digest
+  - post_push_digest
+  - digest_verification
+failure_modes:
+  - code: DIGEST_MISMATCH
+    description: Pre vs post digest mismatch indicates corruption/tampering
+notes:
+  - Implemented via scripts/ci/check_digest_post_push.py (T041) + workflow steps (T042)

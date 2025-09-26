@@ -1,0 +1,17 @@
+# SBOM Linkage Contract (T047)
+version: 1
+name: sbom-linkage
+fr_refs: [FR-008]
+inputs:
+  image_sha:
+    type: string
+outputs:
+  sbom_ref:
+    type: string
+invariants:
+  - description: SBOM artifact name/path includes full image_sha
+  - description: SBOM generation MUST NOT modify image digest
+  - description: (Future) SBOM digest SHOULD match image digest when using OCI attestation
+status: placeholder
+notes:
+  - If SBOM not generated yet, workflow logs TODO referencing this contract.

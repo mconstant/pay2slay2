@@ -1,0 +1,33 @@
+# Rollback Workflow Contract (T003 / amended T044)
+version: 1
+name: rollback-workflow
+fr_refs: [FR-007, FR-013]
+inputs:
+  image_sha:
+    type: string
+  previous_sha:
+    type: string
+    optional: true
+outputs:
+  rollback_ref:
+    type: string
+  previous_sha_out:
+    type: string
+invariants:
+  - description: MUST NOT build a new image (FR-013)
+  - description: MUST reference existing immutable SHA only
+  - description: MUST NOT change digest from original artifact
+log_schema:
+  required:
+    - phase
+    - image_sha
+    - previous_sha
+    - image_digest
+    - rollback_duration_sec
+failure_modes:
+  - code: MISSING_TAG
+    description: Target SHA not present in registry
+  - code: DIGEST_MISMATCH
+    description: Digest differs from recorded metadata (investigate tampering)
+notes:
+  - Dedicated workflow_dispatch input IMAGE_SHA
