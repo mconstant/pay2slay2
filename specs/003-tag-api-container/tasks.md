@@ -35,15 +35,15 @@ Guiding Principles: TDD-first (contract tests before workflow edits), immutabili
  - [x] T011 Performance smoke test `tests/perf/test_build_step_duration.py` (skippable via PAY2SLAY_SKIP_PERF=1) asserting simulated build completes within provisional budget (<600s stubbed); initially failing until instrumentation added.
 
 ## Phase 3.3: Core Workflow Support Code
-- [ ] T012 Implement helper script `scripts/ci/emit_image_metadata.py` producing structured JSON (fields per spec) to stdout; include high-resolution duration measurement.
-- [ ] T013 Implement Python module `src/lib/image_artifact.py` with pure functions:
+- [x] T012 Implement helper script `scripts/ci/emit_image_metadata.py` producing structured JSON (fields per spec) to stdout; include high-resolution duration measurement.
+- [x] T013 Implement Python module `src/lib/image_artifact.py` with pure functions:
   - `build_metadata(git_sha: str, repo: str, digest: str, signature_status: str, start_time: float) -> dict`
   - `validate_sha_tag(tag: str) -> None` (40 hex chars) raising ValueError else.
   - `calc_short_sha(tag: str) -> str` (first 12 chars) with guard for 40-length.
-- [ ] T014 Implement deploy validation stub `src/lib/deploy_validate.py` with:
+- [x] T014 Implement deploy validation stub `src/lib/deploy_validate.py` with:
   - `ensure_tag_exists(repo: str, sha: str) -> None` (later shell/API integration) currently raises MissingImageTagError if sha endswith 'deadbeef' (test sentinel)
   - `ensure_repo_allowed(repo: str, is_main: bool) -> None` (enforces staging vs canonical per FR-016)
-- [ ] T015 Implement rollback logic stub `src/lib/rollback.py` capturing RollbackEvent (in-memory list for tests) and enforcing no rebuild call.
+- [x] T015 Implement rollback logic stub `src/lib/rollback.py` capturing RollbackEvent (in-memory list for tests) and enforcing no rebuild call.
 
 ## Phase 3.4: Workflow Files (GitHub Actions) - Draft (No Production Changes Until Tests Pass)
  - [ ] T016 Add/modify `.github/workflows/api-build.yml` to:
@@ -90,7 +90,7 @@ Rationale: Close high severity analysis gaps for FR-009 (digest mismatch safety)
  - [x] T037 Extend `tests/contract/test_image_build_contract.py` (T006) or create adjunct `tests/contract/test_digest_verification_contract.py` asserting presence of pre & post digest fields and equality; initially failing until workflow instrumentation (reference T042).
  - [x] T038 Add negative test `tests/contract/test_digest_mismatch_failure.py` simulating mismatch (monkeypatch registry lookup returning different digest) expecting `DigestMismatchError` (new custom exception in guard script/module).
  - [x] T039 Add dedicated rollback no-build test `tests/contract/test_rollback_no_build_side_effect.py` asserting that invoking rollback does NOT call any build/rebuild function (use monkeypatch counter) – complements T008 but explicitly enforces FR-013 invariant.
-- [ ] T040 Add sentinel in `src/lib/rollback.py` (e.g., module-level flag or injected callback) to detect unintended build invocation; used only in tests (guarded by ENV var) to keep production path clean.
+- [x] T040 Add sentinel in `src/lib/rollback.py` (e.g., module-level flag or injected callback) to detect unintended build invocation; used only in tests (guarded by ENV var) to keep production path clean.
 - [ ] T041 Introduce script `scripts/ci/check_digest_post_push.py` performing: (a) load recorded digest from metadata artifact, (b) query registry (placeholder stub), (c) compare; exit non-zero on mismatch.
 - [ ] T042 Update build workflow (T016) adding steps: compute local image digest BEFORE push (docker image inspect), store in metadata; AFTER push run `check_digest_post_push.py` to enforce FR-009; ensure both digests logged with structured context.
 - [ ] T043 Refine existing digest guard task T028: clarify it now covers deployment-time verification (pre-deploy) while T041 handles build-time post-push; update its description inline (do not renumber) to avoid duplication.
@@ -110,7 +110,7 @@ Rationale: Close medium severity analysis gaps (parity, single-arch explicit ver
  - [x] T053 Add foreign repo rejection security test `tests/security/test_foreign_repo_rejected.py` ensuring `ensure_repo_allowed` rejects unexpected repo prefixes.
  - [x] T054 Add structured log schema completeness test `tests/contract/test_log_schema_completeness.py` validating presence of required keys (image_sha, short_sha, image_digest, repository, repository_type, arch, signature_status, signature_reason, build_duration_sec).
 - [ ] T055 Implement docs validation script `scripts/ci/validate_docs.sh` asserting `distribution.md` and `quickstart.md` mention: digest verification, rollback no-build, short tag parity, SBOM linkage, single-arch constraint, metrics counters.
-- [ ] T056 Update `scripts/ci/emit_image_metadata.py` to include `arch` and `repository_type` fields; adjust related tests (T006, T054) accordingly.
+- [x] T056 Update `scripts/ci/emit_image_metadata.py` to include `arch` and `repository_type` fields; adjust related tests (T006, T054) accordingly.
 - [ ] T057 Clarify T028 guard script description inline (no code duplication) documenting it is deployment-time digest & repo mapping check; ensure README references both build-time (T041) and deploy-time (T028) checks.
 - [ ] T058 Add performance test `tests/perf/test_deploy_rollback_duration.py` (skippable) asserting simulated deploy <300s & rollback <120s capturing durations.
 - [ ] T059 Update `docs/distribution.md` & quickstart (T027) adding sections for short tag parity, single-arch verification, SBOM linkage contract, metrics emission, and structured log field list.
