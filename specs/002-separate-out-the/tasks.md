@@ -68,11 +68,11 @@ Parallel `[P]` only when tasks touch different files/directories with no depende
   Depends: T018
 
 ## Phase 3.6: Polish & Hardening
-- [ ] T022 Add tflint config & GitHub Action (deferred earlier; now implement)  
+- [x] T022 Add tflint config & GitHub Action (deferred earlier; now implement)  
   Depends: T002,T003
-- [ ] T023 Add schema file `specs/002-separate-out-the/contracts/endpoint.schema.json` matching artifact spec (update tests to use it)  
+- [x] T023 Add schema file `specs/002-separate-out-the/contracts/endpoint.schema.json` matching artifact spec (update tests to use it)  
   Depends: T007
-- [ ] T024 Refine contract tests: remove xfail once implementation present; ensure all pass  
+- [x] T024 Refine contract tests: remove xfail once implementation present; ensure all pass  
   Depends: T013,T015,T023
 - [ ] T025 Update `quickstart.md` with real command snippets for workflows & redeploy notes  
   Depends: T024

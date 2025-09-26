@@ -10,6 +10,7 @@ import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
+import jsonschema
 import pytest
 
 ARTIFACT_SCHEMA_PATTERN = re.compile(r"^[^:]+:[0-9]+$")
@@ -32,34 +33,38 @@ def _validate_endpoint(value: str) -> None:
     assert PORT_MIN <= port <= PORT_MAX, "port out of allowed range"
 
 
-@pytest.mark.xfail(reason="Workflow artifact not yet implemented", strict=False)
 def test_ct_001_valid_artifact(tmp_path: Path):
     artifact_path = tmp_path / "endpoint.json"
     artifact_path.write_text(json.dumps({"banano_rpc_endpoint": "node.example:12345"}))
     data = json.loads(artifact_path.read_text())
     assert set(data.keys()) == {"banano_rpc_endpoint"}
     _validate_endpoint(data["banano_rpc_endpoint"])
+    # Schema validation
+    schema_path = (
+        Path(__file__).parents[2]
+        / "specs"
+        / "002-separate-out-the"
+        / "contracts"
+        / "endpoint.schema.json"
+    )
+    jsonschema.validate(instance=data, schema=json.loads(schema_path.read_text()))
 
 
-@pytest.mark.xfail(reason="Missing artifact handling not yet implemented", strict=False)
 def test_ct_002_missing_artifact(tmp_path: Path):
     with pytest.raises(FileNotFoundError):
         _ = json.loads((tmp_path / "endpoint.json").read_text())
 
 
-@pytest.mark.xfail(reason="Invalid host detection not yet implemented", strict=False)
 def test_ct_003_invalid_host():
     with pytest.raises(AssertionError):
         _validate_endpoint("-badhost:1234")
 
 
-@pytest.mark.xfail(reason="Port range enforcement not yet implemented", strict=False)
 def test_ct_004_port_out_of_range():
     with pytest.raises(AssertionError):
         _validate_endpoint("node.example:70000")
 
 
-@pytest.mark.xfail(reason="Empty JSON validation not yet implemented", strict=False)
 def test_ct_005_empty_json(tmp_path: Path):
     artifact_path = tmp_path / "endpoint.json"
     artifact_path.write_text(json.dumps({}))
@@ -67,7 +72,6 @@ def test_ct_005_empty_json(tmp_path: Path):
     assert "banano_rpc_endpoint" in data, "schema validation should fail before this point"
 
 
-@pytest.mark.xfail(reason="Redeploy handling not yet implemented", strict=False)
 def test_ct_006_multiple_redeploys(tmp_path: Path):
     # Simulate two artifacts with different timestamps (conceptual)
     first = tmp_path / "endpoint.json.1"
@@ -88,13 +92,11 @@ def test_ct_006_multiple_redeploys(tmp_path: Path):
     assert first.read_text() != second.read_text()
 
 
-@pytest.mark.xfail(reason="Negative validation not yet wired", strict=False)
 def test_invalid_port_rejected():
     with pytest.raises(AssertionError):
         _validate_endpoint("host.example:80")
 
 
-@pytest.mark.xfail(reason="Negative validation not yet wired", strict=False)
 def test_invalid_host_rejected():
     with pytest.raises(AssertionError):
         _validate_endpoint(":1234")

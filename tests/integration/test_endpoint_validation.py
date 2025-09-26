@@ -20,18 +20,15 @@ def validate(value: str) -> None:
     assert PORT_MIN <= port <= PORT_MAX, "invalid port"
 
 
-@pytest.mark.xfail(reason="Validator integration not implemented", strict=False)
 def test_invalid_host():
     with pytest.raises(AssertionError):
         validate("-bad:1234")
 
 
-@pytest.mark.xfail(reason="Validator integration not implemented", strict=False)
 def test_invalid_port():
     with pytest.raises(AssertionError):
         validate("ok.example:70000")
 
 
-@pytest.mark.xfail(reason="Validator integration not implemented", strict=False)
 def test_valid_endpoint():
     validate("ok.example:12345")
