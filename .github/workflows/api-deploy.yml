@@ -68,6 +68,20 @@ jobs:
           case "$IMAGE_REF" in *:latest|*:main|*:stable) echo "Floating tag rejected" >&2; exit 3;; esac
           echo "validated_image_ref=$IMAGE_REF" >> $GITHUB_OUTPUT
 
+      - name: Deployment Digest & Repo Guard (T028)
+        id: deploy_guard
+        run: |
+          python3 scripts/ci/check_existing_digest.py \
+            --metadata build_artifacts/metadata.json \
+            --repository "${{ steps.repo.outputs.repository }}" \
+            --image-sha "${{ steps.meta.outputs.image_sha }}" \
+            $([ "${GITHUB_REF##*/}" = "main" ] && echo --is-main || true)
+
+      - name: SBOM Linkage Placeholder (T031)
+        run: |
+            echo "SBOM linkage step placeholder - to be implemented when SBOM generation available" | tee sbom-linkage.log
+            echo "sbom_status=placeholder" >> $GITHUB_OUTPUT
+
       - name: Simulate Deployment (placeholder)
         id: deploy
         run: |
@@ -80,4 +94,4 @@ jobs:
 
       - name: Log Deployment Summary
         run: |
-          echo "Deployed image=${{ steps.validate.outputs.validated_image_ref }} duration_ms=${{ steps.deploy.outputs.deploy_duration_ms }}"
+          echo "Deployed image=${{ steps.validate.outputs.validated_image_ref }} duration_ms=${{ steps.deploy.outputs.deploy_duration_ms }} guard=ok sbom=${{ steps.deploy_guard.outcome || 'n/a' }}"

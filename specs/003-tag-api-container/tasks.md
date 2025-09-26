@@ -111,7 +111,7 @@ Rationale: Close medium severity analysis gaps (parity, single-arch explicit ver
  - [x] T054 Add structured log schema completeness test `tests/contract/test_log_schema_completeness.py` validating presence of required keys (image_sha, short_sha, image_digest, repository, repository_type, arch, signature_status, signature_reason, build_duration_sec).
 - [ ] T055 Implement docs validation script `scripts/ci/validate_docs.sh` asserting `distribution.md` and `quickstart.md` mention: digest verification, rollback no-build, short tag parity, SBOM linkage, single-arch constraint, metrics counters.
 - [x] T056 Update `scripts/ci/emit_image_metadata.py` to include `arch` and `repository_type` fields; adjust related tests (T006, T054) accordingly.
-- [ ] T057 Clarify T028 guard script description inline (no code duplication) documenting it is deployment-time digest & repo mapping check; ensure README references both build-time (T041) and deploy-time (T028) checks.
+ - [ ] T057 Clarify T028 guard script description inline (no code duplication) documenting it is deployment-time digest & repo mapping check; ensure README references both build-time (T041) and deploy-time (T028) checks (add section "Digest Integrity Guards").
 - [ ] T058 Add performance test `tests/perf/test_deploy_rollback_duration.py` (skippable) asserting simulated deploy <300s & rollback <120s capturing durations.
 - [ ] T059 Update `docs/distribution.md` & quickstart (T027) adding sections for short tag parity, single-arch verification, SBOM linkage contract, metrics emission, and structured log field list.
 - [ ] T060 Update `src/lib/observability.py` docstrings & README snippet to enumerate new counters & labels.
