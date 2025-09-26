@@ -5,6 +5,10 @@
 **Status**: Draft  
 **Input**: User description: "Tag API container images with git SHA and deploy using that immutable reference on Akash workflows"
 
+## Clarifications
+### Session 2025-09-26
+- Q: Which registry and naming convention should be the canonical source of truth for SHA-tagged API images? → A: GitHub Container Registry (ghcr.io/mconstant/pay2slay-api)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### Primary User Story
@@ -41,6 +45,7 @@ Not user-facing UI; operator experience criteria:
 - **FR-009**: System MUST ensure cache safety: if an image with the same SHA tag exists, it MUST verify digest matches; if mismatch (corruption), fail.
 - **FR-010**: System SHOULD optionally sign (cosign) the SHA-tagged image (if signing pipeline present) without altering tag semantics.
 - **FR-011**: System MUST document the workflow steps for building, tagging, deploying, and rolling back.
+- **FR-012**: Canonical image repository MUST be `ghcr.io/mconstant/pay2slay-api`; all SHA tags published there first (any future mirrors are secondary and MUST NOT drive deploy references).
 
 ### Key Entities
 - **Image Artifact**: Immutable container image identified by (registry, name, digest) and tagged with git SHA.
@@ -54,6 +59,7 @@ Not user-facing UI; operator experience criteria:
 - Secrets: Build process MUST avoid leaking registry credentials in logs.
 - Abuse/Misuse: Prevent deploying unreviewed commit by limiting production deploy triggers to protected branches.
 - Automation / AI Execution Constraints: Automated agent MUST NOT delete or overwrite existing SHA tags unless explicitly instructed; MUST escalate if digest mismatch is detected for an existing SHA tag.
+- Registry Access: GitHub Container Registry scopes (repo / write:packages) MUST be restricted to CI workflows; deploy workflows require read:packages only.
 
 ## Decentralized Distribution / Blockchain Applicability *(conditional)*
 Not directly applicable to tagging; underlying deployment (Akash) already in decentralized infrastructure. No on-chain logic introduced. (Rationale: image tagging is a CI/CD concern, not protocol layer.)
