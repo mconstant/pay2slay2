@@ -1,8 +1,12 @@
-# T010 / T021 / T045 integration flow (initial failing)
-# Simulates build -> deploy -> rollback using stubs; ensures digest consistency and rollback reverts reference.
+"""Integration flow test (T010 evolved for T021, T045).
 
+Simulates build -> deploy (to B) -> rollback to A ensuring:
+ - Digests remain stable per SHA
+ - Rollback sets current_sha to previous release
+ - No rebuild is performed (simulated via digest map unchanged)
+"""
 
-STATE = {"current_sha": None, "digest_map": {}}
+STATE = {"current_sha": None, "digest_map": {}, "build_count": 0}
 
 
 class DigestMismatchError(Exception):
@@ -10,8 +14,10 @@ class DigestMismatchError(Exception):
 
 
 def build_stub(git_sha: str):
-    digest = f"sha256:{'a' * 64}"  # constant to start; will expand later
+    # Derive deterministic digest from sha prefix (stable) to show difference
+    digest = f"sha256:{git_sha[0] * 64}"
     STATE["digest_map"][git_sha] = digest
+    STATE["build_count"] += 1
     return {"image_sha": git_sha, "image_digest": digest}
 
 
@@ -22,26 +28,26 @@ def deploy_stub(git_sha: str):
     return {"current_sha": git_sha, "digest": STATE["digest_map"][git_sha]}
 
 
-def rollback_stub(previous_sha: str):
-    if previous_sha not in STATE["digest_map"]:
+def rollback_stub(target_previous_sha: str):
+    if target_previous_sha not in STATE["digest_map"]:
         raise RuntimeError("Rollback target missing")
-    STATE["current_sha"] = previous_sha
-    return {"current_sha": previous_sha, "digest": STATE["digest_map"][previous_sha]}
+    # No new build; just switch reference
+    STATE["current_sha"] = target_previous_sha
+    return {"current_sha": target_previous_sha, "digest": STATE["digest_map"][target_previous_sha]}
 
 
 def test_build_deploy_rollback_flow_digest_consistency():
-    sha_a = "a" * 40
-    sha_b = "b" * 40
+    sha_a = "a" * 40  # initial prod
+    sha_b = "b" * 40  # new release
     a_meta = build_stub(sha_a)
     b_meta = build_stub(sha_b)
-    assert (
-        a_meta["image_digest"] == b_meta["image_digest"]
-    ), "(Intentional) currently identical digest; will differentiate later"
-    deploy_stub(sha_a)
-    assert STATE["current_sha"] == sha_a
-    deploy_digest = STATE["digest_map"][sha_a]
-    rollback_stub(sha_b)  # wrong direction intentionally to fail semantics later
-    # Expect digest to remain mapped; this test will evolve; currently force a failing assertion
-    assert (
-        deploy_digest != STATE["digest_map"][sha_b]
-    ), "Digest unexpectedly equal (placeholder failure)"
+    assert a_meta["image_digest"] != b_meta["image_digest"], "Digests should differ across SHAs"
+    deploy_stub(sha_b)
+    assert STATE["current_sha"] == sha_b
+    deploy_digest = STATE["digest_map"][sha_b]
+    builds_before = STATE["build_count"]
+    rb = rollback_stub(sha_a)
+    assert rb["current_sha"] == sha_a, "Rollback did not switch current_sha"
+    assert STATE["digest_map"][sha_a] == a_meta["image_digest"], "Rollback altered digest mapping"
+    assert deploy_digest == STATE["digest_map"][sha_b], "Deploy digest changed after rollback"
+    assert STATE["build_count"] == builds_before, "Rollback triggered an unexpected build"

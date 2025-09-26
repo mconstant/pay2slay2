@@ -9,6 +9,7 @@ Future enhancements: registry API checks, digest comparison (T028 deployment-tim
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 
@@ -17,6 +18,10 @@ class MissingImageTagError(Exception):
 
 
 class RepositoryPolicyError(Exception):
+    pass
+
+
+class FloatingTagError(Exception):
     pass
 
 
@@ -39,6 +44,14 @@ def ensure_repo_allowed(repo: str, is_main: bool) -> None:
     # Non-main should use staging repo variant
     elif not repo.endswith("-staging"):
         raise RepositoryPolicyError("feature branch must deploy to staging repo")
+
+
+FLOATING_TAG_PATTERN = re.compile(r":(latest|main|stable)$")
+
+
+def reject_floating_tag(image_ref: str) -> None:
+    if FLOATING_TAG_PATTERN.search(image_ref):
+        raise FloatingTagError(f"Floating tag rejected: {image_ref}")
 
 
 @dataclass

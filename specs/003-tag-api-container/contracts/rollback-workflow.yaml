@@ -14,9 +14,11 @@ outputs:
   previous_sha_out:
     type: string
 invariants:
-  - description: MUST NOT build a new image (FR-013)
-  - description: MUST reference existing immutable SHA only
-  - description: MUST NOT change digest from original artifact
+  - description: MUST NOT invoke any build or docker build command (FR-013)
+  - description: MUST reference an existing immutable SHA tag only (no floating tags)
+  - description: MUST NOT alter stored image digest (digest after rollback equals digest recorded for target SHA)
+  - description: MUST record previous_sha and image_sha in event log
+  - description: MUST emit rollback_duration_sec timing metric
 log_schema:
   required:
     - phase
