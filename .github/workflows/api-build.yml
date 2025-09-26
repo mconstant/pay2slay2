@@ -33,7 +33,8 @@ jobs:
       - name: Select Repository
         id: repo
         run: |
-          if [ "${{ steps.vars.outputs.branch_ref }}" = "main" ]; then
+          # Treat both 'main' and 'master' as canonical (user default branch may be 'master')
+          if [ "${{ steps.vars.outputs.branch_ref }}" = "main" ] || [ "${{ steps.vars.outputs.branch_ref }}" = "master" ]; then
             echo "repository=$REGISTRY_CANONICAL" >> $GITHUB_OUTPUT
           else
             echo "repository=$REGISTRY_STAGING" >> $GITHUB_OUTPUT
