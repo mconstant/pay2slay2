@@ -26,6 +26,14 @@ def _init_db(app: FastAPI, log: Any) -> None:
     app.state.engine = engine
     app.state.session_factory = session_factory
 
+    # Optional SQLAlchemy tracing instrumentation
+    try:  # pragma: no cover - instrumentation best-effort
+        from src.lib.observability import instrument_sqlalchemy  # local import
+
+        instrument_sqlalchemy(engine)
+    except Exception as exc:  # pragma: no cover
+        log.warning("db_tracing_instrument_failed", error=str(exc))
+
     # Create tables if brand new
     Base.metadata.create_all(bind=engine)
 
