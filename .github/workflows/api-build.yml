@@ -79,8 +79,8 @@ jobs:
       - name: Soft Signature Verify (placeholder)
         id: sign
         run: |
-          echo "signature_status=unverified" >> $GITHUB_OUTPUT
-          echo "signature_reason=missing" >> $GITHUB_OUTPUT
+          chmod +x scripts/ci/soft_verify.sh
+          scripts/ci/soft_verify.sh --image ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} --gha
 
       - name: Post-Push Digest Verification
         id: verify

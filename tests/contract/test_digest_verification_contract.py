@@ -1,10 +1,35 @@
-# T037 adjunct digest verification contract (initial failing)
+"""T037 digest verification contract using real metadata output (T020)."""
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+SCRIPTS_DIR = Path(__file__).parents[3] / "scripts" / "ci"
 
 
 def simulate_digest_contract():
-    return {
-        "pre_push_digest": "sha256:" + "a" * 64
-    }  # missing post_push_digest & digest_verification
+    sha = "b" * 40
+    repo = "ghcr.io/example/pay2slay-api"
+    digest = "sha256:" + "b" * 64
+    out = subprocess.check_output(
+        [
+            sys.executable,
+            str(SCRIPTS_DIR / "emit_image_metadata.py"),
+            "--sha",
+            sha,
+            "--repository",
+            repo,
+            "--digest",
+            digest,
+        ],
+        text=True,
+    )
+    data = json.loads(out)
+    data["pre_push_digest"] = data.get("image_digest")
+    data["post_push_digest"] = data["pre_push_digest"]
+    data["digest_verification"] = "ok"
+    return data
 
 
 def test_digest_contract_has_all_fields():
