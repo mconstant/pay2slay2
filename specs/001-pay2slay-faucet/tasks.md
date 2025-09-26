@@ -68,11 +68,12 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T036 Payout retry logic (attempt_count, last_attempt_at) + exponential backoff placeholder
 
 ## Phase 3.4: Integration & Observability
-- [~] T037 Tracing setup (OpenTelemetry) in src/lib/observability.py (console + optional OTLP exporter; spans in scheduler & accrual; HTTP client spans added; DB statement spans added; pending: metrics correlation/exemplars + OTLP exporter)
+- [x] T037 Tracing setup (OpenTelemetry) in `src/lib/observability.py` (console + optional OTLP exporter env toggle; HTTP client spans; DB statement spans; SQLAlchemy engine auto-instrumented; trace/span IDs injected into logs; metrics exemplars supported via PAY2SLAY_METRICS_EXEMPLARS=1; fallback no-op when OTEL absent)
 - [x] T038 Correlation & trace ID logging middleware (src/lib/http.py)
 - [x] T039 Rate limiting middleware (src/lib/ratelimit.py) using in-memory token bucket (extensible)
 - [x] T040 Abuse heuristic service (enrich accrual / flag abnormal kill rates)
 - [x] T041 Metrics: payouts_by_region, kills_by_region, flagged_users_total
+	- Added: http_requests_total & http_request_duration_seconds (with optional trace exemplar labels) + /metrics endpoint
 - [x] T042 Operator balance check (real BananoClient) integrated into scheduler
 - [~] T043 Alembic migration for AdminAudit and any new analytics columns (AdminAudit done; abuse_flags table added; remaining: any future analytics columns)
 - [ ] T044 Secrets handling review + docs update (no plaintext, env var mapping)
