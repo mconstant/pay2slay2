@@ -57,7 +57,7 @@ jobs:
       - name: Download Artifact
         uses: badgerhobbs/terraform-state@v2
         with:
-            directory: ./infra
+            directory: ./infra/akash
             operation: download
             location: artifact
             github_token: ${{ env.GH_PAT }}
@@ -144,7 +144,7 @@ jobs:
       - name: Upload Artifact
         uses: badgerhobbs/terraform-state@v2
         with:
-          directory: ./infra
+          directory: ./infra/akash
           operation: upload
           location: artifact
           github_token: ${{ env.GH_PAT }}
