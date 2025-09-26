@@ -11,14 +11,27 @@ Create and activate a virtual environment (example):
     - `pip install -e .[dev]`
 
 ## 2) Environment
-Set any of these (defaults shown):
+Copy `.env.example` to `.env` and adjust as needed, or export variables manually.
+
+Core (defaults):
   - `DATABASE_URL=sqlite:///pay2slay.db`
-  - `SESSION_SECRET=dev-secret`
-  - `P2S_DRY_RUN=true`
-  - `P2S_MIN_OPERATOR_BALANCE_BAN=50`
-  - `P2S_INTERVAL_SECONDS=1200`
-  - `P2S_OPERATOR_ACCOUNT=` (required only when not dry-run)
+  - `SESSION_SECRET=dev-secret` (CHANGE in prod)
+  - `P2S_DRY_RUN=true` (set to `false` to use real APIs)
+  - `P2S_OPERATOR_ACCOUNT=` (required only when not dry-run for balance check)
   - `P2S_METRICS_PORT=8001`
+  - `P2S_INTERVAL_SECONDS=1200` (scheduler loop)
+
+External integrations (required once dry-run=false):
+  - `YUNITE_API_KEY=`
+  - `YUNITE_GUILD_ID=`
+  - `FORTNITE_API_KEY=`
+  - `DISCORD_CLIENT_ID=`
+  - `DISCORD_CLIENT_SECRET=`
+  - `DISCORD_REDIRECT_URI=http://localhost:3000/auth/discord/callback`
+
+Optional observability:
+  - `OTEL_EXPORTER_OTLP_ENDPOINT=` or `PAY2SLAY_OTLP_ENDPOINT=`
+  - `PAY2SLAY_METRICS_EXEMPLARS=1`
 
 ## 3) Run the API
   - `uvicorn src.api.app:create_app --reload --port 8000`
