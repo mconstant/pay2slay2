@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import time
 from collections.abc import Callable
 from typing import Any, no_type_check
@@ -41,7 +42,15 @@ try:  # Optional SQLAlchemy dependency
 except Exception:  # pragma: no cover
     _SQLA_AVAILABLE = False
 
-OTLPSpanExporter = None  # Placeholder; add dependency and import when enabling OTLP export
+OTLPSpanExporter: Any | None = None  # Populated if OTLP exporter dependency available
+try:  # Optional OTLP exporter (http/proto) dependency
+    from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # type: ignore
+        OTLPSpanExporter as _OTLPSpanExporter,
+    )
+
+    OTLPSpanExporter = _OTLPSpanExporter
+except Exception:  # pragma: no cover
+    OTLPSpanExporter = None
 
 _TRACER_INITIALIZED = False
 
@@ -53,9 +62,38 @@ def setup_structlog(level: str | int = "INFO") -> None:
         level=level,
         format="%(message)s",
     )
+
+    # Trace context enrichment processor (added early so later processors can use ids)
+    def _add_trace_context(_: Any, __: str, event_dict: Any) -> Any:
+        """If a current span exists, add trace_id/span_id (hex) when not already present."""
+        if not _OTEL_AVAILABLE or _TRACE_MOD is None:
+            return event_dict
+        try:
+            span = _TRACE_MOD.get_current_span()
+            if not span:
+                return event_dict
+            ctx = span.get_span_context()
+            trace_id = getattr(ctx, "trace_id", 0)
+            span_id = getattr(ctx, "span_id", 0)
+            # Only add if ids are non-zero (OTel spec: 0 means invalid)
+            if trace_id and "trace_id" not in event_dict:
+                try:
+                    event_dict["trace_id"] = f"{trace_id:032x}"  # int -> 32 hex chars
+                except Exception:  # pragma: no cover
+                    pass
+            if span_id and "span_id" not in event_dict:
+                try:
+                    event_dict["span_id"] = f"{span_id:016x}"
+                except Exception:  # pragma: no cover
+                    pass
+        except Exception:  # pragma: no cover - never break logging
+            return event_dict
+        return event_dict
+
     structlog.configure(
         processors=[
             structlog.processors.add_log_level,
+            _add_trace_context,
             structlog.processors.TimeStamper(fmt="iso"),
             structlog.processors.StackInfoRenderer(),
             structlog.processors.format_exc_info,
@@ -77,7 +115,23 @@ def setup_structlog(level: str | int = "INFO") -> None:
         try:
             resource = Resource.create({"service.name": "pay2slay"})
             provider = TracerProvider(resource=resource)
-            provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
+
+            # Decide exporter(s): if OTLP endpoint configured and exporter available, prefer it; always include console if no OTLP
+            otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT") or os.getenv(
+                "PAY2SLAY_OTLP_ENDPOINT"
+            )
+            exporters: list[Any] = []
+            if otlp_endpoint and OTLPSpanExporter is not None:
+                try:
+                    exporters.append(OTLPSpanExporter(endpoint=otlp_endpoint))
+                except Exception:  # pragma: no cover
+                    logging.getLogger("observability").warning(
+                        "otlp_exporter_init_failed endpoint=%s", otlp_endpoint
+                    )
+            if not exporters:  # Fallback to console exporter
+                exporters.append(ConsoleSpanExporter())
+            for exp in exporters:
+                provider.add_span_processor(BatchSpanProcessor(exp))
             _TRACE_MOD.set_tracer_provider(provider)
             _TRACER_INITIALIZED = True
         except Exception:  # pragma: no cover
