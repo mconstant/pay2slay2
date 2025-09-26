@@ -1,5 +1,9 @@
 # Pay2Slay Faucet
 
+![Immutable SHA Images](https://img.shields.io/badge/image%20tagging-immutable--sha-success?style=flat)
+![Digest Guards](https://img.shields.io/badge/digest-pre%2Fpost%20verified-blue?style=flat)
+![Rollback No-Build](https://img.shields.io/badge/rollback-no--build-important?style=flat)
+
 Banano payouts for Fortnite kills. FastAPI backend, SQLAlchemy ORM, Alembic migrations, and a simple scheduler that settles rewards and (optionally) pays out via a Banano node.
 
 ## Features (current)

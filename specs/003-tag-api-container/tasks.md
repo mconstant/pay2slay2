@@ -69,7 +69,7 @@ Guiding Principles: TDD-first (contract tests before workflow edits), immutabili
 - [x] T024 Add `docs/operations/rollback.md` runbook with examples (workflow_dispatch JSON, expected logs, troubleshooting missing tag).
 - [x] T025 Update `CHANGELOG.md` with new feature entry (Added: Immutable SHA-based image tagging & rollback workflows).
 - [x] T026 Update `README.md` quick start snippet with note on immutable image tags & rollback command.
-- [ ] T027 Generate / refine `specs/003-tag-api-container/quickstart.md` if not finalized after workflow specifics (ensure examples match final file names).
+- [x] T027 Generate / refine `specs/003-tag-api-container/quickstart.md` if not finalized after workflow specifics (ensure examples match final file names).
 
 ## Phase 3.7: Security & Compliance Enhancements
  - [x] T028 Add deployment-time digest & repo guard script `scripts/ci/check_existing_digest.py` (compares live registry digest for IMAGE_SHA against recorded metadata artifact; if mismatch → fail) and enforce repository mapping (canonical main, staging feature) — distinct from build-time post-push verification (T041/T042). (Refined by T043)
@@ -96,7 +96,7 @@ Rationale: Close high severity analysis gaps for FR-009 (digest mismatch safety)
 - [x] T043 Refine existing digest guard task T028: clarify it now covers deployment-time verification (pre-deploy) while T041 handles build-time post-push; update its description inline (do not renumber) to avoid duplication.
  - [x] T044 Amend `rollback-workflow.yaml` (T003) to explicitly declare invariants: must not build, must not alter digest, must reference existing tag only.
  - [x] T045 Extend integration test `tests/integration/test_build_deploy_rollback_flow.py` (T010/T021) to assert digest remains unchanged across rollback and that attempting a forced rebuild path would raise/flag (simulate by setting sentinel and expecting no trigger).
-- [ ] T046 Update `docs/distribution.md` & `specs/003-tag-api-container/spec.md` to explicitly call out digest integrity and rollback no-build guarantees (reference FR-009, FR-013) and link to new contract file.
+- [x] T046 Update `docs/distribution.md` & `specs/003-tag-api-container/spec.md` to explicitly call out digest integrity and rollback no-build guarantees (reference FR-009, FR-013) and link to new contract file.
 
 ## Phase 3.10: Medium Remediation & Completeness
 Rationale: Close medium severity analysis gaps (parity, single-arch explicit verification, staging/canonical separation tests, SBOM linkage formalization, metrics validation, structured log completeness, foreign repo defense-in-depth, performance gating, documentation validation).
@@ -113,7 +113,7 @@ Rationale: Close medium severity analysis gaps (parity, single-arch explicit ver
 - [x] T056 Update `scripts/ci/emit_image_metadata.py` to include `arch` and `repository_type` fields; adjust related tests (T006, T054) accordingly.
  - [x] T057 Clarify T028 guard script description inline (no code duplication) documenting it is deployment-time digest & repo mapping check; ensure README references both build-time (T041) and deploy-time (T028) checks (add section "Digest Integrity Guards").
 - [x] T058 Add performance test `tests/perf/test_deploy_rollback_duration.py` (skippable) asserting simulated deploy <300s & rollback <120s capturing durations.
-- [ ] T059 Update `docs/distribution.md` & quickstart (T027) adding sections for short tag parity, single-arch verification, SBOM linkage contract, metrics emission, and structured log field list.
+- [x] T059 Update `docs/distribution.md` & quickstart (T027) adding sections for short tag parity, single-arch verification, SBOM linkage contract, metrics emission, and structured log field list.
  - [x] T060 Update `src/lib/observability.py` docstrings & README snippet to enumerate new counters & labels.
 
 ## Validation Checklist
