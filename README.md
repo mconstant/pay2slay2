@@ -1,5 +1,9 @@
 # Pay2Slay Faucet
 
+![Immutable SHA Images](https://img.shields.io/badge/image%20tagging-immutable--sha-success?style=flat)
+![Digest Guards](https://img.shields.io/badge/digest-pre%2Fpost%20verified-blue?style=flat)
+![Rollback No-Build](https://img.shields.io/badge/rollback-no--build-important?style=flat)
+
 Banano payouts for Fortnite kills. FastAPI backend, SQLAlchemy ORM, Alembic migrations, and a simple scheduler that settles rewards and (optionally) pays out via a Banano node.
 
 ## Features (current)
@@ -57,6 +61,23 @@ Makefile shortcuts are available:
 - Metrics default to port 8001; set `P2S_METRICS_PORT` to change.
 
 ## Deploy
+### Digest Integrity Guards (T057)
+Two layers enforce image immutability and provenance alignment:
+1. Build-time pre/post digest verification (scripts/ci/check_digest_post_push.py) ensures the pushed registry digest matches the locally built image (FR-009).
+2. Deployment-time guard (scripts/ci/check_existing_digest.py) validates repository mapping and (future: live digest) before applying an immutable SHA reference (FR-004, FR-016).
+
+Rollback uses a dedicated workflow (`api-rollback.yml`) that never rebuilds (FR-013). All deploys reference full 40-char commit SHAs; floating tags are rejected.
+
+### Metrics (Image Supply Chain)
+The observability module exposes counters (T022, T060):
+- `image_build_total{repository_type}` increments once per successful build (canonical vs staging).
+- `rollback_total{repository_type}` increments when a rollback is applied.
+If Prometheus is available, counters export via the default registry; tests read in-process mirrors for deterministic assertions.
+
+### Immutable Tag Badge
+![Immutable SHA Images](https://img.shields.io/badge/image%20tagging-immutable--sha-success?style=flat)
+
+
 - Docker (local): `docker build -t pay2slay2:dev .` then `docker-compose up --build`
 - CI: GitHub Actions workflow `.github/workflows/ci.yml` runs lint, type, tests, SBOM/scan.
 - Akash (Terraform):

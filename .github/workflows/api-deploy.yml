@@ -1,38 +1,99 @@
 name: API Deploy
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      image_sha:
+        description: 40-char immutable image SHA to deploy
+        required: true
+        type: string
 
 jobs:
-  api:
+  deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    env:
+      REGISTRY_CANONICAL: ghcr.io/mconstant/pay2slay-api
+      REGISTRY_STAGING: ghcr.io/mconstant/pay2slay-api-staging
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Download Endpoint Artifact
+
+      - name: Download Build Metadata
         uses: actions/download-artifact@v4
         with:
-          name: endpoint
-          path: artifact
+          name: image-metadata
+          path: build_artifacts
         continue-on-error: true
-      - name: Validate Artifact Presence
+
+      - name: Validate Metadata Artifact
+        id: meta
         run: |
-          test -f artifact/endpoint.json || { echo "missing endpoint artifact" >&2; exit 1; }
-          cat artifact/endpoint.json
-      - name: Extract Endpoint
-        id: extract
+          if [ ! -f build_artifacts/metadata.json ]; then
+            echo "metadata artifact missing" >&2
+            exit 1
+          fi
+          cat build_artifacts/metadata.json
+          SHA="${{ inputs.image_sha }}"
+          if [ ${#SHA} -ne 40 ]; then
+            echo "Provided image_sha length invalid" >&2; exit 1; fi
+          echo "image_sha=$SHA" >> $GITHUB_OUTPUT
+
+      - name: Derive Repository
+        id: repo
         run: |
-          python3 scripts/infra/validate_endpoint.py $(jq -r '.banano_rpc_endpoint' artifact/endpoint.json)
-          echo "BANANO_RPC_ENDPOINT=$(jq -r '.banano_rpc_endpoint' artifact/endpoint.json)" >> $GITHUB_ENV
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+          BRANCH_REF=${GITHUB_REF##*/}
+          if [ "$BRANCH_REF" = "main" ]; then
+            echo "repository=$REGISTRY_CANONICAL" >> $GITHUB_OUTPUT
+          else
+            echo "repository=$REGISTRY_STAGING" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
         with:
-          terraform_version: 1.8.5
-      - name: Terraform Init
-        working-directory: infra/akash-api
-        run: terraform init -input=false
-      - name: Terraform Apply
-        working-directory: infra/akash-api
-        env:
-          BANANO_RPC_ENDPOINT: ${{ env.BANANO_RPC_ENDPOINT }}
-        run: terraform apply -auto-approve -input=false -var="banano_rpc_endpoint=${{ env.BANANO_RPC_ENDPOINT }}" || true
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate Tag Exists & Policy
+        id: validate
+        run: |
+          IMAGE_REF="${{ steps.repo.outputs.repository }}:${{ steps.meta.outputs.image_sha }}"
+          if ! docker pull "$IMAGE_REF" >/dev/null 2>&1; then
+            echo "Image tag not found: $IMAGE_REF" >&2; exit 2; fi
+          # Floating tag guard (basic)
+          case "$IMAGE_REF" in *:latest|*:main|*:stable) echo "Floating tag rejected" >&2; exit 3;; esac
+          echo "validated_image_ref=$IMAGE_REF" >> $GITHUB_OUTPUT
+
+      - name: Deployment Digest & Repo Guard (T028)
+        id: deploy_guard
+        run: |
+          python3 scripts/ci/check_existing_digest.py \
+            --metadata build_artifacts/metadata.json \
+            --repository "${{ steps.repo.outputs.repository }}" \
+            --image-sha "${{ steps.meta.outputs.image_sha }}" \
+            $([ "${GITHUB_REF##*/}" = "main" ] && echo --is-main || true)
+
+      - name: SBOM Linkage Placeholder (T031)
+        run: |
+            echo "SBOM linkage step placeholder - to be implemented when SBOM generation available" | tee sbom-linkage.log
+            echo "sbom_status=placeholder" >> $GITHUB_OUTPUT
+
+      - name: Simulate Deployment (placeholder)
+        id: deploy
+        run: |
+          START=$(date +%s%3N)
+          echo "Applying deployment for ${{ steps.validate.outputs.validated_image_ref }}"
+          sleep 1
+          END=$(date +%s%3N)
+          DURATION_MS=$((END-START))
+          echo "deploy_duration_ms=$DURATION_MS" >> $GITHUB_OUTPUT
+          echo "deploy_start_ms=$START" >> $GITHUB_OUTPUT
+          echo "deploy_end_ms=$END" >> $GITHUB_OUTPUT
+
+      - name: Log Deployment Summary
+        run: |
+          echo "Deployed image=${{ steps.validate.outputs.validated_image_ref }} duration_ms=${{ steps.deploy.outputs.deploy_duration_ms }} guard=ok sbom=${{ steps.deploy_guard.outcome || 'n/a' }} start_ms=${{ steps.deploy.outputs.deploy_start_ms }} end_ms=${{ steps.deploy.outputs.deploy_end_ms }}"

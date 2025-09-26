@@ -1,0 +1,55 @@
+# Build Workflow Contract (T003)
+version: 1
+name: build-workflow
+fr_refs: [FR-001, FR-002, FR-003, FR-006, FR-014, FR-015, FR-017]
+inputs:
+  git_sha:
+    type: string
+    description: 40-char commit SHA
+  branch:
+    type: string
+  repository_type:
+    type: string
+    enum: [canonical, staging]
+outputs:
+  image_ref:
+    type: string
+    description: image repository:sha tag
+  image_digest:
+    type: string
+  signature_status:
+    type: string
+    enum: [verified, unverified]
+  signature_reason:
+    type: string
+    nullable: true
+  arch:
+    type: string
+    const: linux/amd64
+  short_sha:
+    type: string
+  metadata_artifact:
+    type: string
+    description: path to json artifact uploaded
+log_schema:
+  required:
+    - phase
+    - image_sha
+    - image_digest
+    - repository
+    - repository_type
+    - signature_status
+    - arch
+    - build_duration_sec
+failure_modes:
+  - code: MISSING_SHA
+    description: git SHA input empty/invalid
+  - code: BUILD_FAILURE
+    description: docker build failed
+  - code: PUSH_FAILURE
+    description: registry push failed
+  - code: SOFT_VERIFY_TOOL_ERROR
+    description: cosign invocation crashed; workflow may fail
+notes:
+  - Clean build enforced (no cache) per FR-017
+  - Soft signature verification only; missing signature not fatal (FR-014)

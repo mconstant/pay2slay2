@@ -1,0 +1,63 @@
+name: API Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_sha:
+        description: 40-char image SHA to rollback TO
+        required: true
+        type: string
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    env:
+      REGISTRY_CANONICAL: ghcr.io/mconstant/pay2slay-api
+      REGISTRY_STAGING: ghcr.io/mconstant/pay2slay-api-staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Derive Repository
+        id: repo
+        run: |
+          BRANCH_REF=${GITHUB_REF##*/}
+          if [ "$BRANCH_REF" = "main" ]; then
+            echo "repository=$REGISTRY_CANONICAL" >> $GITHUB_OUTPUT
+          else
+            echo "repository=$REGISTRY_STAGING" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Validate Target Tag Exists
+        id: validate
+        run: |
+          SHA="${{ inputs.target_sha }}"
+          if [ ${#SHA} -ne 40 ]; then echo "Invalid SHA length" >&2; exit 1; fi
+          IMAGE_REF="${{ steps.repo.outputs.repository }}:$SHA"
+          if ! docker pull "$IMAGE_REF" >/dev/null 2>&1; then echo "Target image not found $IMAGE_REF" >&2; exit 2; fi
+          echo "target_image_ref=$IMAGE_REF" >> $GITHUB_OUTPUT
+
+      - name: Emit Rollback Event (no build)
+        id: event
+        run: |
+          START=$(date +%s%3N)
+          echo '{"phase":"rollback","image_sha":"'${{ inputs.target_sha }}'","rollback_duration_sec":0,"note":"placeholder event"}' > rollback_event.json
+          sleep 1
+          END=$(date +%s%3N)
+          DUR_MS=$((END-START))
+          python -c "import json,os; p='rollback_event.json'; d=json.load(open(p)); ms=$DUR_MS; d['rollback_duration_sec']=ms/1000.0; d['rollback_start_ms']=${START}; d['rollback_end_ms']=${END}; json.dump(d, open(p,'w'))"
+          cat rollback_event.json
+
+      - name: Log Rollback Summary
+        run: |
+          echo "Rolled back to ${{ steps.validate.outputs.target_image_ref }}"

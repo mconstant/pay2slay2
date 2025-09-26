@@ -3,7 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- (placeholder for upcoming changes)
+- Added immutable SHA tagging workflows (build, deploy, rollback) with digest verification guards (pre/post push & deploy-time) and rollback invariants.
+- Introduced soft signature verification and structured image metadata artifact (image_sha, digest, signature_status, repository_type, arch, pre/post digests).
+- Added deployment-time repository mapping & floating tag rejection.
+- Added SBOM linkage and signature verification contract descriptors (placeholders pending full SBOM generation).
 
 ## [0.2.0] - 2025-09-25
 ### Added

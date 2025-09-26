@@ -1,0 +1,26 @@
+# Signature Verification Contract (T048)
+version: 1
+name: signature-verification
+fr_refs: [FR-014]
+inputs:
+  image_ref:
+    type: string
+outputs:
+  signature_status:
+    type: string
+    enum: [verified, unverified]
+  signature_reason:
+    type: string
+    nullable: true
+log_fields:
+  - signature_status
+  - signature_reason
+semantics:
+  - description: Missing or invalid signature MUST NOT fail workflow (soft policy)
+  - description: Tool errors (cosign crash) MAY fail workflow to avoid silent bypass
+future_escalation:
+  criteria: 
+    - ">=90% images signed in trailing 30 deployments"
+    - "<1% signature verification tool failure rate"
+notes:
+  - Expect eventual switch to mandatory verification or policy gate.

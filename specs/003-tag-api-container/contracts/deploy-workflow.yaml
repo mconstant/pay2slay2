@@ -1,0 +1,38 @@
+# Deploy Workflow Contract (T003)
+version: 1
+name: deploy-workflow
+fr_refs: [FR-003, FR-004, FR-005, FR-006, FR-016]
+inputs:
+  image_sha:
+    type: string
+  repository:
+    type: string
+  environment:
+    type: string
+outputs:
+  deployment_ref:
+    type: string
+  applied_digest:
+    type: string
+validations:
+  - name: tag_exists
+    description: Fail if SHA tag absent (FR-004)
+  - name: immutable_tag_only
+    description: Reject floating tags (FR-005)
+  - name: repository_policy
+    description: Ensure canonical repo for production (FR-016)
+log_schema:
+  required:
+    - phase
+    - image_sha
+    - image_digest
+    - repository
+    - repository_type
+    - deploy_duration_sec
+failure_modes:
+  - code: MISSING_TAG
+    description: Tag not found in registry
+  - code: POLICY_VIOLATION
+    description: Floating tag or wrong repository
+notes:
+  - Consumes metadata artifact from build for digest mapping

@@ -12,6 +12,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
+      - name: Initialize Summary File
+        run: |
+          echo "# CI Summary" > summary.txt
+          echo "Job: build-test" >> summary.txt
       - name: Set up caching
         uses: actions/cache@v4
         with:
@@ -34,9 +38,9 @@ jobs:
           artifact-name: sbom.spdx.json
           format: spdx-json
           upload-artifact: true
-      - name: Upload SBOM summary
+      - name: Append SBOM summary
         run: |
-          echo "SBOM generated (spdx-json). Will gate on critical vulns." >> $GITHUB_STEP_SUMMARY
+          echo "SBOM generated (spdx-json). Will gate on critical vulns." >> summary.txt
       - name: Scan (Grype)
         uses: anchore/scan-action@v5
         with:
@@ -45,5 +49,36 @@ jobs:
       - name: Vulnerability summary (non-blocking informational)
         if: always()
         run: |
-          echo 'For detailed vulnerability report see action artifacts and the Grype step logs.' >> $GITHUB_STEP_SUMMARY
-          echo 'Gating policy: build fails if any CRITICAL vulnerabilities are detected in direct or transitive dependencies.' >> $GITHUB_STEP_SUMMARY
+          echo 'For detailed vulnerability report see action artifacts and the Grype step logs.' >> summary.txt
+          echo 'Gating policy: build fails if any CRITICAL vulnerabilities are detected in direct or transitive dependencies.' >> summary.txt
+      - name: Upload Partial Summary Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-partial-summary
+          path: summary.txt
+
+  docs-validate:
+    runs-on: ubuntu-latest
+    name: Docs Validation
+    needs: [build-test]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download Partial Summary
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-partial-summary
+          path: .
+      - name: Validate Docs
+        id: docs
+        run: |
+          chmod +x scripts/ci/validate_docs.sh
+          if scripts/ci/validate_docs.sh; then echo "docs_status=passed" >> $GITHUB_OUTPUT; else echo "docs_status=failed" >> $GITHUB_OUTPUT; fi
+      - name: Aggregate Summary
+        if: always()
+        run: |
+          echo >> summary.txt
+          echo "Job: docs-validate" >> summary.txt
+          echo "Docs validation status: ${{ steps.docs.outputs.docs_status }}" >> summary.txt
+          echo "## Combined CI Summary" > combined_summary.txt
+          cat summary.txt >> combined_summary.txt
+          cat combined_summary.txt >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,117 @@
+name: API Build
+
+on:
+  push:
+    branches: ["**"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY_CANONICAL: ghcr.io/mconstant/pay2slay-api
+      REGISTRY_STAGING: ghcr.io/mconstant/pay2slay-api-staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Derive Git SHA
+        id: vars
+        run: |
+          GIT_SHA=$(git rev-parse HEAD)
+          echo "git_sha=$GIT_SHA" >> $GITHUB_OUTPUT
+          echo "short_sha=${GIT_SHA:0:12}" >> $GITHUB_OUTPUT
+          echo "branch_ref=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
+
+      - name: Select Repository
+        id: repo
+        run: |
+          if [ "${{ steps.vars.outputs.branch_ref }}" = "main" ]; then
+            echo "repository=$REGISTRY_CANONICAL" >> $GITHUB_OUTPUT
+          else
+            echo "repository=$REGISTRY_STAGING" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Image (single-arch, no cache)
+        run: |
+          docker build --no-cache --platform linux/amd64 -t ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} .
+          docker tag ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.short_sha }}
+
+      - name: Capture Local Digest (pre-push)
+        id: digest
+        run: |
+          DIGEST=$(docker image inspect ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} --format '{{.Id}}')
+          echo "pre_push_digest=$DIGEST" >> $GITHUB_OUTPUT
+
+      - name: Push Images
+        run: |
+          docker push ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }}
+          docker push ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.short_sha }}
+
+      - name: Install Project
+        run: |
+          pip install .
+
+      - name: Emit Initial Metadata JSON
+        id: meta_init
+        run: |
+          python scripts/ci/emit_image_metadata.py \
+            --sha ${{ steps.vars.outputs.git_sha }} \
+            --repository ${{ steps.repo.outputs.repository }} \
+            --digest ${{ steps.digest.outputs.pre_push_digest }} > metadata.json
+          # Add pre_push_digest explicitly (image_digest already present)
+          python -c "import json; p='metadata.json'; d=json.load(open(p)); d['pre_push_digest']=d['image_digest']; json.dump(d, open(p,'w')); print()"
+
+      - name: Soft Signature Verify (placeholder)
+        id: sign
+        run: |
+          chmod +x scripts/ci/soft_verify.sh
+          scripts/ci/soft_verify.sh --image ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} --gha
+
+      - name: Post-Push Digest Verification
+        id: verify
+        run: |
+          python scripts/ci/check_digest_post_push.py metadata.json ${{ steps.repo.outputs.repository }} ${{ steps.vars.outputs.git_sha }}
+          echo "metadata_path=metadata.json" >> $GITHUB_OUTPUT
+
+      - name: Generate SBOM (Syft)
+        run: |
+          echo "Installing syft for SBOM generation" >&2
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin > /dev/null
+          syft ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} -o spdx-json=sbom.json
+          python -c "import json; d=json.load(open('metadata.json')); d['sbom_ref']='sbom.json'; json.dump(d, open('metadata.json','w')); print('SBOM linked: sbom.json')"
+          echo "sbom_status=generated" >> $GITHUB_OUTPUT
+
+      - name: Upload SBOM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+
+      - name: Upload Metadata Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-metadata
+          path: metadata.json
+
+      - name: Log Summary
+        run: |
+          sudo apt-get update -y >/dev/null 2>&1 || true
+          sudo apt-get install -y jq >/dev/null 2>&1 || true
+          echo "Built image ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} pre_digest=${{ steps.digest.outputs.pre_push_digest }}" \
+               "verification=$(jq -r .digest_verification metadata.json) post_digest=$(jq -r .post_push_digest metadata.json)" \
+               "signature=${{ steps.sign.outputs.signature_status }}"

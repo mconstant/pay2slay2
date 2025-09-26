@@ -69,7 +69,18 @@ def test_ct_005_empty_json(tmp_path: Path):
     artifact_path = tmp_path / "endpoint.json"
     artifact_path.write_text(json.dumps({}))
     data = json.loads(artifact_path.read_text())
-    assert "banano_rpc_endpoint" in data, "schema validation should fail before this point"
+    schema_path = (
+        Path(__file__).parents[2]
+        / "specs"
+        / "002-separate-out-the"
+        / "contracts"
+        / "endpoint.schema.json"
+    )
+    if schema_path.exists():
+        with pytest.raises(jsonschema.ValidationError):
+            jsonschema.validate(instance=data, schema=json.loads(schema_path.read_text()))
+    else:
+        pytest.skip("endpoint.schema.json missing")
 
 
 def test_ct_006_multiple_redeploys(tmp_path: Path):
