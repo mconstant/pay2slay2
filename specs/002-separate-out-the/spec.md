@@ -8,6 +8,7 @@
 ## Clarifications
 ### Session 2025-09-25
 - Q: What retry strategy and total timeout should the Banano deployment workflow use to discover the forwarded RPC port (7072) before declaring failure? → A: Exponential backoff 5s,10s,20s,40s (4 attempts, ~75s max)
+- Q: How should the Banano workflow persist the resolved banano_rpc_endpoint for consumption by the API workflow? → A: Terraform output + JSON artifact (endpoint.json with {"banano_rpc_endpoint": ...})
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -40,7 +41,7 @@ Not a user-facing UI feature; surfaced only through CI workflow logs and Terrafo
 - **FR-002**: API Terraform stack MUST exclude Banano service and accept an input variable `banano_rpc_endpoint`.
 - **FR-003**: Banano deployment workflow MUST output a Terraform output named `banano_rpc_endpoint` capturing `host:external_port` associated with internal port 7072.
 - **FR-004**: Banano workflow MUST attempt RPC port (7072) discovery with an exponential backoff schedule of 4 attempts at 5s, 10s, 20s, and 40s delays (≈75s max elapsed). After the 4th failed attempt it MUST hard-fail and NOT emit a partial/empty endpoint artifact.
-- **FR-005**: On success, Banano workflow MUST persist the endpoint via artifact AND set a workflow output for downstream/manual copy.
+- **FR-005**: On success, Banano workflow MUST (a) expose a Terraform output `banano_rpc_endpoint`, (b) write an artifact file `endpoint.json` containing `{ "banano_rpc_endpoint": "<host:port>" }`, and (c) set a GitHub Actions workflow output of the same name.
 - **FR-006**: API workflow MUST fail fast if `banano_rpc_endpoint` input is absent or empty.
 - **FR-007**: API workflow MUST surface the injected endpoint in logs (redacting nothing—no secret content).
 - **FR-008**: Changing Banano deployment MUST NOT require changes to API Terraform except updating the endpoint input.
