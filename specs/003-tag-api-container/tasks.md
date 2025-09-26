@@ -46,7 +46,7 @@ Guiding Principles: TDD-first (contract tests before workflow edits), immutabili
 - [x] T015 Implement rollback logic stub `src/lib/rollback.py` capturing RollbackEvent (in-memory list for tests) and enforcing no rebuild call.
 
 ## Phase 3.4: Workflow Files (GitHub Actions) - Draft (No Production Changes Until Tests Pass)
- - [ ] T016 Add/modify `.github/workflows/api-build.yml` to:
+- [x] T016 Add/modify `.github/workflows/api-build.yml` to:
   - Trigger on push (any branch)
   - Condition: if main → push to canonical repo; else → staging repo
   - Steps: checkout → derive GIT_SHA → docker build (no cache flags, single-arch linux/amd64) → push SHA tag (+ optional 12-char short tag) → capture digest → run cosign verify (soft) → run emit_image_metadata.py (now includes arch & repository_type) → upload artifact (metadata.json)
@@ -91,7 +91,7 @@ Rationale: Close high severity analysis gaps for FR-009 (digest mismatch safety)
  - [x] T038 Add negative test `tests/contract/test_digest_mismatch_failure.py` simulating mismatch (monkeypatch registry lookup returning different digest) expecting `DigestMismatchError` (new custom exception in guard script/module).
  - [x] T039 Add dedicated rollback no-build test `tests/contract/test_rollback_no_build_side_effect.py` asserting that invoking rollback does NOT call any build/rebuild function (use monkeypatch counter) – complements T008 but explicitly enforces FR-013 invariant.
 - [x] T040 Add sentinel in `src/lib/rollback.py` (e.g., module-level flag or injected callback) to detect unintended build invocation; used only in tests (guarded by ENV var) to keep production path clean.
-- [ ] T041 Introduce script `scripts/ci/check_digest_post_push.py` performing: (a) load recorded digest from metadata artifact, (b) query registry (placeholder stub), (c) compare; exit non-zero on mismatch.
+- [x] T041 Introduce script `scripts/ci/check_digest_post_push.py` performing: (a) load recorded digest from metadata artifact, (b) query registry (placeholder stub), (c) compare; exit non-zero on mismatch.
 - [ ] T042 Update build workflow (T016) adding steps: compute local image digest BEFORE push (docker image inspect), store in metadata; AFTER push run `check_digest_post_push.py` to enforce FR-009; ensure both digests logged with structured context.
 - [ ] T043 Refine existing digest guard task T028: clarify it now covers deployment-time verification (pre-deploy) while T041 handles build-time post-push; update its description inline (do not renumber) to avoid duplication.
 - [ ] T044 Amend `rollback-workflow.yaml` (T003) to explicitly declare invariants: must not build, must not alter digest, must reference existing tag only.
