@@ -1,6 +1,16 @@
 from sqlalchemy.orm import Session
 
-from src.lib.config import get_config
+try:  # pragma: no cover - test environment path guard
+    from src.lib.config import get_config  # type: ignore
+except ModuleNotFoundError:  # pragma: no cover
+    import sys
+    from pathlib import Path
+
+    project_root = Path(__file__).resolve().parents[2]
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+    from src.lib.config import get_config  # type: ignore
+
 from src.models.models import User
 from src.services.domain.accrual_service import AccrualService
 from src.services.fortnite_service import FortniteService, KillsDelta

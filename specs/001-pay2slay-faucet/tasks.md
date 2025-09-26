@@ -33,7 +33,12 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T010 Contract: POST /admin/payouts/retry
 - [~] T011 Integration: registration flow (OAuth→Yunite→wallet link→status) (test added)
 - [~] T012 Integration: accrual→settlement→payout (dry_run) (test added)
-- [ ] T013 Performance smoke: /me/status p95<300ms
+- [x] T013 Performance smoke: /me/status p95<300ms
+	- Added perf smoke test `tests/perf/test_me_status_perf.py` (50 sampled sequential calls)
+	- Asserts p95 <300ms (TARGET_P95_MS env-coded) on warm in-memory sqlite + local app
+	- Warmup (5 calls) discards startup jitter (first query, model import, etc.)
+	- Skippable via PAY2SLAY_SKIP_PERF=1 for slow CI environments
+	- Prints diagnostic stats (median/mean/max) on run for easy trend capture
 - [~] T014 Security: OAuth replay/state (state enforced), rate limit baseline, invalid wallet format fuzz
 - [x] T015 Contract: POST /me/reverify (stub test created)
 - [x] T016 Contract: GET /config/product (stub test created)

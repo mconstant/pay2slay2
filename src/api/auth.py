@@ -23,9 +23,9 @@ def _get_db(request: Request) -> Generator[Session, None, None]:
 
 @router.post("/auth/discord/callback")
 def discord_callback(
+    request: Request,
     state: str = Query(..., description="OAuth state"),
     code: str = Query(..., description="OAuth authorization code"),
-    request: Request = None,  # type: ignore[assignment]
     db: Session = Depends(_get_db),  # noqa: B008 - FastAPI dependency
 ) -> JSONResponse:
     if not state or not code:

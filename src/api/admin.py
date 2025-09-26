@@ -71,10 +71,10 @@ def admin_login(email: str = Body(..., embed=True), db: Session = Depends(_get_d
 
 @router.post("/reverify")
 def admin_reverify(
+    request: Request,
     discord_id: str = Body(..., embed=True),
     _: None = Depends(_require_admin),
     db: Session = Depends(_get_db),  # noqa: B008
-    request: Request = None,  # type: ignore[assignment]
 ) -> JSONResponse:
     user = db.query(User).filter(User.discord_user_id == discord_id).one_or_none()
     if not user:
@@ -124,10 +124,10 @@ def admin_reverify(
 
 @router.post("/payouts/retry")
 def admin_payouts_retry(
+    request: Request,
     payout_id: int = Body(..., embed=True),
     _: None = Depends(_require_admin),
     db: Session = Depends(_get_db),  # noqa: B008
-    request: Request = None,  # type: ignore[assignment]
 ) -> JSONResponse:
     payout = db.query(Payout).filter(Payout.id == payout_id).one_or_none()
     if not payout:

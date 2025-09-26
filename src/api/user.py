@@ -21,8 +21,8 @@ def _get_db(request: Request) -> Generator[Session, None, None]:
 
 @router.post("/link/wallet")
 def link_wallet(
+    request: Request,
     banano_address: str = Body(..., embed=True),
-    request: Request = None,  # type: ignore[assignment]
     db: Session = Depends(_get_db),  # noqa: B008 - FastAPI dependency
 ) -> JSONResponse:
     # rudimentary validation: must start with 'ban_'
@@ -53,7 +53,7 @@ def link_wallet(
 
 @router.post("/me/reverify")
 def me_reverify(
-    request: Request | None = None,
+    request: Request,
     db: Session = Depends(_get_db),  # noqa: B008
 ) -> JSONResponse:
     token = request.cookies.get("p2s_session") if request else None
@@ -100,7 +100,7 @@ def me_reverify(
 
 
 @router.get("/me/status")
-def me_status(request: Request = None, db: Session = Depends(_get_db)) -> JSONResponse:  # type: ignore[assignment]  # noqa: B008
+def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:  # noqa: B008
     token = request.cookies.get("p2s_session") if request else None
     uid = verify_session(token, session_secret()) if token else None
     if not uid:
@@ -135,7 +135,7 @@ def me_status(request: Request = None, db: Session = Depends(_get_db)) -> JSONRe
 
 @router.get("/me/payouts")
 def me_payouts(
-    request: Request = None,  # type: ignore[assignment]
+    request: Request,
     db: Session = Depends(_get_db),  # noqa: B008
     limit: int = 20,
     offset: int = 0,

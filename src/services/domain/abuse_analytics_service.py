@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from prometheus_client import Counter
 from sqlalchemy.orm import Session
@@ -57,21 +57,21 @@ class AbuseAnalyticsService:
             return False
         from src.models.models import AbuseFlag, RewardAccrual
 
-        cutoff = datetime.now(UTC) - timedelta(minutes=recent_window_min)
-        rows = (
-            self.session.query(RewardAccrual.kills)
-            .filter(RewardAccrual.user_id == user_id, RewardAccrual.created_at >= cutoff)
-            .all()
+        cutoff = datetime.utcnow() - timedelta(minutes=recent_window_min)
+        q = self.session.query(RewardAccrual.kills).filter(
+            RewardAccrual.user_id == user_id, RewardAccrual.created_at >= cutoff
         )
-        total_recent = sum(r[0] or 0 for r in rows)
+        rows = q.all()
+        total_recent = sum((r[0] or 0) for r in rows)
         if total_recent > self.kill_rate_threshold:
-            flag = AbuseFlag(
-                user_id=user_id,
-                flag_type="kill_rate_spike",
-                severity="med",
-                detail=f"kills={total_recent} window_min={recent_window_min}",
+            self.session.add(
+                AbuseFlag(
+                    user_id=user_id,
+                    flag_type="kill_rate_spike",
+                    severity="med",
+                    detail=f"kills={total_recent} window_min={recent_window_min}",
+                )
             )
-            self.session.add(flag)
             self.flag_user()
             return True
         return False

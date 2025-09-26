@@ -22,9 +22,9 @@ def app():
     os.environ.setdefault("RATE_LIMIT_PER_IP_PER_MINUTE", "60")
     # Ensure src/ is on sys.path for direct test execution contexts
     project_root = Path(__file__).resolve().parents[1]
-    src_dir = project_root / "src"
-    if str(src_dir) not in sys.path:
-        sys.path.insert(0, str(src_dir))
+    # Ensure project root (not src/) is on sys.path so 'src' package resolves correctly
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
 
     from src.api.app import create_app  # type: ignore[attr-defined]
 
