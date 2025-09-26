@@ -93,3 +93,54 @@ Values to template into `infra/akash/*.tf` or manifests:
 - Review `SECURITY.md` for supply chain & provenance guidelines.
 - Fill out `research.md`, `data-model.md`, and `contracts/` docs (tasks T046–T048).
 - Switch monetary fields to Decimal before production payouts (T052).
+
+## 11) Split Akash Deployments (Banano Node + API)
+The project supports separated Akash deployments for the Banano node and API service to decouple lifecycle and scaling.
+
+### Workflows
+GitHub Actions:
+- `banano-deploy.yml` provisions/updates Banano node then emits `infra/akash-banano/endpoint.json`.
+- `api-deploy.yml` downloads and validates the artifact and applies the API stack passing `-var="banano_rpc_endpoint=<host:port>"`.
+
+### Trigger (Web UI)
+1. Run Banano workflow (workflow_dispatch).
+2. Wait for `[discover][success] endpoint=...` log line.
+3. Confirm `endpoint.json` artifact in run summary.
+4. Run API workflow; verify log shows using the resolved endpoint.
+
+### Trigger (CLI)
+```
+gh workflow run banano-deploy.yml --ref 002-separate-out-the
+gh run watch
+gh workflow run api-deploy.yml --ref 002-separate-out-the
+```
+
+### Artifact Contract
+`infra/akash-banano/endpoint.json`:
+```json
+{ "banano_rpc_endpoint": "node.example:12345" }
+```
+Local validation:
+```
+python3 scripts/infra/validate_endpoint.py $(jq -r '.banano_rpc_endpoint' infra/akash-banano/endpoint.json)
+```
+Exit code 0 indicates VALID.
+
+### Redeploy Simulation
+If provider port changes, re-run Banano then API workflows. Test locally:
+```
+bash scripts/infra/test_redeploy.sh
+```
+
+### Schema
+`specs/002-separate-out-the/contracts/endpoint.schema.json` enforces structure (used in contract tests).
+
+### Failure Modes
+| Scenario | Symptom | Action |
+|----------|---------|--------|
+| Discovery timeout | `[discover][failure]` | Re-run Banano; inspect provider logs |
+| Invalid candidate(s) | Repeated `[discover][candidate-invalid]` | Check port mapping / lease; redeploy |
+| API early failure | Missing BANANO endpoint var | Ensure Banano workflow succeeded |
+
+### Metrics (Planned)
+Commented Prometheus gauge stub lives inside `discover_banano_endpoint.sh` for future enablement.

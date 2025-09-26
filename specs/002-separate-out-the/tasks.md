@@ -74,12 +74,22 @@ Parallel `[P]` only when tasks touch different files/directories with no depende
   Depends: T007
 - [x] T024 Refine contract tests: remove xfail once implementation present; ensure all pass  
   Depends: T013,T015,T023
-- [ ] T025 Update `quickstart.md` with real command snippets for workflows & redeploy notes  
+- [x] T025 Update `quickstart.md` with real command snippets for workflows & redeploy notes  
   Depends: T024
-- [ ] T026 Add CHANGELOG entry describing feature  
+- [x] T026 Add CHANGELOG entry describing feature  
   Depends: T025
-- [ ] T027 Final Constitution re-check & tasks closure summary  
+- [x] T027 Final Constitution re-check & tasks closure summary  
   Depends: T026
+
+### T027 Closure Summary
+Constitution items re-verified:
+- Security: No secrets in artifact; workflows avoid leaking provider creds.
+- Decentralization: Separate stacks allow independent lease migration.
+- Observability: Structured discovery logs + planned metrics stub; operator doc present.
+- Performance: Backoff capped (total < 80s); elapsed logged.
+- Validation: JSON Schema + Python validator enforce contract.
+- Documentation: Quickstart updated, operations guide added, CHANGELOG entry created.
+All tasks T001–T027 complete.
 
 ## Dependencies Summary
 - Setup foundation (T001–T006) precedes tests.
