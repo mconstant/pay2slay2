@@ -11,6 +11,7 @@
 - Q: How should the Banano workflow persist the resolved banano_rpc_endpoint for consumption by the API workflow? → A: Terraform output + JSON artifact (endpoint.json with {"banano_rpc_endpoint": ...})
 - Q: What validation rules should we enforce on the banano_rpc_endpoint host:port string before accepting it as valid? → A: Host must be DNS label or IPv4; port 1024–65535
 - Q: How should the API workflow receive the banano_rpc_endpoint when triggered (primary integration mechanism)? → A: Read from prior run artifact (download)
+- Q: What is the failure exit behavior if the Banano workflow cannot resolve the RPC endpoint after all retries? → A: Hard fail (exit 1, no outputs)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -49,7 +50,7 @@ Not a user-facing UI feature; surfaced only through CI workflow logs and Terrafo
 - **FR-008**: Changing Banano deployment MUST NOT require changes to API Terraform except updating the endpoint input.
 - **FR-009**: Banano Terraform MUST expose ONLY necessary ports (7071, 7072, 7074) per initial design; any removal or addition requires explicit variable or documentation update.
 - **FR-010**: Workflows MUST be independently triggerable via `workflow_dispatch` with clear inputs.
-- **FR-011**: Banano workflow MUST mark failure if Terraform apply succeeds but no forwarded port 7072 is present.
+- **FR-011**: Banano workflow MUST mark failure (exit code 1) if Terraform apply succeeds but no forwarded port 7072 is present after FR-004 retries; it MUST emit no `banano_rpc_endpoint` outputs/artifacts (avoid placeholder values).
 - **FR-012**: Endpoint validation MUST ensure host is a valid DNS label or IPv4 address (regex class `[a-z0-9.-]+` with at least one non-digit alpha segment allowed) and port is numeric in the inclusive range 1024–65535; empty or whitespace-only host is invalid.
 - **FR-013**: If multiple Banano deployments exist, the workflow MUST target exactly one state directory (no ambiguous merges).
 - **FR-014**: Documentation MUST describe operator process: 1) Deploy Banano; 2) Copy or reference endpoint; 3) Deploy API with endpoint.
