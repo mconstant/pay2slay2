@@ -32,7 +32,7 @@
 - ❌ Avoid HOW to implement (no tech stack, APIs, code structure)
 - 👥 Written for business stakeholders, not developers
 
-Additional mandatory guidance: Every spec MUST include explicit UX Acceptance Criteria (if feature is user-facing) and Performance Targets (if feature impacts latency/throughput/resource usage). When these sections are not applicable, state `N/A` with rationale.
+Additional mandatory guidance: Every spec MUST include explicit UX Acceptance Criteria (if feature is user-facing) and Performance Targets (if feature impacts latency/throughput/resource usage). When these sections are not applicable, state `N/A` with rationale. If the feature depends on autonomous AI execution, it MUST include an Automation / AI Execution Constraints subsection (may live inside Security Considerations) describing boundaries, escalation triggers, and any disallowed operations.
 Security is first-class: Every spec MUST include a Security Considerations section. When decentralized distribution or blockchain elements apply, explicitly mark applicability and include the required details in their sections below.
 
 ### Section Requirements
@@ -45,7 +45,7 @@ Security is first-class: Every spec MUST include a Security Considerations secti
 - Requirements (mandatory) — all FRs MUST be testable and measurable
 - UX Acceptance Criteria (mandatory if user-facing)
 - Performance Targets (mandatory if feature has performance impact)
-- Security Considerations (mandatory)
+- Security Considerations (mandatory; include Automation / AI Execution Constraints if agent-run)
 - Decentralized Distribution / Blockchain Applicability (conditional)
 
 ### For AI Generation
@@ -104,6 +104,7 @@ When creating this spec from a user prompt:
 - Secrets management: [where stored, rotation policy]
 - Dependency and supply chain risks: [notable libs, native code, crypto]
 - Abuse/misuse cases and mitigations
+- Automation / AI Execution Constraints (if applicable): escalation criteria, forbidden actions, audit logging expectations
 
 ## Decentralized Distribution / Blockchain Applicability *(conditional)*
 If the feature uses decentralized distribution or blockchain, specify:
@@ -127,7 +128,8 @@ If not applicable, state: `N/A` with a brief rationale.
 - [ ] No implementation details (languages, frameworks, APIs) unless justified
 - [ ] Focused on user value and business needs
 - [ ] Written for non-technical stakeholders
-- [ ] All mandatory sections completed, including UX & Performance where applicable
+ - [ ] All mandatory sections completed, including UX & Performance where applicable
+ - [ ] Automation / AI Execution Constraints present if agent-run
  - [ ] Security Considerations completed
  - [ ] Decentralized/Blockchain section completed or explicitly N/A
 
@@ -148,7 +150,8 @@ If not applicable, state: `N/A` with a brief rationale.
 - [ ] No implementation details (languages, frameworks, APIs)
 - [ ] Focused on user value and business needs
 - [ ] Written for non-technical stakeholders
-- [ ] All mandatory sections completed
+ - [ ] All mandatory sections completed
+ - [ ] Automation / AI Execution Constraints present if agent-run
 
 ### Requirement Completeness
 - [ ] No [NEEDS CLARIFICATION] markers remain

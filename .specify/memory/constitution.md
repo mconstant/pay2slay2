@@ -2,14 +2,15 @@
 
 <!--
 Sync Impact Report
-- Version change: 2.2.0 -> 2.3.0
-- Modified principles: expanded to include Security & Privacy, Decentralized Distribution & Interoperability,
-  Blockchain & Smart Contract Safety, Open Source Ethos & Licensing (in addition to existing quality/testing/observability guidance)
-- Added sections: Security Considerations, Decentralized Distribution guidance, Licensing & Community Governance notes
-- Templates updated:
+- Version change: 2.3.0 -> 2.4.0
+- Modified principles: (new) AI-Assisted Autonomous Delivery
+- Added sections: AI execution governance & safeguards (principle + governance bullet)
+- Removed sections: none
+- Templates requiring updates:
   - .specify/templates/plan-template.md ✅ updated
   - .specify/templates/spec-template.md ✅ updated
   - .specify/templates/tasks-template.md ✅ updated
+  - .specify/templates/agent-file-template.md ⚠ pending (will reflect on next regeneration from plans)
 - Follow-up TODOs: none
 -->
 
@@ -40,6 +41,11 @@ Previously established principles for code quality, test-first development, UX, 
 
 Rationale: Security, decentralization, and open-source practices complement and build on existing engineering quality gates.
 
+### VI. AI-Assisted Autonomous Delivery
+AI agents executing plans MUST: (1) Honor all constitutional gates (security, tests-first, licensing, decentralization, blockchain safety) before advancing phases; (2) Proceed without unnecessary user prompts whenever an approved tasks list or plan is present; (3) Request clarification ONLY when an ambiguity blocks safe, policy-compliant progress; (4) Record every governance-relevant change (security, audits, licensing) directly in the repository history with clear commit messages; (5) Avoid destructive or irreversible operations (secret rotation, key revocation, schema destructive migrations) without explicit human approval documented in the commit message.
+
+Rationale: Autonomous acceleration increases velocity but must not erode safety, auditability, or user control. Guardrails preserve trust while minimizing friction.
+
 ## Additional Constraints
 - Licensing: Every release MUST include a LICENSE file and a dependency license manifest.
 - Secrets & Keys: Private keys and credentials MUST be stored in approved secret stores; clear rotation policies MUST be documented.
@@ -55,7 +61,12 @@ Rationale: Security, decentralization, and open-source practices complement and 
 - MAJOR bump is reserved for incompatible redefinitions of governance or principle removals.
 - Editorial/formatting fixes are PATCH bumps.
 
+AI Execution Safeguards:
+- Agents MUST log principle gate evaluations in generated plan/tasks artifacts.
+- Agents MUST surface (not silently bypass) any failed gate and halt until resolved.
+- Agents MUST not solicit user confirmation for routine sequential tasks already authorized by tasks.md.
+
 Approval policy:
 - Security-affecting amendments MUST include at least one security reviewer and one maintainer approver.
 
-**Version**: 2.3.0 | **Ratified**: 2025-09-24 | **Last Amended**: 2025-09-24
+**Version**: 2.4.0 | **Ratified**: 2025-09-24 | **Last Amended**: 2025-09-25
