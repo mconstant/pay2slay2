@@ -47,3 +47,23 @@ If a build fails due to a newly disclosed vulnerability, contributors should:
 
 ## Disclosure
 Please practice coordinated disclosure; do not publicize issues before a patch release.
+
+## OAuth State & Session Integrity
+- OAuth state tokens are HMAC-signed opaque values containing entropy + issued timestamp.
+- Single-use enforcement: consumed state is placed in an in-memory replay cache; any reuse returns 400.
+- Tests cover: tamper, mismatch, replay, and legacy fallback path.
+
+## Abuse Heuristics
+- Current heuristic flags unusually high kill deltas in a sliding window (threshold driven).
+- Flags written to `abuse_flags` table with severity for later review / potential automatic mitigation.
+- Future work: probabilistic anomaly detection (EWMA / z-score) and rate-of-change models.
+
+## Regional Privacy
+- Region inferred heuristically (header + placeholder IP logic) and stored as short code only.
+- No raw IP addresses persisted; region usage limited to aggregate metrics counters.
+- Middleware can be disabled or replaced for stricter privacy requirements.
+
+## Future Enhancements
+- Differential privacy noise addition for public metrics exports.
+- Signed vulnerability allowlist with expiration metadata.
+- Formal threat model document (STRIDE) and security architecture diagram.

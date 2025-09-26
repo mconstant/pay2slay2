@@ -94,16 +94,16 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T044 Secrets handling review + docs update (masking helper, secrets.md doc, startup masked log, unit tests)
 
 ## Phase 3.5: Docs & Polish
-- [ ] T045 quickstart.md (operator deploy + Akash + migrations + signing)
-- [ ] T046 research.md (Fortnite endpoints, Yunite specifics, Banano node, signing)
-- [ ] T047 data-model.md (including cursor, audit, region, abuse fields)
-- [ ] T048 contracts/ OpenAPI snapshot + per-endpoint markdown
-- [ ] T049 SECURITY.md expand (OAuth state, abuse heuristics, regional privacy)
-- [ ] T050 distribution/upgrade strategy (docs/distribution.md) incl. cosign & rollback
-- [ ] T051 Perf harness (parallel simulated users for accrual/settlement throughput)
+- [x] T045 quickstart.md (operator deploy + Akash + migrations + signing)
+- [x] T046 research.md (Fortnite endpoints, Yunite specifics, Banano node, signing)
+- [x] T047 data-model.md (including cursor, audit, region, abuse fields)
+- [x] T048 contracts/ OpenAPI snapshot + per-endpoint markdown
+- [x] T049 SECURITY.md expand (OAuth state, abuse heuristics, regional privacy)
+- [x] T050 distribution/upgrade strategy (docs/distribution.md) incl. cosign & rollback
+- [x] T051 Perf harness (parallel simulated users for accrual/settlement throughput)
 - [ ] T052 Decimal monetary types refactor (models/services/tests)
-- [ ] T053 i18n scaffolding (src/lib/i18n.py + locale negotiation)
-- [ ] T054 abuse.md documenting heuristics and flags semantics
+- [x] T053 i18n scaffolding (src/lib/i18n.py + locale negotiation)
+- [x] T054 abuse.md documenting heuristics and flags semantics
 
 ## Phase 3.6: Security & Compliance
 - [x] T055 Expand security tests (state mismatch, replay, rate limit exhaustion)

@@ -49,10 +49,47 @@ Optional observability:
   - Lint: `ruff check .`
   - Types: `mypy`
 
-## 6) Makefile shortcuts
+## 6) Database migrations
+If using Alembic (Postgres / persistent DB) you can apply migrations:
+```
+PAY2SLAY_AUTO_MIGRATE=1 python -m src.api.app  # triggers upgrade on start
+```
+Or manually:
+```
+alembic upgrade head
+```
+
+## 7) Image build & signing (supply chain)
+Build container image locally:
+```
+docker build -t pay2slay:local .
+```
+Generate SBOM (Syft) and sign (Cosign) (example):
+```
+syft packages pay2slay:local -o spdx-json > sbom.json
+cosign sign --key cosign.key pay2slay:local
+cosign attest --predicate sbom.json --type spdxjson pay2slay:local
+```
+Verify:
+```
+cosign verify pay2slay:local
+```
+
+## 8) Deployment (Akash example snippet)
+Values to template into `infra/akash/*.tf` or manifests:
+- Image reference (signed) + digest
+- Environment secrets via provider (never bake secrets in image)
+- Expose port 8000 (API) and metrics port if required
+
+## 9) Makefile shortcuts
   - `make api` — start API (reload)
   - `make scheduler` — start scheduler (reads env)
   - `make test` — run tests
   - `make lint` — lint
   - `make type` — type-check
   - `make all` — lint + type + tests
+
+## 10) Next steps
+- Review `SECURITY.md` for supply chain & provenance guidelines.
+- Fill out `research.md`, `data-model.md`, and `contracts/` docs (tasks T046–T048).
+- Switch monetary fields to Decimal before production payouts (T052).
