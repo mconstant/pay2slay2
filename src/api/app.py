@@ -67,6 +67,33 @@ def _register_metrics(app: FastAPI) -> None:
             return PlainTextResponse(f"error generating metrics: {exc}", status_code=500)
 
 
+def _register_health(app: FastAPI) -> None:
+    """Register health, live, and readiness probes (kept small for PLR0915)."""
+
+    @app.get("/healthz")
+    def healthz() -> dict[str, str]:  # pragma: no cover
+        return {"status": "ok"}
+
+    @app.get("/livez")
+    def livez() -> dict[str, str]:  # pragma: no cover
+        return {"status": "alive"}
+
+    @app.get("/readyz")
+    def readyz() -> dict[str, str]:  # pragma: no cover
+        try:
+            session_factory = getattr(app.state, "session_factory", None)
+            if session_factory is None:
+                return {"status": "not_ready"}
+            session = session_factory()
+            try:
+                session.execute("SELECT 1")
+            finally:
+                session.close()
+            return {"status": "ready"}
+        except Exception:
+            return {"status": "not_ready"}
+
+
 def create_app() -> FastAPI:
     """Create and return the FastAPI application instance."""
     setup_structlog()
@@ -95,6 +122,10 @@ def create_app() -> FastAPI:
         from src.lib.config import get_config  # local import
 
         app.state.config = get_config()
+        try:  # safe masked config log (no secrets)
+            log.info("config_loaded", config=app.state.config.safe_dict())
+        except Exception:  # pragma: no cover
+            pass
     except Exception as exc:  # pragma: no cover
         app.state.config_error = str(exc)
         log.warning("config_load_failed", error=str(exc))
@@ -115,32 +146,7 @@ def create_app() -> FastAPI:
     app.include_router(user_router)
     app.include_router(admin_router)
 
-    @app.get("/healthz")
-    def healthz() -> dict[str, str]:  # pragma: no cover
-        return {"status": "ok"}
-
-    @app.get("/livez")
-    def livez() -> dict[str, str]:  # pragma: no cover
-        # If the process is up, liveness is ok
-        return {"status": "alive"}
-
-    @app.get("/readyz")
-    def readyz() -> dict[str, str]:  # pragma: no cover
-        # Basic readiness: ensure DB session can be created
-        try:
-            session_factory = getattr(app.state, "session_factory", None)
-            if session_factory is None:
-                return {"status": "not_ready"}
-            session = session_factory()
-            try:
-                # do a trivial no-op
-                session.execute("SELECT 1")
-            finally:
-                session.close()
-            return {"status": "ready"}
-        except Exception:
-            return {"status": "not_ready"}
-
+    _register_health(app)
     _register_metrics(app)
 
     return app
