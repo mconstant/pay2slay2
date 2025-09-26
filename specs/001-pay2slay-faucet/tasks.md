@@ -23,7 +23,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T002 Dependencies
 - [x] T003 Lint/format/type tooling
 - [x] T004 Config YAML defaults
-- [ ] T005 Docs skeleton (docs/README.md, SECURITY.md, CONTRIBUTING.md, LICENSE, QUICKSTART placeholder)
+- [x] T005 Docs skeleton (docs/README.md, SECURITY.md, CONTRIBUTING.md, LICENSE, QUICKSTART placeholder)
 
 ## Phase 3.2: Tests First (Contract / Integration / Perf / Security)
 - [x] T006 Contract: POST /auth/discord/callback
