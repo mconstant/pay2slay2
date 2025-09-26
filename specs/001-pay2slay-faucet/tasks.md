@@ -101,7 +101,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T049 SECURITY.md expand (OAuth state, abuse heuristics, regional privacy)
 - [x] T050 distribution/upgrade strategy (docs/distribution.md) incl. cosign & rollback
 - [x] T051 Perf harness (parallel simulated users for accrual/settlement throughput)
-- [ ] T052 Decimal monetary types refactor (models/services/tests)
+- [x] T052 Decimal monetary types refactor (models/services/tests)
 - [x] T053 i18n scaffolding (src/lib/i18n.py + locale negotiation)
 - [x] T054 abuse.md documenting heuristics and flags semantics
 
@@ -150,7 +150,7 @@ T037, T038, T039, T041
 ## Notes
 - Distinct file tasks may run in parallel; avoid parallel edits to same module.
 - Ensure each new test initially fails (capture failing assertion screenshot/log in CI if needed).
-- Switch to Decimal (T052) before real money flows leave dry_run.
+- Decimal monetary precision (T052) completed: all monetary fields now Decimal(18,8) with deterministic rounding; ready for non-dry-run payouts.
 - Provide migration safety: run Alembic upgrade in entrypoint before app start.
 
 Generated on 2025-09-25 (automated per tasks.prompt).
