@@ -88,6 +88,11 @@ jobs:
           python scripts/ci/check_digest_post_push.py metadata.json ${{ steps.repo.outputs.repository }} ${{ steps.vars.outputs.git_sha }}
           echo "metadata_path=metadata.json" >> $GITHUB_OUTPUT
 
+      - name: SBOM Linkage Placeholder (T031)
+        run: |
+          echo "TODO: Generate SBOM and attach reference (contract: sbom-linkage.yaml)" | tee sbom-linkage.log
+          echo "sbom_status=placeholder" >> $GITHUB_OUTPUT
+
       - name: Upload Metadata Artifact
         uses: actions/upload-artifact@v4
         with:

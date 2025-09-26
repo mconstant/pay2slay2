@@ -75,7 +75,7 @@ Guiding Principles: TDD-first (contract tests before workflow edits), immutabili
  - [x] T028 Add deployment-time digest & repo guard script `scripts/ci/check_existing_digest.py` (compares live registry digest for IMAGE_SHA against recorded metadata artifact; if mismatch → fail) and enforce repository mapping (canonical main, staging feature) — distinct from build-time post-push verification (T041/T042). (Refined by T043)
  - [x] T029 Add policy check pre-deploy ensuring no floating tag pattern (regex guard) even if misconfigured (defense-in-depth) in `src/lib/deploy_validate.py`.
  - [x] T030 Add unit tests for deploy_validate & rollback modules in `tests/unit/test_deploy_validate.py` and `tests/unit/test_rollback.py`.
- - [ ] T031 Add SBOM linkage step update in build workflow referencing SHA tag (FR-008); if SBOM generation not yet implemented, create explicit TODO plus link to new `sbom-linkage.yaml` contract (T047) rather than generic comment.
+ - [~] T031 Add SBOM linkage step update in build workflow referencing SHA tag (FR-008); if SBOM generation not yet implemented, create explicit TODO plus link to new `sbom-linkage.yaml` contract (T047) rather than generic comment. (Placeholder step present in build & deploy workflows; full generation pending)
 
 ## Phase 3.8: Polish & Performance
  - [ ] T032 Add timing capture & log for deploy and rollback workflows (start/end) appended to structured output including fields {deploy_duration_sec, rollback_duration_sec}.
