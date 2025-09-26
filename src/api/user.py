@@ -7,6 +7,10 @@ from sqlalchemy.orm import Session
 from src.lib.auth import session_secret, verify_session
 from src.models.models import Payout, User, VerificationRecord, WalletLink
 
+# Banano address heuristic length bounds
+BANANO_ADDR_MIN_LEN = 20
+BANANO_ADDR_MAX_LEN = 120
+
 router = APIRouter()
 
 
@@ -27,6 +31,11 @@ def link_wallet(
 ) -> JSONResponse:
     # rudimentary validation: must start with 'ban_'
     if not isinstance(banano_address, str) or not banano_address.startswith("ban_"):
+        raise HTTPException(status_code=400, detail="Invalid Banano address")
+    # Additional basic sanitation: no whitespace and reasonable length bounds
+    if any(c.isspace() for c in banano_address) or not (
+        BANANO_ADDR_MIN_LEN <= len(banano_address) <= BANANO_ADDR_MAX_LEN
+    ):
         raise HTTPException(status_code=400, detail="Invalid Banano address")
     # Identify user from session cookie
     token = request.cookies.get("p2s_session") if request else None

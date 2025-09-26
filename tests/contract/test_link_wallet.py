@@ -9,5 +9,8 @@ def test_link_wallet_validates_banano_address(client):
 def test_link_wallet_success_path(client):
     # Ensure a user exists via auth dry-run
     client.post("/auth/discord/callback?state=xyz&code=dummy")
-    resp = client.post("/link/wallet", json={"banano_address": "ban_1exampleaddress"})
+    resp = client.post(
+        "/link/wallet",
+        json={"banano_address": "ban_1exampleaddresslongenoughfortestpurpose"},
+    )
     assert resp.status_code in (HTTPStatus.OK, HTTPStatus.ACCEPTED)

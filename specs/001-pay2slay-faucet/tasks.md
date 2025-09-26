@@ -43,7 +43,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 	- Warmup (5 calls) discards startup jitter (first query, model import, etc.)
 	- Skippable via PAY2SLAY_SKIP_PERF=1 for slow CI environments
 	- Prints diagnostic stats (median/mean/max) on run for easy trend capture
-- [~] T014 Security: OAuth replay/state (state enforced), rate limit baseline, invalid wallet format fuzz
+- [x] T014 Security: OAuth replay/state (state enforced), rate limit baseline, invalid wallet format fuzz
 - [x] T015 Contract: POST /me/reverify (stub test created)
 - [x] T016 Contract: GET /config/product (stub test created)
 - [x] T017 Contract: GET /me/payouts (stub test created)

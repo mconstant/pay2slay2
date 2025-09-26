@@ -7,6 +7,14 @@ import os
 import time
 from hashlib import sha256
 from secrets import token_urlsafe
+from typing import Any, cast
+
+# In-memory replay cache container (mutable dict to avoid needing 'global')
+_OAUTH_REPLAY_STATE: dict[str, Any] = {
+    "cache": {},  # nonce -> exp timestamp
+    "last_clean": 0.0,
+    "interval": 30,  # seconds between GC passes
+}
 
 
 def _b64url(data: bytes) -> str:
@@ -37,7 +45,10 @@ def verify_session(token: str, secret: str) -> str | None:
         good = hmac.new(secret.encode("utf-8"), body, sha256).digest()
         if not hmac.compare_digest(sig, good):
             return None
-        payload = json.loads(body)
+        raw = json.loads(body)
+        if not isinstance(raw, dict):
+            return None
+        payload: dict[str, Any] = raw  # narrow type for mypy
         if payload.get("exp", 0) < int(time.time()):
             return None
         uid = payload.get("uid")
@@ -63,20 +74,70 @@ def issue_oauth_state(secret: str, ttl_seconds: int = 600) -> str:
     return f"{_b64url(body)}.{_b64url(sig)}"
 
 
-def verify_oauth_state(token: str, secret: str) -> bool:
+def _decode_oauth_state(token: str, secret: str) -> dict[str, Any] | None:
+    """Decode + verify signature & expiry. Returns payload or None."""
     try:
         body_b64, sig_b64 = token.split(".", 1)
         body = _b64url_decode(body_b64)
         sig = _b64url_decode(sig_b64)
         good = hmac.new(secret.encode("utf-8"), body, sha256).digest()
-        if not hmac.compare_digest(sig, good):
-            return False
-        payload = json.loads(body)
-        if payload.get("exp", 0) < int(time.time()):
-            return False
-        return True
+        if not hmac.compare_digest(sig, good):  # signature mismatch
+            return None
+        raw = json.loads(body)
+        if not isinstance(raw, dict):  # ensure mapping
+            return None
+        payload: dict[str, Any] = raw
+        if payload.get("exp", 0) < int(time.time()):  # expired
+            return None
+        if "nonce" not in payload:
+            return None
+        return payload
     except Exception:
+        return None
+
+
+def verify_oauth_state(token: str, secret: str) -> bool:  # backward-compatible (no replay)
+    return _decode_oauth_state(token, secret) is not None
+
+
+def consume_oauth_state(token: str, secret: str, enforce_single_use: bool = True) -> bool:
+    """Verify & optionally enforce single-use semantics for OAuth state tokens.
+
+    When enforce_single_use=True (default), a nonce may only be consumed once
+    per process lifetime (until its natural expiry). Subsequent attempts are rejected.
+    """
+    payload = _decode_oauth_state(token, secret)
+    if not payload:
         return False
+    nonce: str = str(payload["nonce"])
+    exp: int = int(payload.get("exp", 0))
+    now = time.time()
+    if enforce_single_use:
+        # Opportunistic GC of expired entries
+        if now - _OAUTH_REPLAY_STATE["last_clean"] > _OAUTH_REPLAY_STATE["interval"]:
+            _OAUTH_REPLAY_STATE["last_clean"] = now
+            cache = cast(dict[str, int], _OAUTH_REPLAY_STATE["cache"])
+            expired = [k for k, v in cache.items() if v < now]
+            for k in expired:
+                cache.pop(k, None)
+        cache = cast(dict[str, int], _OAUTH_REPLAY_STATE["cache"])
+        if nonce in cache:  # replay attempt
+            return False
+        cache[nonce] = exp
+    return True
+
+
+__all__ = [
+    # existing exports
+    "issue_session",
+    "verify_session",
+    "session_secret",
+    "issue_oauth_state",
+    "verify_oauth_state",
+    "consume_oauth_state",
+    "issue_admin_session",
+    "verify_admin_session",
+]
 
 
 # Admin sessions
