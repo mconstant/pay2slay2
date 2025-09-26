@@ -52,7 +52,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T027 Implement /config/product endpoint (src/api/config.py)
 - [x] T028 Implement /me/payouts endpoint (paginated)
 - [~] T029 Region analytics middleware (header-based region capture; pending GeoIP + metrics)
-- [ ] T030 AdminAudit model + migration + persistence utilities
+- [x] T030 AdminAudit model + migration + persistence utilities
 - [ ] T031 Verification refresh background job (src/jobs/verification_refresh.py)
 - [~] T032 FortniteService real kill delta retrieval + rate limiting
 	- DONE: HTTP client (httpx), token-bucket rate limiting, dry_run path, delta computation from lifetime kills
@@ -74,7 +74,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [ ] T040 Abuse heuristic service (enrich accrual / flag abnormal kill rates)
 - [ ] T041 Metrics: payouts_by_region, kills_by_region, flagged_users_total
 - [ ] T042 Operator balance check (real BananoClient) integrated into scheduler
-- [ ] T043 Alembic migration for AdminAudit and any new analytics columns
+- [~] T043 Alembic migration for AdminAudit and any new analytics columns (AdminAudit done; analytics pending)
 - [ ] T044 Secrets handling review + docs update (no plaintext, env var mapping)
 
 ## Phase 3.5: Docs & Polish

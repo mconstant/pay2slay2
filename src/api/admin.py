@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from prometheus_client import Counter
 from sqlalchemy.orm import Session
 
+from src.lib.admin_audit import AdminAuditPayload, record_admin_audit
 from src.lib.auth import issue_admin_session, session_secret, verify_admin_session
 from src.lib.observability import get_logger
 from src.models.models import AdminUser, Payout, User, VerificationRecord
@@ -53,6 +54,17 @@ def admin_login(email: str = Body(..., embed=True), db: Session = Depends(_get_d
     token = issue_admin_session(email, session_secret())
     resp = JSONResponse({"email": email})
     resp.set_cookie("p2s_admin", token, httponly=True, samesite="lax")
+    record_admin_audit(
+        db,
+        AdminAuditPayload(
+            action="admin_login",
+            actor_email=email,
+            target_type="admin_user",
+            target_id=email,
+            summary="login",
+        ),
+    )
+    db.commit()
     log.info("admin_login", email=email)
     return resp
 
@@ -91,6 +103,17 @@ def admin_reverify(
         detail=None,
     )
     db.add(vr)
+    db.commit()
+    record_admin_audit(
+        db,
+        AdminAuditPayload(
+            action="admin_reverify",
+            actor_email=None,
+            target_type="user",
+            target_id=discord_id,
+            summary="reverify",
+        ),
+    )
     db.commit()
     log.info("admin_reverify", discord_id=discord_id, epic_account_id=epic_id)
     ADMIN_REVERIFY_TOTAL.labels(result="accepted").inc()
@@ -137,6 +160,17 @@ def admin_payouts_retry(
         payout.error_detail = payout.error_detail or "retry failed"
         ADMIN_PAYOUT_RETRY_TOTAL.labels(result="failed").inc()
         log.warning("admin_payout_retry_failed", payout_id=payout_id)
+    record_admin_audit(
+        db,
+        AdminAuditPayload(
+            action="admin_payout_retry",
+            actor_email=None,
+            target_type="payout",
+            target_id=str(payout_id),
+            summary=payout.status,
+            detail=payout.error_detail,
+        ),
+    )
     db.commit()
     return JSONResponse(
         {"status": payout.status, "payout_id": payout_id, "tx_hash": payout.tx_hash}

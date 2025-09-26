@@ -127,3 +127,16 @@ class Payout(Base, TimestampMixin):
 
     user: Mapped[User] = relationship(back_populates="payouts")
     accruals: Mapped[list[RewardAccrual]] = relationship(back_populates="payout")
+
+
+class AdminAudit(Base, TimestampMixin):
+    __tablename__ = "admin_audit"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    action: Mapped[str] = mapped_column(String(64), index=True)
+    actor_email: Mapped[str | None] = mapped_column(String(255), index=True)
+    target_type: Mapped[str | None] = mapped_column(String(64))
+    target_id: Mapped[str | None] = mapped_column(String(64))
+    summary: Mapped[str | None] = mapped_column(String(200))
+    detail: Mapped[str | None] = mapped_column(String(2000))
+    ip_address: Mapped[str | None] = mapped_column(String(64))
