@@ -62,25 +62,31 @@ jobs:
           docker push ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }}
           docker push ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.short_sha }}
 
+      - name: Install Project
+        run: |
+          pip install .
+
+      - name: Emit Initial Metadata JSON
+        id: meta_init
+        run: |
+          python scripts/ci/emit_image_metadata.py \
+            --sha ${{ steps.vars.outputs.git_sha }} \
+            --repository ${{ steps.repo.outputs.repository }} \
+            --digest ${{ steps.digest.outputs.pre_push_digest }} > metadata.json
+          # Add pre_push_digest explicitly (image_digest already present)
+          python -c "import json; p='metadata.json'; d=json.load(open(p)); d['pre_push_digest']=d['image_digest']; json.dump(d, open(p,'w')); print()"
+
       - name: Soft Signature Verify (placeholder)
         id: sign
         run: |
           echo "signature_status=unverified" >> $GITHUB_OUTPUT
           echo "signature_reason=missing" >> $GITHUB_OUTPUT
 
-      - name: Install Project
+      - name: Post-Push Digest Verification
+        id: verify
         run: |
-          pip install .
-
-      - name: Emit Metadata JSON
-        id: meta
-        run: |
-          python scripts/ci/emit_image_metadata.py \
-            --sha ${{ steps.vars.outputs.git_sha }} \
-            --repository ${{ steps.repo.outputs.repository }} \
-            --digest ${{ steps.digest.outputs.pre_push_digest }} > metadata.json
+          python scripts/ci/check_digest_post_push.py metadata.json ${{ steps.repo.outputs.repository }} ${{ steps.vars.outputs.git_sha }}
           echo "metadata_path=metadata.json" >> $GITHUB_OUTPUT
-          echo "pre_push_digest=${{ steps.digest.outputs.pre_push_digest }}" >> $GITHUB_OUTPUT
 
       - name: Upload Metadata Artifact
         uses: actions/upload-artifact@v4
@@ -90,4 +96,8 @@ jobs:
 
       - name: Log Summary
         run: |
-          echo "Built image ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} digest=${{ steps.digest.outputs.pre_push_digest }} signature=${{ steps.sign.outputs.signature_status }}"
+          sudo apt-get update -y >/dev/null 2>&1 || true
+          sudo apt-get install -y jq >/dev/null 2>&1 || true
+          echo "Built image ${{ steps.repo.outputs.repository }}:${{ steps.vars.outputs.git_sha }} pre_digest=${{ steps.digest.outputs.pre_push_digest }}" \
+               "verification=$(jq -r .digest_verification metadata.json) post_digest=$(jq -r .post_push_digest metadata.json)" \
+               "signature=${{ steps.sign.outputs.signature_status }}"
