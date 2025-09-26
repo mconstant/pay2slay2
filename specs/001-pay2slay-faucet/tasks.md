@@ -65,7 +65,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T033 Accrual batch job (src/jobs/accrual.py) iterating verified users (implemented + unit test)
 - [ ] T034 BananoClient real RPC (balance/send/raw conversion)
 - [x] T035 Payout idempotency key (hash unsettled accrual IDs) & duplicate guard
-- [ ] T036 Payout retry logic (attempt_count, last_attempt_at) + exponential backoff placeholder
+- [x] T036 Payout retry logic (attempt_count, last_attempt_at) + exponential backoff placeholder
 
 ## Phase 3.4: Integration & Observability
 - [~] T037 Tracing setup (OpenTelemetry) in src/lib/observability.py (console + optional OTLP exporter; added span attrs in scheduler & accrual; pending: HTTP span enrichment, DB spans, metrics correlation)

@@ -32,7 +32,12 @@ class PayoutService:
         return row.address if row else None
 
     def create_payout(
-        self, user: User, amount_ban: float, accruals: list[RewardAccrual]
+        self,
+        user: User,
+        amount_ban: float,
+        accruals: list[RewardAccrual],
+        max_retries: int = 2,
+        backoff_base: float = 0.5,
     ) -> PayoutResult | None:
         address = self._get_primary_address(user)
         if not address:
@@ -70,16 +75,31 @@ class PayoutService:
             a.settled = True
             a.settled_at = datetime.now(UTC)
             a.payout = payout
-        if self.dry_run:
-            payout.status = "sent"
-            payout.tx_hash = "dryrun"
-        else:
-            # Convert BAN to raw if needed (placeholder: assume input already in BAN and node accepts it)
+        import random
+        import time
+
+        def _attempt_send() -> bool:
+            if self.dry_run:
+                payout.tx_hash = "dryrun"
+                payout.status = "sent"
+                return True
             tx = self.banano.send(
                 source_wallet="operator", to_address=address, amount_raw=str(amount_ban)
             )
             payout.tx_hash = tx
             payout.status = "sent" if tx else "failed"
+            return payout.status == "sent"
+
+        success = _attempt_send()
+        attempt = 1
+        while not success and attempt <= max_retries:
+            attempt += 1
+            payout.attempt_count = attempt
+            payout.last_attempt_at = datetime.now(UTC)
+            # jittered exponential backoff (capped small since scheduler loop handles broader timing)
+            sleep_for = min(backoff_base * (2 ** (attempt - 1)) * (0.5 + random.random()), 5.0)
+            time.sleep(sleep_for)
+            success = _attempt_send()
         # Advance cursor if payout succeeded (sum accrual kills added to cursor)
         if payout.status == "sent":
             total_kills = sum(a.kills for a in accruals)
