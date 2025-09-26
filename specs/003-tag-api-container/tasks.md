@@ -126,6 +126,9 @@ Rationale: Close medium severity analysis gaps (parity, single-arch explicit ver
  - Rollback no-build invariant enforced (T039, T045) and codified in contract (T044)
  - Medium completeness: short tag parity (T049), single-arch verification (T050), repo selection (T051), SBOM linkage contract (T047), signature contract (T048), metrics tests (T052), foreign repo defense (T053), log schema completeness (T054), docs validation (T055), performance deploy/rollback timings (T058)
 
+## Maintenance / Post-Completion Tasks
+- [ ] T061 Fix build workflow PYTHONPATH issue causing ModuleNotFoundError for 'src' in `scripts/ci/emit_image_metadata.py` when running on GitHub-hosted runners (ensure project installed or PYTHONPATH set before script invocation).
+
 ## Dependencies Summary
 Setup → Contracts/Tests → Helper Code → Workflows → Implementation Hardening → Docs → Security → Polish
 - T006–T009 before T012–T015 finalization (stubs may exist earlier)
