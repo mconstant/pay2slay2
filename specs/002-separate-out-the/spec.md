@@ -10,6 +10,7 @@
 - Q: What retry strategy and total timeout should the Banano deployment workflow use to discover the forwarded RPC port (7072) before declaring failure? → A: Exponential backoff 5s,10s,20s,40s (4 attempts, ~75s max)
 - Q: How should the Banano workflow persist the resolved banano_rpc_endpoint for consumption by the API workflow? → A: Terraform output + JSON artifact (endpoint.json with {"banano_rpc_endpoint": ...})
 - Q: What validation rules should we enforce on the banano_rpc_endpoint host:port string before accepting it as valid? → A: Host must be DNS label or IPv4; port 1024–65535
+- Q: How should the API workflow receive the banano_rpc_endpoint when triggered (primary integration mechanism)? → A: Read from prior run artifact (download)
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -43,7 +44,7 @@ Not a user-facing UI feature; surfaced only through CI workflow logs and Terrafo
 - **FR-003**: Banano deployment workflow MUST output a Terraform output named `banano_rpc_endpoint` capturing `host:external_port` associated with internal port 7072.
 - **FR-004**: Banano workflow MUST attempt RPC port (7072) discovery with an exponential backoff schedule of 4 attempts at 5s, 10s, 20s, and 40s delays (≈75s max elapsed). After the 4th failed attempt it MUST hard-fail and NOT emit a partial/empty endpoint artifact.
 - **FR-005**: On success, Banano workflow MUST (a) expose a Terraform output `banano_rpc_endpoint`, (b) write an artifact file `endpoint.json` containing `{ "banano_rpc_endpoint": "<host:port>" }`, and (c) set a GitHub Actions workflow output of the same name.
-- **FR-006**: API workflow MUST fail fast if `banano_rpc_endpoint` input is absent or empty.
+- **FR-006**: API workflow MUST download the latest successful Banano workflow artifact `endpoint.json`, parse `banano_rpc_endpoint`, and fail fast if artifact missing, JSON invalid, or value fails FR-012 validation (no manual input parameter required by default).
 - **FR-007**: API workflow MUST surface the injected endpoint in logs (redacting nothing—no secret content).
 - **FR-008**: Changing Banano deployment MUST NOT require changes to API Terraform except updating the endpoint input.
 - **FR-009**: Banano Terraform MUST expose ONLY necessary ports (7071, 7072, 7074) per initial design; any removal or addition requires explicit variable or documentation update.
