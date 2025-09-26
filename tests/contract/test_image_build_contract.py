@@ -4,11 +4,12 @@ We invoke the emit_image_metadata.py script to produce real JSON and load it.
 """
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
-SCRIPTS_DIR = Path(__file__).parents[3] / "scripts" / "ci"
+SCRIPTS_DIR = Path(__file__).parents[2] / "scripts" / "ci"
 
 
 def simulate_build_contract_stub():  # retained name for minimal diff
@@ -25,7 +26,8 @@ def simulate_build_contract_stub():  # retained name for minimal diff
         "--digest",
         digest,
     ]
-    out = subprocess.check_output(cmd, text=True)
+    env = {**os.environ, "PYTHONPATH": str(Path(__file__).parents[2])}
+    out = subprocess.check_output(cmd, text=True, env=env)
     data = json.loads(out)
     # Simulate that pre_push_digest now equals image_digest as workflow sets
     data["pre_push_digest"] = data.get("image_digest")

@@ -13,8 +13,4 @@ def test_main_goes_canonical():
 
 def test_feature_branch_not_canonical():
     repo = select_repository("feature/x")
-    assert repo.endswith("-staging")
-    # Force failure placeholder
-    assert not repo.endswith(
-        "-staging"
-    ), "Feature branch incorrectly marked staging (intentional fail)"
+    assert repo.endswith("-staging"), "Feature branch should select staging repo"

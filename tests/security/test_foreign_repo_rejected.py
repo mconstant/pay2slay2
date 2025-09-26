@@ -19,6 +19,5 @@ def test_foreign_repo_rejected():
 
 
 def test_legit_repo():
-    # Force failing assertion by expecting exception for allowed repo
-    with pytest.raises(ForeignRepositoryError):
-        ensure_repo_allowed("ghcr.io/mconstant/pay2slay-api")
+    # Allowed repo should NOT raise
+    ensure_repo_allowed("ghcr.io/mconstant/pay2slay-api")

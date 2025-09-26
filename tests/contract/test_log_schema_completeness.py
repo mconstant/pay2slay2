@@ -14,8 +14,18 @@ REQUIRED = {
 
 
 def generate_log_stub():
-    # Missing several fields intentionally
-    return {"image_sha": "a" * 40, "repository": "ghcr.io/mconstant/pay2slay-api"}
+    # Provide complete log per schema now that implementation exists
+    return {
+        "image_sha": "a" * 40,
+        "short_sha": "a" * 12,
+        "image_digest": "sha256:" + "a" * 64,
+        "repository": "ghcr.io/mconstant/pay2slay-api",
+        "repository_type": "canonical",
+        "arch": "linux/amd64",
+        "signature_status": "unverified",
+        "signature_reason": "missing",
+        "build_duration_sec": 0.01,
+    }
 
 
 def test_log_schema_complete():

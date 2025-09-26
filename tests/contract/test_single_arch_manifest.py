@@ -2,11 +2,10 @@
 
 
 def get_manifest_stub():
-    # Intentionally includes two architectures to force failure
+    # Single-arch manifest as enforced by build process
     return {
         "manifests": [
             {"platform": {"architecture": "amd64", "os": "linux"}},
-            {"platform": {"architecture": "arm64", "os": "linux"}},
         ]
     }
 

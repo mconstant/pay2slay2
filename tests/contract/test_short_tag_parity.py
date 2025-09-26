@@ -17,7 +17,4 @@ def test_short_tag_parity():
     full = "c" * 40
     digest = "sha256:" + "c" * 64
     register_image(full, digest)
-    assert get_digest(full) == get_digest(full[:12])
-    # Force failing expectation by mutating short tag digest
-    FAKE_REGISTRY[full[:12]] = "sha256:" + "d" * 64
-    assert get_digest(full) == get_digest(full[:12]), "Short tag digest diverged (placeholder fail)"
+    assert get_digest(full) == get_digest(full[:12]), "Short tag digest parity failed"

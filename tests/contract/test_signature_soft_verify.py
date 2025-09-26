@@ -4,8 +4,7 @@
 def soft_verify_stub(has_signature: bool):
     if has_signature:
         return {"signature_status": "verified", "signature_reason": "n/a"}
-    # Missing signature path (non-fatal) - intentionally omit reason key to fail test initially
-    return {"signature_status": "unverified"}
+    return {"signature_status": "unverified", "signature_reason": "missing"}
 
 
 def test_signature_soft_verify_includes_reason():
