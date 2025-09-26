@@ -55,7 +55,7 @@ jobs:
           sleep 1
           END=$(date +%s%3N)
           DUR_MS=$((END-START))
-          python -c "import json,os; p='rollback_event.json'; d=json.load(open(p)); ms=$DUR_MS; d['rollback_duration_sec']=ms/1000.0; json.dump(d, open(p,'w'))"
+          python -c "import json,os; p='rollback_event.json'; d=json.load(open(p)); ms=$DUR_MS; d['rollback_duration_sec']=ms/1000.0; d['rollback_start_ms']=${START}; d['rollback_end_ms']=${END}; json.dump(d, open(p,'w'))"
           cat rollback_event.json
 
       - name: Log Rollback Summary

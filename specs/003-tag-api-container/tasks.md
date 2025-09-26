@@ -78,8 +78,8 @@ Guiding Principles: TDD-first (contract tests before workflow edits), immutabili
  - [~] T031 Add SBOM linkage step update in build workflow referencing SHA tag (FR-008); if SBOM generation not yet implemented, create explicit TODO plus link to new `sbom-linkage.yaml` contract (T047) rather than generic comment. (Placeholder step present in build & deploy workflows; full generation pending)
 
 ## Phase 3.8: Polish & Performance
- - [ ] T032 Add timing capture & log for deploy and rollback workflows (start/end) appended to structured output including fields {deploy_duration_sec, rollback_duration_sec}.
-- [ ] T033 Add performance assertion in integration test ensuring deploy simulation <300s (mock) for p95 target representational check.
+ - [x] T032 Add timing capture & log for deploy and rollback workflows (start/end) appended to structured output including fields {deploy_duration_sec, rollback_duration_sec}.
+- [x] T033 Add performance assertion in integration test ensuring deploy simulation <300s (mock) for p95 target representational check.
 - [ ] T034 Refactor any duplicated SHA handling utilities into `src/lib/image_artifact.py` (dedupe logic from scripts) + run ruff/mypy.
 - [ ] T035 Add README badge or status snippet referencing use of immutable SHA images (optional marketing value).
 
@@ -112,7 +112,7 @@ Rationale: Close medium severity analysis gaps (parity, single-arch explicit ver
 - [ ] T055 Implement docs validation script `scripts/ci/validate_docs.sh` asserting `distribution.md` and `quickstart.md` mention: digest verification, rollback no-build, short tag parity, SBOM linkage, single-arch constraint, metrics counters.
 - [x] T056 Update `scripts/ci/emit_image_metadata.py` to include `arch` and `repository_type` fields; adjust related tests (T006, T054) accordingly.
  - [ ] T057 Clarify T028 guard script description inline (no code duplication) documenting it is deployment-time digest & repo mapping check; ensure README references both build-time (T041) and deploy-time (T028) checks (add section "Digest Integrity Guards").
-- [ ] T058 Add performance test `tests/perf/test_deploy_rollback_duration.py` (skippable) asserting simulated deploy <300s & rollback <120s capturing durations.
+- [x] T058 Add performance test `tests/perf/test_deploy_rollback_duration.py` (skippable) asserting simulated deploy <300s & rollback <120s capturing durations.
 - [ ] T059 Update `docs/distribution.md` & quickstart (T027) adding sections for short tag parity, single-arch verification, SBOM linkage contract, metrics emission, and structured log field list.
 - [ ] T060 Update `src/lib/observability.py` docstrings & README snippet to enumerate new counters & labels.
 

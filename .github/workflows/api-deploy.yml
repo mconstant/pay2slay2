@@ -91,7 +91,9 @@ jobs:
           END=$(date +%s%3N)
           DURATION_MS=$((END-START))
           echo "deploy_duration_ms=$DURATION_MS" >> $GITHUB_OUTPUT
+          echo "deploy_start_ms=$START" >> $GITHUB_OUTPUT
+          echo "deploy_end_ms=$END" >> $GITHUB_OUTPUT
 
       - name: Log Deployment Summary
         run: |
-          echo "Deployed image=${{ steps.validate.outputs.validated_image_ref }} duration_ms=${{ steps.deploy.outputs.deploy_duration_ms }} guard=ok sbom=${{ steps.deploy_guard.outcome || 'n/a' }}"
+          echo "Deployed image=${{ steps.validate.outputs.validated_image_ref }} duration_ms=${{ steps.deploy.outputs.deploy_duration_ms }} guard=ok sbom=${{ steps.deploy_guard.outcome || 'n/a' }} start_ms=${{ steps.deploy.outputs.deploy_start_ms }} end_ms=${{ steps.deploy.outputs.deploy_end_ms }}"
