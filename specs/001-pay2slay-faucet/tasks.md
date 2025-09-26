@@ -32,7 +32,11 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T009 Contract: POST /admin/reverify
 - [x] T010 Contract: POST /admin/payouts/retry
 - [~] T011 Integration: registration flow (OAuth→Yunite→wallet link→status) (test added)
-- [~] T012 Integration: accrual→settlement→payout (dry_run) (test added)
+- [x] T012 Integration: accrual→settlement→payout (dry_run)
+	- Test exercises accrual (positive delta), settlement candidate selection, payout creation
+	- Verifies accrual rows marked settled and cursor advanced (last_settled_kill_count)
+	- Added idempotency assertion: second payout attempt does not create duplicate row
+	- Uses dry_run Banano client (tx_hash = dryrun) ensuring deterministic status=sent
 - [x] T013 Performance smoke: /me/status p95<300ms
 	- Added perf smoke test `tests/perf/test_me_status_perf.py` (50 sampled sequential calls)
 	- Asserts p95 <300ms (TARGET_P95_MS env-coded) on warm in-memory sqlite + local app

@@ -102,3 +102,8 @@ def test_accrual_settlement_payout_flow(app, db_session: Session):  # type: igno
     # Cursor advanced
     updated_user = db_session.query(User).filter(User.id == user.id).one()
     assert updated_user.last_settled_kill_count >= KILL_DELTA
+    # Idempotency: re-attempt payout with same accruals (now settled) should yield no new payout
+    second = payout_svc.create_payout(user, cand.payable_amount_ban or 0.0, accruals)
+    assert second is not None and second.status == "sent"
+    # Only one payout row should exist for user
+    assert db_session.query(Payout).filter(Payout.user_id == user.id).count() == 1
