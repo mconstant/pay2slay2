@@ -4,10 +4,11 @@ on:
   workflow_dispatch:
     inputs:
       target_sha:
-        description: 40-char image SHA to rollback TO
+        description: 40-char image SHA to rollback TO (select or paste)
         required: true
-        type: string
-
+        type: choice
+        options:
+          - 1111111111111111111111111111111111111111
 jobs:
   rollback:
     runs-on: ubuntu-latest
