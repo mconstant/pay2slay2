@@ -1,0 +1,23 @@
+name: Banano Deploy
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  banano:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+      - name: Terraform Init
+        working-directory: infra/akash-banano
+        run: terraform init -input=false
+      - name: Terraform Apply (placeholder)
+        working-directory: infra/akash-banano
+        run: terraform apply -auto-approve -input=false || true
+      - name: Discover Endpoint (placeholder)
+        run: scripts/infra/discover_banano_endpoint.sh || true
