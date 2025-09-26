@@ -32,18 +32,8 @@ import sys
 import time
 from dataclasses import asdict, dataclass
 
-SHA_LENGTH = 40  # constant for git SHA length (lint: magic number)
-
-# Minimal validation helpers duplicated until image_artifact module imported (circular-safe)
-
-
-def _validate_sha(tag: str) -> None:
-    if len(tag) != SHA_LENGTH or any(c not in "0123456789abcdef" for c in tag):
-        raise ValueError(f"Invalid git sha: {tag}")
-
-
-def _short_sha(tag: str) -> str:
-    return tag[:12]
+from src.lib.image_artifact import calc_short_sha as _short_sha
+from src.lib.image_artifact import validate_sha_tag as _validate_sha
 
 
 def detect_arch() -> str:
@@ -73,6 +63,7 @@ class ImageMetadata:
     pre_push_digest: str | None = None
     post_push_digest: str | None = None
     digest_verification: str | None = None  # ok|mismatch|unknown
+    sbom_ref: str | None = None  # path or URI to SBOM artifact (T031)
 
 
 def main(argv: list[str]) -> int:
@@ -111,6 +102,20 @@ def main(argv: list[str]) -> int:
         post_push_digest=None,
         digest_verification="unknown",
     )
+    # SBOM linkage placeholder (T031): generate a minimal stub referencing digest
+    sbom_enabled = os.getenv("PAY2SLAY_GENERATE_SBOM", "1") != "0"
+    if sbom_enabled:
+        sbom_path = os.getenv("PAY2SLAY_SBOM_PATH", "sbom.json")
+        sbom_doc = {
+            "_note": "SBOM placeholder; replace with real syft output",
+            "image_sha": args.sha,
+            "image_digest": args.digest,
+            "generated_at": time.time(),
+            "schema": "spdx-lite-placeholder",
+        }
+        with open(sbom_path, "w", encoding="utf-8") as f:
+            json.dump(sbom_doc, f)
+        metadata.sbom_ref = sbom_path
     json.dump(asdict(metadata), sys.stdout)
     sys.stdout.write("\n")
     return 0
