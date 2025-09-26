@@ -16,25 +16,25 @@ Ordering: Setup → Tests (fail first) → Implementation → Integration → Po
 Parallel `[P]` only when tasks touch different files/directories with no dependency.
 
 ## Phase 3.1: Setup
-- [ ] T001 Create infra directory skeleton: `infra/akash-banano/` and `infra/akash-api/` (README placeholders)  
+- [x] T001 Create infra directory skeleton: `infra/akash-banano/` and `infra/akash-api/` (README placeholders)  
   Files: `infra/akash-banano/README.md`, `infra/akash-api/README.md`
-- [ ] T002 Add Terraform scaffolding for Banano: `infra/akash-banano/main.tf`, `outputs.tf`, `variables.tf`, minimal provider + Akash deployment resource (placeholder image, internal ports 7071,7072,7074)  
+- [x] T002 Add Terraform scaffolding for Banano: `infra/akash-banano/main.tf`, `outputs.tf`, `variables.tf`, minimal provider + Akash deployment resource (placeholder image, internal ports 7071,7072,7074)  
   Depends: T001
-- [ ] T003 Add Terraform scaffolding for API: `infra/akash-api/main.tf`, `variables.tf` (includes `banano_rpc_endpoint`), `outputs.tf` (deployment_id only)  
+- [x] T003 Add Terraform scaffolding for API: `infra/akash-api/main.tf`, `variables.tf` (includes `banano_rpc_endpoint`), `outputs.tf` (deployment_id only)  
   Depends: T001
-- [ ] T004 [P] Add `.github/workflows/banano-deploy.yml` skeleton with workflow_dispatch, terraform init/apply stub (no logic yet)  
+- [x] T004 [P] Add `.github/workflows/banano-deploy.yml` skeleton with workflow_dispatch, terraform init/apply stub (no logic yet)  
   Depends: T002
-- [ ] T005 [P] Add `.github/workflows/api-deploy.yml` skeleton with workflow_dispatch, terraform init/apply stub referencing `infra/akash-api`  
+- [x] T005 [P] Add `.github/workflows/api-deploy.yml` skeleton with workflow_dispatch, terraform init/apply stub referencing `infra/akash-api`  
   Depends: T003
-- [ ] T006 Add shared script directory `scripts/infra/` with placeholder `discover_banano_endpoint.sh` (returns non-zero unimplemented)  
+- [x] T006 Add shared script directory `scripts/infra/` with placeholder `discover_banano_endpoint.sh` (returns non-zero unimplemented)  
   Depends: T004
 
 ## Phase 3.2: Tests First (Contract & Integration) – MUST FAIL INITIALLY
-- [ ] T007 [P] Expand existing `tests/contract/test_endpoint_artifact.py` to cover CT-001..CT-006 (mark xfail where not yet implemented)  
+- [x] T007 [P] Expand existing `tests/contract/test_endpoint_artifact.py` to cover CT-001..CT-006 (mark xfail where not yet implemented)  
   Depends: T004 (skeleton present)  
-- [ ] T008 [P] Add `tests/integration/test_api_requires_endpoint.py` simulating missing artifact scenario → expect failure path (use environment var absence)  
+- [x] T008 [P] Add `tests/integration/test_api_requires_endpoint.py` simulating missing artifact scenario → expect failure path (use environment var absence)  
   Depends: T005
-- [ ] T009 [P] Add `tests/integration/test_endpoint_validation.py` covering invalid host, invalid port, empty JSON conditions (simulate artifact parsing function to add)  
+- [x] T009 [P] Add `tests/integration/test_endpoint_validation.py` covering invalid host, invalid port, empty JSON conditions (simulate artifact parsing function to add)  
   Depends: T007
 
 ## Phase 3.3: Core Implementation (Banano Workflow)
