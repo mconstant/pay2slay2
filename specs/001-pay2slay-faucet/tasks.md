@@ -46,7 +46,12 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T021 Domain services (settlement, payout, accrual) initial
 - [~] T022 Admin API (needs audit trail & health expansion)
 - [x] T023 Auth/User APIs
-- [~] T024 Scheduler job (needs operator balance + tracing) - accrual+settlement alternating loop implemented; tracing & real balance validation TODO
+- [x] T024 Scheduler job (operator balance validation + tracing)
+	- Added: distinct spans (accrual_cycle, operator_balance_check, settlement_cycle)
+	- Added: startup jitter (P2S_START_JITTER_SEC) & exponential backoff on loop errors
+	- Added: explicit operator balance check span & attributes; warning on skip
+	- Added: structured refactor (_build_scheduler_components / _run_once) for testability
+	- Maintains: dry_run safety & metrics server startup
 - [x] T025 OAuth state/nonce validation (basic HMAC state issued + validated)
 - [x] T026 Implement /me/reverify endpoint (returns accepted + creates VerificationRecord)
 - [x] T027 Implement /config/product endpoint (src/api/config.py)
