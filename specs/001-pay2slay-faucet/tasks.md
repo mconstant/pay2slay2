@@ -31,7 +31,7 @@ Legend: [ ] pending, [x] done, [~] partial/stub.
 - [x] T008 Contract: GET /me/status
 - [x] T009 Contract: POST /admin/reverify
 - [x] T010 Contract: POST /admin/payouts/retry
-- [~] T011 Integration: registration flow (OAuth→Yunite→wallet link→status) (test added)
+- [x] T011 Integration: registration flow (OAuth→Yunite→wallet link→status)
 - [x] T012 Integration: accrual→settlement→payout (dry_run)
 	- Test exercises accrual (positive delta), settlement candidate selection, payout creation
 	- Verifies accrual rows marked settled and cursor advanced (last_settled_kill_count)
