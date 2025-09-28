@@ -31,9 +31,27 @@ import os
 import sys
 import time
 from dataclasses import asdict, dataclass
+from pathlib import Path
 
-from src.lib.image_artifact import calc_short_sha as _short_sha
-from src.lib.image_artifact import validate_sha_tag as _validate_sha
+
+# T061: resilient import strategy so script runs before install / without PYTHONPATH tweaks.
+def _import_helpers() -> tuple[object, object]:  # pragma: no cover - simple wrapper
+    try:
+        from src.lib.image_artifact import calc_short_sha as _short  # type: ignore
+        from src.lib.image_artifact import validate_sha_tag as _val  # type: ignore
+
+        return _short, _val
+    except ModuleNotFoundError:
+        repo_root = Path(__file__).resolve().parents[2]
+        if str(repo_root) not in sys.path:
+            sys.path.insert(0, str(repo_root))
+        from src.lib.image_artifact import calc_short_sha as _short  # type: ignore
+        from src.lib.image_artifact import validate_sha_tag as _val  # type: ignore
+
+        return _short, _val
+
+
+_short_sha, _validate_sha = _import_helpers()
 
 
 def detect_arch() -> str:
