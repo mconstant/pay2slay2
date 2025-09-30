@@ -57,15 +57,15 @@ jobs:
           echo '{"validated": true, "image_sha": '"$META_SHA"'}'
           echo "image_sha=${{ inputs.image_sha }}" >> $GITHUB_OUTPUT
 
-      - name: Derive Repository
+      - name: Extract Repository (from metadata)
         id: repo
         run: |
-          BRANCH_REF=${GITHUB_REF##*/}
-          if [ "$BRANCH_REF" = "main" ] || [ "$BRANCH_REF" = "master" ]; then
-            echo "repository=$REGISTRY_CANONICAL" >> $GITHUB_OUTPUT
-          else
-            echo "repository=$REGISTRY_STAGING" >> $GITHUB_OUTPUT
-          fi
+          set -euo pipefail
+          META_REPO=$(python -c 'import json; print(json.load(open("build_artifacts/metadata.json"))["repository"])')
+          if [ -z "$META_REPO" ]; then
+            echo "repository field missing in metadata" >&2; exit 1; fi
+          echo "repository=$META_REPO" >> $GITHUB_OUTPUT
+          echo "Using repository from metadata: $META_REPO"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
