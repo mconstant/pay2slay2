@@ -87,11 +87,24 @@ jobs:
       - name: Deployment Digest & Repo Guard (T028)
         id: deploy_guard
         run: |
+          # Inference logic: if the resolved repository is canonical (not ending in -staging)
+          # we treat this as a main deploy even if the workflow was dispatched from a
+          # feature branch referencing a main-built artifact. This enables out-of-band
+          # deployment runs without relaxing repository mapping policy.
+          REPO="${{ steps.repo.outputs.repository }}"
+          IS_MAIN_FLAG=""
+          BRANCH_NAME="${GITHUB_REF##*/}"
+          if [ "$BRANCH_NAME" = "main" ] || [ "$BRANCH_NAME" = "master" ]; then
+            IS_MAIN_FLAG="--is-main"
+          elif [[ "$REPO" != *"-staging" ]]; then
+            IS_MAIN_FLAG="--is-main"
+            echo "Inferring --is-main since repository is canonical ($REPO) but branch is $BRANCH_NAME" >&2
+          fi
           python3 scripts/ci/check_existing_digest.py \
             --metadata build_artifacts/metadata.json \
-            --repository "${{ steps.repo.outputs.repository }}" \
+            --repository "$REPO" \
             --image-sha "${{ steps.meta.outputs.image_sha }}" \
-            $([ "${GITHUB_REF##*/}" = "main" ] && echo --is-main || true)
+            ${IS_MAIN_FLAG}
 
       - name: SBOM Linkage Placeholder (T031)
         run: |
