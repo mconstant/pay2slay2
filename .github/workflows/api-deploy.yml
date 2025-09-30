@@ -35,6 +35,8 @@ jobs:
           name: image-metadata-${{ inputs.image_sha }}
           path: build_artifacts
           run-id: ${{ inputs.build_run_id }}
+          # Explicit token helps ensure cross-run access; action can default but being explicit avoids ambiguity
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         # Artifact must exist; fail fast if not
         continue-on-error: false
 
