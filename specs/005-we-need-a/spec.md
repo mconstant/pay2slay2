@@ -72,16 +72,16 @@ As a product owner and manual tester, we need a fully functional testing environ
 - **FR-007**: System MUST provide rollback capabilities if critical issues are discovered during testing
 - **FR-008**: All test data MUST be isolated from production systems while using real integration endpoints
 - **FR-009**: System MUST validate integration response formats and data integrity in real-time
-- **FR-010**: Testing environment MUST support [NEEDS CLARIFICATION: concurrent user load - how many simultaneous testers?]
-- **FR-011**: Feedback system MUST integrate with [NEEDS CLARIFICATION: specific project management or issue tracking tool not specified]
-- **FR-012**: System MUST handle integration rate limits and quotas [NEEDS CLARIFICATION: specific rate limiting strategy not defined]
+- **FR-010**: Testing environment MUST support 1 concurrent tester with dedicated session isolation
+- **FR-011**: Feedback system MUST integrate with GitHub Issues for automated issue creation and tracking
+- **FR-012**: System MUST handle integration rate limits and quotas using request queuing with exponential backoff retry strategy
 
 ### Key Entities
-- **Testing Environment**: Represents the complete deployed system configuration with live integrations enabled
-- **Integration Endpoint**: External service connections that process real transactions and return live data
+- **Testing Environment**: Represents the complete deployed system configuration with live integrations enabled for Yunite, Discord OAuth, Banano node, wallet services, and admin functions
+- **Integration Endpoint**: External service connections that process real transactions and return live data from Yunite, Discord, Banano, wallet, and admin systems
 - **Test Session**: A bounded period of collaborative testing with defined scope and participants
 - **Feedback Report**: Structured documentation of issues, observations, and recommendations from testing activities
-- **Integration Health Status**: Real-time monitoring data showing availability, response times, and error rates for each external service
+- **Integration Health Status**: Real-time monitoring data showing availability, response times, and error rates for each external service (Yunite, Discord, Banano, wallet, admin)
 
 ## Security Considerations *(mandatory)*
 - Threat model summary: Testing environment handles real integration credentials and processes live transactions; actors include internal testers and product stakeholders; entry points include testing interfaces and integration endpoints
@@ -95,7 +95,8 @@ As a product owner and manual tester, we need a fully functional testing environ
 - Integration response monitoring: p95 latency alerts when external services exceed baseline by 200%
 - Test environment availability: 99.5% uptime during scheduled testing windows
 - Feedback submission latency: under 2 seconds for issue reporting interface
-- Integration health check frequency: every 30 seconds with alerting on failures
+- Integration health check frequency: every 30 seconds with alerting on failures (extended timeout for Banano node due to slow startup)
+- Integration health check response time: under 30 seconds maximum acceptable latency
 - Test data isolation verification: real-time validation that no production data is accessed
 
 ## Review & Acceptance Checklist
@@ -131,6 +132,15 @@ As a product owner and manual tester, we need a fully functional testing environ
 - [ ] Review checklist passed (pending clarification resolution)
 
 ---
+
+## Clarifications
+
+### Session 2025-09-30
+- Q: How many concurrent testers should the testing environment support during peak testing sessions? → A: 1 tester
+- Q: Which project management or issue tracking tool should the feedback system integrate with? → A: GitHub Issues (native repository integration)
+- Q: How should the system handle integration rate limits and quotas from external services? → A: Queue requests with exponential backoff retry
+- Q: What specific external integrations need to be tested in this non-dry run environment? → A: Yunite, Discord, Banano, wallet, admin
+- Q: What is the maximum acceptable response time for integration health checks during testing? → A: Under 30 seconds (relaxed monitoring) but banano node spins up slowly
 
 ## Decentralized Distribution / Blockchain Applicability
 

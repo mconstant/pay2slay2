@@ -1,0 +1,561 @@
+openapi: 3.0.3
+info:
+  title: Non-Dry Run Testing Environment API
+  description: API for managing collaborative testing sessions with live integrations
+  version: 1.0.0
+  contact:
+    name: pay2slay2 Development Team
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://testing.pay2slay2.app
+    description: Testing environment
+
+paths:
+  /testing/sessions:
+    get:
+      summary: List all test sessions
+      description: Retrieve list of test sessions with optional filtering
+      parameters:
+        - name: status
+          in: query
+          description: Filter by session status
+          schema:
+            type: string
+            enum: [ACTIVE, PAUSED, COMPLETED, FAILED]
+        - name: tester_id
+          in: query
+          description: Filter by tester identifier
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of test sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestSession'
+    
+    post:
+      summary: Create new test session
+      description: Start a new collaborative testing session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTestSessionRequest'
+      responses:
+        '201':
+          description: Test session created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSession'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /testing/sessions/{session_id}:
+    get:
+      summary: Get test session details
+      description: Retrieve detailed information about a specific test session
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Test session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSessionDetail'
+        '404':
+          description: Test session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    
+    patch:
+      summary: Update test session
+      description: Update session status or configuration
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTestSessionRequest'
+      responses:
+        '200':
+          description: Test session updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestSession'
+        '404':
+          description: Test session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /testing/integrations:
+    get:
+      summary: List integration endpoints
+      description: Get all configured integration endpoints
+      responses:
+        '200':
+          description: List of integration endpoints
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IntegrationEndpoint'
+
+  /testing/integrations/{endpoint_id}/health:
+    get:
+      summary: Get integration health status
+      description: Retrieve current health status for an integration endpoint
+      parameters:
+        - name: endpoint_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Integration health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrationHealthStatus'
+    
+    post:
+      summary: Trigger health check
+      description: Manually trigger a health check for an integration endpoint
+      parameters:
+        - name: endpoint_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Health check completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrationHealthStatus'
+
+  /testing/sessions/{session_id}/results:
+    get:
+      summary: Get test results for session
+      description: Retrieve all test results for a specific session
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: endpoint_id
+          in: query
+          description: Filter by integration endpoint
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of test results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TestResult'
+    
+    post:
+      summary: Execute test workflow
+      description: Run a specific test workflow against an integration
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExecuteTestRequest'
+      responses:
+        '201':
+          description: Test executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestResult'
+
+  /testing/feedback:
+    post:
+      summary: Submit feedback report
+      description: Create a new feedback report with GitHub issue integration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFeedbackRequest'
+      responses:
+        '201':
+          description: Feedback report created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackReport'
+
+  /testing/feedback/{feedback_id}:
+    get:
+      summary: Get feedback report
+      description: Retrieve details of a specific feedback report
+      parameters:
+        - name: feedback_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Feedback report details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackReport'
+
+  /testing/dashboard/ws:
+    get:
+      summary: WebSocket connection for real-time updates
+      description: WebSocket endpoint for receiving real-time dashboard updates
+      responses:
+        '101':
+          description: WebSocket connection established
+
+components:
+  schemas:
+    TestSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [ACTIVE, PAUSED, COMPLETED, FAILED]
+        created_at:
+          type: string
+          format: date-time
+        started_at:
+          type: string
+          format: date-time
+        ended_at:
+          type: string
+          format: date-time
+        tester_id:
+          type: string
+        configuration:
+          type: object
+      required:
+        - id
+        - name
+        - status
+        - created_at
+        - tester_id
+
+    TestSessionDetail:
+      allOf:
+        - $ref: '#/components/schemas/TestSession'
+        - type: object
+          properties:
+            test_results:
+              type: array
+              items:
+                $ref: '#/components/schemas/TestResult'
+            feedback_reports:
+              type: array
+              items:
+                $ref: '#/components/schemas/FeedbackReport'
+            health_statuses:
+              type: array
+              items:
+                $ref: '#/components/schemas/IntegrationHealthStatus'
+
+    CreateTestSessionRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        tester_id:
+          type: string
+        configuration:
+          type: object
+      required:
+        - name
+        - tester_id
+
+    UpdateTestSessionRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, PAUSED, COMPLETED, FAILED]
+        configuration:
+          type: object
+
+    IntegrationEndpoint:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        base_url:
+          type: string
+          format: uri
+        health_check_url:
+          type: string
+          format: uri
+        auth_type:
+          type: string
+          enum: [NONE, API_KEY, OAUTH, BEARER_TOKEN]
+        rate_limit_per_minute:
+          type: integer
+        timeout_seconds:
+          type: integer
+        retry_attempts:
+          type: integer
+        enabled:
+          type: boolean
+      required:
+        - id
+        - name
+        - base_url
+        - health_check_url
+        - auth_type
+        - enabled
+
+    IntegrationHealthStatus:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        endpoint_id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [HEALTHY, DEGRADED, UNHEALTHY, TIMEOUT]
+        response_time_ms:
+          type: integer
+        status_code:
+          type: integer
+        error_message:
+          type: string
+        checked_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+      required:
+        - id
+        - endpoint_id
+        - session_id
+        - status
+        - checked_at
+
+    TestResult:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        endpoint_id:
+          type: string
+          format: uuid
+        test_name:
+          type: string
+        status:
+          type: string
+          enum: [PASSED, FAILED, SKIPPED, ERROR]
+        started_at:
+          type: string
+          format: date-time
+        completed_at:
+          type: string
+          format: date-time
+        request_data:
+          type: object
+        response_data:
+          type: object
+        assertions:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              expected:
+                type: string
+              actual:
+                type: string
+              passed:
+                type: boolean
+        error_details:
+          type: string
+      required:
+        - id
+        - session_id
+        - endpoint_id
+        - test_name
+        - status
+        - started_at
+
+    ExecuteTestRequest:
+      type: object
+      properties:
+        endpoint_id:
+          type: string
+          format: uuid
+        test_name:
+          type: string
+        test_data:
+          type: object
+      required:
+        - endpoint_id
+        - test_name
+
+    FeedbackReport:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [INTEGRATION, UX, PERFORMANCE, SECURITY, OTHER]
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        status:
+          type: string
+          enum: [OPEN, IN_PROGRESS, RESOLVED, CLOSED]
+        github_issue_number:
+          type: integer
+        github_issue_url:
+          type: string
+          format: uri
+        reported_by:
+          type: string
+        reported_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        metadata:
+          type: object
+      required:
+        - id
+        - session_id
+        - title
+        - description
+        - category
+        - priority
+        - status
+        - reported_by
+        - reported_at
+
+    CreateFeedbackRequest:
+      type: object
+      properties:
+        session_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+          enum: [INTEGRATION, UX, PERFORMANCE, SECURITY, OTHER]
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, CRITICAL]
+        reported_by:
+          type: string
+        metadata:
+          type: object
+      required:
+        - session_id
+        - title
+        - description
+        - category
+        - priority
+        - reported_by
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+      required:
+        - error
+        - message
