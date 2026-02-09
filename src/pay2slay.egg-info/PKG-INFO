@@ -19,6 +19,9 @@ Requires-Dist: prometheus-client>=0.20
 Requires-Dist: opentelemetry-instrumentation-fastapi>=0.47b0
 Requires-Dist: opentelemetry-sdk>=1.25.0
 Requires-Dist: tenacity>=9.0
+Requires-Dist: python-dotenv>=1.0
+Requires-Dist: cryptography>=42.0
+Requires-Dist: ed25519-blake2b>=1.4
 Provides-Extra: dev
 Requires-Dist: pytest>=8.2; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.23; extra == "dev"
@@ -117,6 +120,9 @@ If Prometheus is available, counters export via the default registry; tests read
    - Prereqs: set `AKASH_MNEMONIC` secret in GitHub, set repository variable `AKASH_ACCOUNT_ADDRESS` (your `akash1...` wallet address), and use `deploy-akash` workflow dispatch with `image_tag`.
    - Infra code under `infra/akash` uses the Akash Terraform provider to submit a simple deployment.
    - Container image is built & pushed to GHCR automatically by the `deploy-akash` workflow.
+   - **Provider Selection**: The deployment automatically selects the cheapest audited Akash provider by specifying `audited: true` in the SDL placement attributes and restricting to signed providers.
+   - **Deployment Output**: The workflow outputs the deployed UI URL in the GitHub Actions step summary and validates the health check endpoint post-deployment.
+   - **Health Check**: After deployment, the workflow automatically validates the `/healthz` endpoint with retry logic to ensure the service is running correctly.
    - NOTE: Workflow must exist on the target branch (use `REF=<branch>` with `make deploy-akash` if deploying a non-default branch).
    - Cert Rotation: use either the GitHub UI (Actions → `rotate-akash-cert`) or the Makefile target `make rotate-akash-cert` to mint a new Akash client certificate and automatically update `AKASH_CERT` (secret) and `AKASH_CERT_ID` (variable). Requires an existing `AKASH_MNEMONIC` repo secret and (for secret/variable mutation via CLI) a `GH_ADMIN_TOKEN` repo secret (classic PAT with `repo` + `actions:write`).
 
