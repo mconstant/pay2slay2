@@ -57,10 +57,15 @@
       </div>
     </div>
 
-    <button id="demo-login-btn" class="btn btn-primary btn-lg" onclick="demoLogin()">
-      Demo Login (Dry Run)
-    </button>
-    <p class="login-hint">Demo mode uses simulated data — no real crypto is sent.</p>
+    <div class="login-buttons">
+      <button class="btn btn-discord btn-lg" onclick="discordLogin()">
+        Login with Discord
+      </button>
+      <button id="demo-login-btn" class="btn btn-lg" onclick="demoLogin()">
+        Demo Login
+      </button>
+    </div>
+    <p class="login-hint">Demo mode uses simulated data. Discord login connects your real account.</p>
   </div>
 
   <!-- ── Dashboard Page ──────────────────────────── -->
@@ -132,8 +137,19 @@
       <span id="wallet-status" class="badge badge-pending">checking...</span>
     </div>
 
+    <!-- Current wallet display (shown when linked) -->
+    <div id="wallet-linked-card" class="card" style="display:none;">
+      <h2>Linked Wallet</h2>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:12px;">
+        Your payouts will be sent to this address:
+      </p>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:12px;font-family:monospace;font-size:13px;word-break:break-all;">
+        <span id="wallet-linked-address">—</span>
+      </div>
+    </div>
+
     <div class="card">
-      <h2>Link Banano Wallet</h2>
+      <h2 id="wallet-form-title">Link Banano Wallet</h2>
       <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">
         Enter your Banano address (starts with <code>ban_</code>) to receive payouts.
       </p>

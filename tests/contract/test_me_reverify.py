@@ -8,6 +8,6 @@ def test_me_reverify_requires_auth(client):
 
 def test_me_reverify_success_path(client):
     # Precondition: user session
-    client.post("/auth/discord/callback?state=xyz&code=dummy")
+    client.get("/auth/discord/callback?state=xyz&code=dummy")
     r = client.post("/me/reverify")
     assert r.status_code in (HTTPStatus.ACCEPTED, HTTPStatus.OK)

@@ -17,6 +17,9 @@ def app():
     db_path = os.path.join(tmp_dir, "test.db")
     os.environ.setdefault("DATABASE_URL", f"sqlite:///{db_path}")
     os.environ.setdefault("PAY2SLAY_AUTO_MIGRATE", "1")
+    # Force dry-run mode in tests so services don't make real HTTP calls
+    os.environ["P2S_DRY_RUN"] = "true"
+    os.environ.setdefault("DEMO_MODE", "1")
     # Provide deterministic, test-friendly low rate limits so exhaustion tests can be added later
     os.environ.setdefault("RATE_LIMIT_GLOBAL_PER_MINUTE", "120")
     os.environ.setdefault("RATE_LIMIT_PER_IP_PER_MINUTE", "60")

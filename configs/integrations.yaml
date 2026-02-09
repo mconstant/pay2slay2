@@ -1,15 +1,17 @@
 chain_env: testnet
-node_rpc: ""
+node_rpc: ${BANANO_NODE_RPC}
 min_operator_balance_ban: 50
 dry_run: true
 yunite_api_key: ${YUNITE_API_KEY}
-yunite_guild_id: ""
-discord_guild_id: ""
+yunite_guild_id: ${YUNITE_GUILD_ID}
+yunite_base_url: ${YUNITE_BASE_URL}
+discord_guild_id: ${YUNITE_GUILD_ID}
 discord_oauth_client_id: ${DISCORD_CLIENT_ID}
 discord_oauth_client_secret: ${DISCORD_CLIENT_SECRET}
-discord_redirect_uri: http://localhost:3000/auth/discord/callback
+discord_redirect_uri: ${DISCORD_REDIRECT_URI}
 oauth_scopes: [identify, guilds]
 fortnite_api_key: ${FORTNITE_API_KEY}
+fortnite_base_url: ${FORTNITE_BASE_URL}
 rate_limits:
   fortnite_per_min: 60
 abuse_heuristics:

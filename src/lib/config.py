@@ -11,9 +11,17 @@ from pydantic import BaseModel, Field
 
 
 def _expand_env(obj: Any) -> Any:
-    """Recursively expand environment variables in strings within a structure."""
+    """Recursively expand environment variables in strings within a structure.
+
+    Unexpanded ``${VAR}`` references (env var not set) are replaced with empty
+    string so Pydantic defaults can kick in.
+    """
     if isinstance(obj, str):
-        return os.path.expandvars(obj)
+        expanded = os.path.expandvars(obj)
+        # If expandvars left a ${...} reference, the var was unset — use empty string
+        if expanded.startswith("${") and expanded.endswith("}"):
+            return ""
+        return expanded
     if isinstance(obj, list):
         return [_expand_env(i) for i in obj]
     if isinstance(obj, tuple):
@@ -43,6 +51,7 @@ class IntegrationsConfig(BaseModel):
     )
     yunite_api_key: str = Field(...)
     yunite_guild_id: str = Field(...)
+    yunite_base_url: str = Field("https://yunite.xyz/api", description="Yunite API base URL")
     discord_guild_id: str = Field(...)
     discord_oauth_client_id: str = Field(...)
     discord_oauth_client_secret: str = Field(...)
@@ -59,6 +68,7 @@ class ProductConfig(BaseModel):
     banner_url: str = ""
     media_kit_url: str = ""
     default_locale: str = "en"
+    discord_invite_url: str = Field("", description="Public Discord server invite URL")
     feature_flags: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -127,6 +137,11 @@ def load_config(configs_dir: Path | None = None) -> AppConfig:
     payout = _read_yaml(base / "payout.yaml")
     integrations = _read_yaml(base / "integrations.yaml")
     product = _read_yaml(base / "product.yaml")
+
+    # Allow P2S_DRY_RUN env var to override YAML (booleans can't expand via ${} cleanly)
+    dry_run_env = os.getenv("P2S_DRY_RUN")
+    if dry_run_env is not None:
+        integrations["dry_run"] = dry_run_env.lower() not in ("false", "0", "no", "off")
 
     return AppConfig(
         payout=PayoutConfig(**payout),

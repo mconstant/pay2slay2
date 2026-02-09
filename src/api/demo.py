@@ -1,6 +1,6 @@
-"""Demo-only endpoints: login simulation, data seeding, scheduler trigger.
+"""Demo endpoints: login simulation, data seeding, scheduler trigger.
 
-All endpoints in this module require dry_run=true and return 403 otherwise.
+Endpoints require either dry_run=true or DEMO_MODE=1 env var.
 """
 
 from __future__ import annotations
@@ -44,12 +44,20 @@ def _get_db(request: Request) -> Generator[Session, None, None]:
         session.close()
 
 
-def _require_dry_run(request: Request) -> None:
+def _require_demo_mode(request: Request) -> None:
+    """Demo endpoints are available when DEMO_MODE=1 or dry_run=true."""
+    import os
+
+    if os.getenv("DEMO_MODE", "").lower() in ("1", "true", "yes"):
+        return
     config = getattr(getattr(request, "app", None), "state", None)
     cfg = getattr(config, "config", None)
     integ = getattr(cfg, "integrations", None)
-    if not integ or not integ.dry_run:
-        raise HTTPException(status_code=403, detail="Only available in dry_run mode")
+    if integ and integ.dry_run:
+        return
+    raise HTTPException(
+        status_code=403, detail="Demo endpoints require DEMO_MODE=1 or dry_run=true"
+    )
 
 
 def _upsert_demo_users(db: Session) -> tuple[list[User], int]:
@@ -158,7 +166,7 @@ def _seed_payouts(db: Session, user: User) -> tuple[int, int]:
 @router.post("/auth/demo-login")
 def demo_login(
     request: Request,
-    _: None = Depends(_require_dry_run),
+    _: None = Depends(_require_demo_mode),
     db: Session = Depends(_get_db),  # noqa: B008
 ) -> JSONResponse:
     """Simulate Discord OAuth login in dry-run mode."""
@@ -209,7 +217,7 @@ def demo_login(
 @router.post("/demo/seed")
 def demo_seed(
     request: Request,
-    _: None = Depends(_require_dry_run),
+    _: None = Depends(_require_demo_mode),
     db: Session = Depends(_get_db),  # noqa: B008
 ) -> JSONResponse:
     """Seed the database with realistic demo data for demonstrations."""
@@ -236,7 +244,7 @@ def demo_seed(
 @router.post("/demo/run-scheduler")
 def demo_run_scheduler(
     request: Request,
-    _: None = Depends(_require_dry_run),
+    _: None = Depends(_require_demo_mode),
     db: Session = Depends(_get_db),  # noqa: B008
 ) -> JSONResponse:
     """Run one accrual+settlement cycle inline (dry-run only)."""

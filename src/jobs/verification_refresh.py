@@ -43,6 +43,7 @@ def run_verification_refresh(session: Session, cfg: VerificationRefreshConfig) -
     yunite = YuniteService(
         api_key=integrations.yunite_api_key,
         guild_id=integrations.yunite_guild_id,
+        base_url=integrations.yunite_base_url,
         dry_run=integrations.dry_run,
     )
     counters = {"candidates": 0, "updated": 0}
