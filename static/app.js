@@ -267,33 +267,29 @@
 
   // ── Admin ────────────────────────────────────────────
   async function loadAdmin() {
+    // Try to authenticate via Discord username (server checks ADMIN_DISCORD_USERNAMES)
+    if (!isAdmin) {
+      try {
+        const r = await fetch("/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        if (r.ok) {
+          isAdmin = true;
+        }
+      } catch (_) {}
+    }
+
     if (!isAdmin) {
       $("#admin-authed").style.display = "none";
-      $("#admin-login-form").style.display = "block";
+      $("#admin-unauthorized").style.display = "block";
       return;
     }
-    $("#admin-login-form").style.display = "none";
+    $("#admin-unauthorized").style.display = "none";
     $("#admin-authed").style.display = "block";
     await Promise.all([loadAdminStats(), loadAdminAudit()]);
   }
-
-  window.adminLogin = async function () {
-    const email = $("#admin-email").value.trim();
-    if (!email) { toast("Enter admin email", "error"); return; }
-    try {
-      const r = await fetch("/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (!r.ok) throw new Error("Unauthorized");
-      isAdmin = true;
-      toast("Admin authenticated", "success");
-      loadAdmin();
-    } catch (e) {
-      toast("Admin login failed: " + e.message, "error");
-    }
-  };
 
   async function loadAdminStats() {
     try {

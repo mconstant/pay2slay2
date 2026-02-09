@@ -165,17 +165,12 @@
   <div id="page-admin" class="page">
     <h2 style="margin-bottom:16px;">Admin Panel</h2>
 
-    <!-- Admin login -->
-    <div id="admin-login-form" class="card">
-      <h2>Admin Login</h2>
-      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">
-        For the demo, use <strong>admin@example.org</strong>
+    <!-- Unauthorized message -->
+    <div id="admin-unauthorized" class="card" style="display:none;">
+      <h2>🔒 Access Denied</h2>
+      <p style="color:var(--text-muted);font-size:14px;margin-top:12px;">
+        You don't have admin access. Admin users are configured via <code>ADMIN_DISCORD_USERNAMES</code> in the server environment.
       </p>
-      <div class="form-group">
-        <label for="admin-email">Admin Email</label>
-        <input type="email" id="admin-email" value="admin@example.org">
-      </div>
-      <button class="btn btn-primary" onclick="adminLogin()">Login</button>
     </div>
 
     <!-- Admin content (after login) -->
