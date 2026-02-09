@@ -4,8 +4,6 @@ import sys
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 # Import the script module
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts/infra"))
 import validate_health
@@ -78,6 +76,8 @@ def test_validate_health_connection_error():
 
 def test_validate_health_retries():
     """Test that health check retries on failure."""
+    expected_retry_count = 2
+    
     mock_response_fail = MagicMock()
     mock_response_fail.status_code = 503
     
@@ -90,7 +90,7 @@ def test_validate_health_retries():
         # First call fails, second succeeds
         mock_instance.get.side_effect = [mock_response_fail, mock_response_success]
         
-        result = validate_health.validate_health("https://example.com", retries=2, delay=0)
+        result = validate_health.validate_health("https://example.com", retries=expected_retry_count, delay=0)
     
     assert result is True
-    assert mock_instance.get.call_count == 2
+    assert mock_instance.get.call_count == expected_retry_count

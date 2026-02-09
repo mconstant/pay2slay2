@@ -23,6 +23,10 @@ except ImportError:
 DEFAULT_RETRIES = 10
 DEFAULT_RETRY_DELAY = 6  # seconds
 TIMEOUT = 10  # seconds per request
+HTTP_OK = 200  # HTTP OK status code
+MIN_ARGS = 2  # Minimum required command line arguments
+ARG_INDEX_RETRIES = 2  # sys.argv index for retries parameter
+ARG_INDEX_DELAY = 3  # sys.argv index for delay parameter
 
 
 def validate_health(url: str, retries: int = DEFAULT_RETRIES, delay: int = DEFAULT_RETRY_DELAY) -> bool:
@@ -55,7 +59,7 @@ def validate_health(url: str, retries: int = DEFAULT_RETRIES, delay: int = DEFAU
             with httpx.Client(timeout=TIMEOUT, follow_redirects=True) as client:
                 response = client.get(health_url)
                 
-                if response.status_code == 200:
+                if response.status_code == HTTP_OK:
                     try:
                         data = response.json()
                         if data.get("status") == "ok":
@@ -85,7 +89,7 @@ def validate_health(url: str, retries: int = DEFAULT_RETRIES, delay: int = DEFAU
 
 
 def main() -> int:
-    if len(sys.argv) < 2:
+    if len(sys.argv) < MIN_ARGS:
         print("usage: validate_health.py <url> [retries] [delay]", file=sys.stderr)
         print("  url: Base URL of deployed service (e.g., https://example.com)", file=sys.stderr)
         print(f"  retries: Number of retry attempts (default: {DEFAULT_RETRIES})", file=sys.stderr)
@@ -93,8 +97,8 @@ def main() -> int:
         return 1
     
     url = sys.argv[1]
-    retries = int(sys.argv[2]) if len(sys.argv) > 2 else DEFAULT_RETRIES
-    delay = int(sys.argv[3]) if len(sys.argv) > 3 else DEFAULT_RETRY_DELAY
+    retries = int(sys.argv[ARG_INDEX_RETRIES]) if len(sys.argv) > ARG_INDEX_RETRIES else DEFAULT_RETRIES
+    delay = int(sys.argv[ARG_INDEX_DELAY]) if len(sys.argv) > ARG_INDEX_DELAY else DEFAULT_RETRY_DELAY
     
     success = validate_health(url, retries, delay)
     return 0 if success else 1
