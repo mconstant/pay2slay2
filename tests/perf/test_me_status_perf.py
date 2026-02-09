@@ -14,7 +14,7 @@ REQUESTS = 50  # modest sample for smoke test
 @pytest.mark.skipif(SKIP_PERF, reason="Performance smoke tests skipped via PAY2SLAY_SKIP_PERF=1")
 def test_me_status_p95_under_target(client):
     # Warm session creation (simulate registration flow minimal subset):
-    client.post("/auth/discord/callback?state=xyz&code=dummy")
+    client.get("/auth/discord/callback?state=xyz&code=dummy")
     client.post("/link/wallet", json={"banano_address": "ban_1exampleaddress"})
 
     latencies_ms: list[float] = []

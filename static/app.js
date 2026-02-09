@@ -16,7 +16,27 @@
   async function init() {
     await loadProductConfig();
     setupNav();
-    showPage("login");
+
+    // Check if user already has a session (e.g., returning from OAuth redirect)
+    const hasSession = await checkExistingSession();
+    if (hasSession) {
+      showPage("dashboard");
+    } else {
+      showPage("login");
+    }
+  }
+
+  async function checkExistingSession() {
+    try {
+      const r = await fetch("/me/status");
+      if (r.ok) {
+        // Session cookie is valid — user is logged in
+        user = { discord_username: "You" };
+        $(".username").textContent = user.discord_username;
+        return true;
+      }
+    } catch (_) {}
+    return false;
   }
 
   async function loadProductConfig() {
@@ -66,6 +86,11 @@
   }
 
   // ── Login ────────────────────────────────────────────
+  window.discordLogin = function () {
+    // Redirect to server-side Discord OAuth flow
+    window.location.href = "/auth/discord/login";
+  };
+
   window.demoLogin = async function () {
     const btn = $("#demo-login-btn");
     btn.disabled = true;
@@ -88,7 +113,7 @@
       toast("Login failed: " + e.message, "error");
     } finally {
       btn.disabled = false;
-      btn.textContent = "Demo Login (Dry Run)";
+      btn.textContent = "Demo Login";
     }
   };
 
@@ -102,7 +127,6 @@
 
   // ── Dashboard ────────────────────────────────────────
   async function loadDashboard() {
-    // Load all dashboard data in parallel
     await Promise.all([loadStatus(), loadAccruals(), loadPayouts()]);
   }
 

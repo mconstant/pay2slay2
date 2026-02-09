@@ -1,11 +1,13 @@
 from collections.abc import Generator
+from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from fastapi.responses import JSONResponse
+from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from src.lib.auth import (
     consume_oauth_state,
+    issue_oauth_state,
     issue_session,
     session_secret,
 )
@@ -25,13 +27,30 @@ def _get_db(request: Request) -> Generator[Session, None, None]:
         session.close()
 
 
-@router.post("/auth/discord/callback")
+@router.get("/auth/discord/login")
+def discord_login(request: Request) -> RedirectResponse:
+    """Redirect the user to Discord's OAuth authorization page."""
+    config = request.app.state.config
+    integ = config.integrations
+    state = issue_oauth_state(session_secret())
+    params = {
+        "client_id": integ.discord_oauth_client_id,
+        "redirect_uri": integ.discord_redirect_uri,
+        "response_type": "code",
+        "scope": " ".join(integ.oauth_scopes),
+        "state": state,
+    }
+    url = f"https://discord.com/api/oauth2/authorize?{urlencode(params)}"
+    return RedirectResponse(url)
+
+
+@router.get("/auth/discord/callback")
 def discord_callback(
     request: Request,
     state: str = Query(..., description="OAuth state"),
     code: str = Query(..., description="OAuth authorization code"),
     db: Session = Depends(_get_db),  # noqa: B008 - FastAPI dependency
-) -> JSONResponse:
+) -> RedirectResponse:
     if not state or not code:
         raise HTTPException(status_code=400, detail="Missing state or code")
     # Basic state token validation (accept legacy 'xyz' in dry-run for backward compat tests)
@@ -96,12 +115,7 @@ def discord_callback(
     db.refresh(user)
 
     token = issue_session(user.discord_user_id, session_secret())
-    resp = JSONResponse(
-        {
-            "discord_user_id": user.discord_user_id,
-            "discord_username": user.discord_username,
-            "epic_account_id": user.epic_account_id,
-        }
-    )
+    # After real OAuth redirect, send user to the frontend dashboard
+    resp = RedirectResponse(url="/", status_code=302)
     resp.set_cookie("p2s_session", token, httponly=True, samesite="lax")
     return resp

@@ -10,12 +10,10 @@ def test_full_registration_flow(client):
     - /me/status reflects linkage and verification metadata
     """
     # 1. Simulate Discord OAuth callback in dry_run (state 'xyz' allowed for tests)
-    auth_resp = client.post("/auth/discord/callback?state=xyz&code=dummy")
-    assert auth_resp.status_code == HTTPStatus.OK
-    auth_payload = auth_resp.json()
-    # Basic shape assertions
-    for k in ("discord_user_id", "discord_username", "epic_account_id"):
-        assert auth_payload.get(k)
+    # Callback now returns a 302 redirect with session cookie set
+    auth_resp = client.get("/auth/discord/callback?state=xyz&code=dummy", follow_redirects=False)
+    assert auth_resp.status_code == HTTPStatus.FOUND
+    assert "p2s_session" in auth_resp.cookies
 
     # 2. Link a wallet using same client (session cookie should be preserved)
     wallet_address = "ban_1registrationflowexampleaddress"

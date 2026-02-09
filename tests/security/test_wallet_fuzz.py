@@ -17,7 +17,7 @@ INVALID_ADDRESSES = [
 def test_wallet_address_fuzz_invalid_rejections(client, db_session):
     from src.models.models import User, WalletLink  # type: ignore
 
-    client.post("/auth/discord/callback?state=xyz&code=dummy")
+    client.get("/auth/discord/callback?state=xyz&code=dummy")
     # Snapshot baseline wallet link count (could be >0 if other tests created one)
     uid_row = db_session.execute(select(User.id)).first()
     user_id = uid_row[0] if uid_row else None
