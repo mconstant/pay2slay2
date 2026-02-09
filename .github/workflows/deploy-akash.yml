@@ -130,6 +130,7 @@ jobs:
             exit 1
           fi
       - name: Terraform init/plan/apply
+        id: terraform
         working-directory: infra/akash
         env:
           TF_VAR_akash_mnemonic: ${{ secrets.AKASH_MNEMONIC }}
@@ -147,9 +148,67 @@ jobs:
           terraform init -input=false
           terraform plan -input=false -out=tfplan
           terraform apply -input=false -auto-approve tfplan
-          echo "Deployment ID: $(terraform output -raw deployment_id 2>/dev/null || echo 'unavailable')"
-          echo "Image: $(terraform output -raw image 2>/dev/null || echo 'unavailable')"
+          
+          # Extract deployment outputs
+          DEPLOYMENT_ID=$(terraform output -raw deployment_id 2>/dev/null || echo 'unavailable')
+          IMAGE=$(terraform output -raw image 2>/dev/null || echo 'unavailable')
+          API_URL=$(terraform output -raw api_url 2>/dev/null || echo '')
+          
+          echo "Deployment ID: ${DEPLOYMENT_ID}"
+          echo "Image: ${IMAGE}"
+          echo "API URL: ${API_URL}"
           echo "Services (JSON): $(terraform output -json services 2>/dev/null | jq -c '.' || echo 'unavailable')"
+          
+          # Set outputs for later steps
+          echo "deployment_id=${DEPLOYMENT_ID}" >> $GITHUB_OUTPUT
+          echo "api_url=${API_URL}" >> $GITHUB_OUTPUT
+          
+      - name: Extract UI URL
+        id: ui_url
+        working-directory: infra/akash
+        run: |
+          # Try to get URL from terraform output first
+          API_URL="${{ steps.terraform.outputs.api_url }}"
+          
+          # If not available, try to extract from services
+          if [ -z "$API_URL" ] || [ "$API_URL" = "" ]; then
+            echo "Extracting UI URL from services output..."
+            services_json=$(terraform output -json services 2>/dev/null || echo '[]')
+            API_URL=$(echo "$services_json" | jq -r '.[] | select(.name=="api") | .uris[0]' 2>/dev/null || echo '')
+          fi
+          
+          if [ -z "$API_URL" ] || [ "$API_URL" = "null" ]; then
+            echo "::warning::Could not extract API URL from deployment"
+            API_URL="unavailable"
+          fi
+          
+          echo "ui_url=${API_URL}" >> $GITHUB_OUTPUT
+          echo "Deployed UI URL: ${API_URL}"
+          
+          # Add to step summary
+          echo "## 🚀 Deployment Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployed UI URL:** ${API_URL}" >> $GITHUB_STEP_SUMMARY
+          echo "**Deployment ID:** ${{ steps.terraform.outputs.deployment_id }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** ${IMAGE_REPO}:${IMAGE_TAG}" >> $GITHUB_STEP_SUMMARY
+          
+      - name: Validate Health Check
+        if: steps.ui_url.outputs.ui_url != 'unavailable' && steps.ui_url.outputs.ui_url != ''
+        run: |
+          UI_URL="${{ steps.ui_url.outputs.ui_url }}"
+          echo "Running health check validation for: ${UI_URL}"
+          
+          # Install httpx if not available
+          pip install httpx || true
+          
+          # Run health check with retries (10 attempts, 6 seconds between)
+          python3 scripts/infra/validate_health.py "${UI_URL}" 10 6
+          
+          # Add result to summary
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## ✅ Health Check" >> $GITHUB_STEP_SUMMARY
+          echo "Health check passed for: ${UI_URL}/healthz" >> $GITHUB_STEP_SUMMARY
+          
       - name: Derive Banano RPC endpoint
         id: banano_rpc
         working-directory: infra/akash
@@ -158,6 +217,19 @@ jobs:
           services_json=$(terraform output -json services 2>/dev/null || echo '[]')
           endpoint=$(echo "$services_json" | jq -r --arg p "$INTERNAL_PORT" '.[] | select(.name=="banano") | .forwarded_ports[] | select(.port==($p|tonumber)) | "\(.host):\(.external_port)"' | grep -v '^:$' | head -n1 || true)
           echo "Banano RPC endpoint available: $endpoint"
+          
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📋 Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **UI URL:** ${{ steps.ui_url.outputs.ui_url || 'unavailable' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployment ID:** ${{ steps.terraform.outputs.deployment_id || 'unavailable' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Tag:** ${IMAGE_TAG}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image Repo:** ${IMAGE_REPO}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Provider Selection:** Cheapest audited provider (via SDL attributes)" >> $GITHUB_STEP_SUMMARY
+          
       - name: Upload Artifact
         uses: badgerhobbs/terraform-state@v2
         with:
