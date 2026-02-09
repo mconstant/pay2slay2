@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 
 from src.lib.admin_audit import AdminAuditPayload, record_admin_audit
 from src.lib.auth import issue_admin_session, session_secret, verify_admin_session, verify_session
+from src.lib.crypto import decrypt_value, encrypt_value, validate_banano_seed
 from src.lib.observability import get_logger
 from src.models.models import (
     AbuseFlag,
@@ -17,10 +18,11 @@ from src.models.models import (
     AdminUser,
     Payout,
     RewardAccrual,
+    SecureConfig,
     User,
     VerificationRecord,
 )
-from src.services.banano_client import BananoClient
+from src.services.banano_client import BananoClient, seed_to_address
 from src.services.yunite_service import YuniteService
 
 router = APIRouter(prefix="/admin")
@@ -321,6 +323,16 @@ def admin_stats(
     operator_pending: float | None = None
     operator_account = os.getenv("P2S_OPERATOR_ACCOUNT", "")
 
+    # If no env var, try to derive from stored seed
+    if not operator_account:
+        seed_config = (
+            db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+        )
+        if seed_config:
+            decrypted = decrypt_value(seed_config.encrypted_value)
+            if decrypted:
+                operator_account = seed_to_address(decrypted) or ""
+
     if integrations and operator_account:
         try:
             banano = BananoClient(
@@ -393,3 +405,84 @@ def admin_health_extended(request: Request, _: None = Depends(_require_admin)) -
             "db_init_error": getattr(request.app.state, "db_init_error", None),
         }
     )
+
+
+@router.post("/config/operator-seed")
+def admin_set_operator_seed(
+    request: Request,
+    seed: str = Body(..., embed=True),
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Securely store the operator wallet seed (encrypted at rest).
+
+    The seed is validated (64 hex chars) and encrypted before storage.
+    """
+    # Get admin email from cookie for audit
+    token = request.cookies.get("p2s_admin")
+    admin_email = verify_admin_session(token, session_secret()) if token else "unknown"
+
+    # Validate seed format
+    seed = seed.strip()
+    if not validate_banano_seed(seed):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid seed format. Must be 64 hexadecimal characters.",
+        )
+
+    # Encrypt and store
+    encrypted = encrypt_value(seed)
+
+    existing = db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+    if existing:
+        existing.encrypted_value = encrypted
+        existing.set_by = admin_email
+    else:
+        sc = SecureConfig(
+            key="operator_seed",
+            encrypted_value=encrypted,
+            set_by=admin_email,
+            description="Banano operator wallet seed",
+        )
+        db.add(sc)
+
+    # Audit log
+    record_admin_audit(
+        db,
+        AdminAuditPayload(
+            action="set_operator_seed",
+            actor_email=admin_email,
+            target_type="secure_config",
+            target_id="operator_seed",
+            summary="Operator seed updated",
+        ),
+    )
+
+    db.commit()
+    log.info("operator_seed_set", admin=admin_email)
+
+    return JSONResponse({"success": True, "message": "Operator seed saved securely"})
+
+
+@router.get("/config/operator-seed/status")
+def admin_get_operator_seed_status(
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Check if operator seed is configured and derive the address."""
+    existing = db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+    if existing:
+        # Verify it's decryptable and derive address
+        decrypted = decrypt_value(existing.encrypted_value)
+        derived_address = None
+        if decrypted:
+            derived_address = seed_to_address(decrypted)
+        return JSONResponse(
+            {
+                "configured": decrypted is not None,
+                "address": derived_address,
+                "set_by": existing.set_by,
+                "updated_at": existing.updated_at.isoformat() if existing.updated_at else None,
+            }
+        )
+    return JSONResponse({"configured": False, "address": None, "set_by": None, "updated_at": None})

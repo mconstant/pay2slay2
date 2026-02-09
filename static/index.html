@@ -189,6 +189,26 @@
           </div>
         </div>
         <p id="admin-operator-account" style="font-size:11px;color:var(--text-muted);margin-top:12px;word-break:break-all;"></p>
+
+        <!-- Operator Seed Config -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+          <h3 style="font-size:14px;margin-bottom:12px;">🔐 Operator Seed</h3>
+          <p id="operator-seed-status" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+            Checking...
+          </p>
+          <p id="operator-seed-address" style="font-size:12px;color:var(--text);margin-bottom:12px;padding:8px;background:var(--bg);border-radius:4px;display:none;">
+          </p>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="operator-seed-input">Wallet Seed (64 hex characters)</label>
+            <input type="password" id="operator-seed-input" placeholder="Enter 64-character hex seed" autocomplete="off" style="font-family:monospace;">
+          </div>
+          <button id="save-seed-btn" class="btn btn-primary btn-sm" onclick="saveOperatorSeed()">
+            Save Seed Securely
+          </button>
+          <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+            ⚠️ The seed is encrypted at rest. Never share your seed with anyone.
+          </p>
+        </div>
       </div>
 
       <!-- Payout Config Card -->

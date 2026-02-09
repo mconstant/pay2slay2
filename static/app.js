@@ -336,7 +336,80 @@
         }
       }
     } catch (_) {}
+
+    // Load operator seed status
+    await loadOperatorSeedStatus();
   }
+
+  async function loadOperatorSeedStatus() {
+    const statusEl = $("#operator-seed-status");
+    const addressEl = $("#operator-seed-address");
+    if (!statusEl) return;
+    try {
+      const r = await fetch("/admin/config/operator-seed/status");
+      if (r.ok) {
+        const data = await r.json();
+        if (data.configured) {
+          const date = data.updated_at ? new Date(data.updated_at).toLocaleDateString() : "unknown";
+          statusEl.innerHTML = `<span class="badge badge-sent">✓ Configured</span> Last updated: ${date} by ${data.set_by || "unknown"}`;
+          // Show derived address
+          if (addressEl && data.address) {
+            addressEl.innerHTML = `<strong>Derived Address:</strong><br><code style="font-size:11px;word-break:break-all;">${data.address}</code>`;
+            addressEl.style.display = "block";
+            // Update the operator wallet display to use this address
+            const balanceEl = $("#admin-operator-balance");
+            const accountEl = $("#admin-operator-account");
+            if (accountEl) {
+              accountEl.textContent = data.address;
+            }
+          }
+        } else {
+          statusEl.innerHTML = '<span class="badge badge-pending">⚠ Not configured</span> Set a seed to enable payouts';
+          if (addressEl) addressEl.style.display = "none";
+        }
+      }
+    } catch (_) {
+      statusEl.textContent = "Unable to check status";
+    }
+  }
+
+  window.saveOperatorSeed = async function () {
+    const input = $("#operator-seed-input");
+    const seed = input.value.trim();
+    if (!seed) {
+      toast("Enter a wallet seed", "error");
+      return;
+    }
+    if (!/^[0-9a-fA-F]{64}$/.test(seed)) {
+      toast("Seed must be 64 hexadecimal characters", "error");
+      return;
+    }
+    if (!confirm("Save this operator seed? This will encrypt and store it securely.")) {
+      return;
+    }
+    const btn = $("#save-seed-btn");
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    try {
+      const r = await fetch("/admin/config/operator-seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seed }),
+      });
+      if (!r.ok) {
+        const err = await r.json();
+        throw new Error(err.detail || "Failed to save");
+      }
+      toast("Operator seed saved securely", "success");
+      input.value = "";
+      await loadOperatorSeedStatus();
+    } catch (e) {
+      toast("Failed to save seed: " + e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Save Seed Securely";
+    }
+  };
 
   async function loadAdminAudit() {
     try {

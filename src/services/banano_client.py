@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from decimal import ROUND_DOWN, Decimal
 from typing import Any
 
@@ -8,6 +9,82 @@ import httpx
 _DRYRUN_BALANCE_BAN = 1_000_000.0  # Large dummy balance for dry-run safety margin
 
 _DRYRUN_BALANCE_BAN = 100.0
+
+# Banano address encoding alphabet (same as Nano)
+_B32_ALPHABET = "13456789abcdefghijkmnopqrstuwxyz"
+
+# Banano seed is 64 hex characters (32 bytes)
+_SEED_HEX_LEN = 64
+
+
+def _bytes_to_b32(data: bytes) -> str:
+    """Convert bytes to Nano/Banano base32 encoding."""
+    # Pad to 5-bit boundaries
+    bits = bin(int.from_bytes(data, "big"))[2:].zfill(len(data) * 8)
+    # Pad bits to multiple of 5
+    while len(bits) % 5:
+        bits = "0" + bits
+    result = ""
+    for i in range(0, len(bits), 5):
+        chunk = int(bits[i : i + 5], 2)
+        result += _B32_ALPHABET[chunk]
+    return result
+
+
+def _blake2b_checksum(pubkey: bytes) -> bytes:
+    """Compute 5-byte Blake2b checksum for Banano address."""
+    h = hashlib.blake2b(pubkey, digest_size=5)
+    return h.digest()[::-1]  # Reversed
+
+
+def seed_to_address(seed_hex: str, index: int = 0) -> str | None:
+    """Derive a Banano address from a 64-char hex seed.
+
+    Uses Blake2b to derive private key, then Ed25519 to get public key.
+    Returns ban_... address or None if derivation fails.
+    """
+    try:
+        # Validate seed format
+        if len(seed_hex) != _SEED_HEX_LEN:
+            return None
+        seed_bytes = bytes.fromhex(seed_hex)
+
+        # Derive private key: blake2b(seed + index as 4-byte big-endian)
+        h = hashlib.blake2b(seed_bytes + index.to_bytes(4, "big"), digest_size=32)
+        private_key = h.digest()
+
+        # Get public key via Ed25519
+        # We need nacl or ed25519 library - use hashlib for the signing key derivation
+        # Actually, for Ed25519 public key derivation we need a proper library
+        # Let's use the built-in hashlib with a workaround
+        try:
+            from nacl.signing import SigningKey  # type: ignore[import-not-found]
+
+            signing_key = SigningKey(private_key)
+            public_key = bytes(signing_key.verify_key)
+        except ImportError:
+            # Fallback: try cryptography library
+            from cryptography.hazmat.primitives.asymmetric.ed25519 import (  # type: ignore[import-not-found]
+                Ed25519PrivateKey,
+            )
+
+            priv = Ed25519PrivateKey.from_private_bytes(private_key)
+            public_key = priv.public_key().public_bytes_raw()
+
+        # Encode public key to address
+        # Banano address: ban_ + 52 chars (4-bit padding + 256-bit pubkey) + 8 chars checksum
+        pubkey_with_padding = b"\x00\x00\x00" + public_key  # 3 bytes padding for 259 bits
+        encoded = _bytes_to_b32(pubkey_with_padding)
+        # Take last 52 chars (skip padding encoding artifacts)
+        encoded = encoded[-52:]
+
+        # Checksum
+        checksum = _blake2b_checksum(public_key)
+        checksum_encoded = _bytes_to_b32(checksum)[-8:]
+
+        return f"ban_{encoded}{checksum_encoded}"
+    except Exception:
+        return None
 
 
 class BananoClient:
