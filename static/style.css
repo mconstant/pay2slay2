@@ -53,6 +53,8 @@ header .user-info .username {
   color: var(--text);
   font-weight: 600;
 }
+
+/* ── Buttons ─────────────────────────────────────────── */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -64,11 +66,12 @@ header .user-info .username {
   color: var(--text);
   font-size: 14px;
   cursor: pointer;
-  transition: background .15s, border-color .15s;
+  transition: background .15s, border-color .15s, transform .1s;
 }
 .btn:hover {
   background: var(--border);
 }
+.btn:active { transform: scale(.97); }
 .btn-primary {
   background: var(--accent);
   color: #000;
@@ -87,6 +90,11 @@ header .user-info .username {
   background: rgba(248,81,73,.15);
 }
 .btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-lg { font-size: 16px; padding: 12px 32px; }
+.btn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
 
 /* ── Dry-run banner ──────────────────────────────────── */
 .dry-run-banner {
@@ -136,22 +144,62 @@ main {
 /* ── Login page ──────────────────────────────────────── */
 .login-page {
   text-align: center;
-  padding-top: 80px;
+  padding-top: 60px;
 }
 .login-page h1 {
-  font-size: 36px;
+  font-size: 48px;
   color: var(--accent);
   margin-bottom: 8px;
+  letter-spacing: -1px;
 }
-.login-page p {
+.login-page .tagline {
   color: var(--text-muted);
-  font-size: 16px;
-  margin-bottom: 32px;
-  max-width: 480px;
-  margin-left: auto;
-  margin-right: auto;
+  font-size: 18px;
+  margin-bottom: 40px;
 }
-.login-page .btn-primary { font-size: 16px; padding: 12px 32px; }
+.login-page .login-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-top: 16px;
+}
+
+/* How-it-works steps */
+.how-it-works {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.step-num {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+}
+.step-text {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.step-arrow {
+  color: var(--border);
+  font-size: 20px;
+  margin-bottom: 20px;
+}
 
 /* ── Cards ───────────────────────────────────────────── */
 .card {
@@ -165,6 +213,24 @@ main {
   font-size: 16px;
   margin-bottom: 16px;
   color: var(--text);
+}
+.card-header {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.card-header h2 { margin-bottom: 0; }
+.card-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+code {
+  background: var(--bg);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--accent);
 }
 
 /* ── Stat grid ───────────────────────────────────────── */
@@ -211,6 +277,11 @@ th {
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: .5px;
+}
+td.tx-hash {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 12px;
+  color: var(--text-muted);
 }
 .badge {
   display: inline-block;
@@ -260,6 +331,7 @@ th {
   opacity: 0;
   transition: opacity .3s;
   pointer-events: none;
+  max-width: 400px;
 }
 .toast.visible { opacity: 1; pointer-events: auto; }
 .toast-success { background: var(--success); color: #000; }
@@ -295,4 +367,7 @@ th {
   .stat-grid { grid-template-columns: 1fr 1fr; }
   header { padding: 12px 16px; }
   nav { padding: 0 16px; }
+  .login-page h1 { font-size: 36px; }
+  .how-it-works { gap: 10px; }
+  .step-arrow { font-size: 16px; }
 }

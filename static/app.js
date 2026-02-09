@@ -75,6 +75,13 @@
       if (!r.ok) throw new Error(await r.text());
       user = await r.json();
       $(".username").textContent = user.discord_username;
+
+      // Auto-seed demo data so dashboard isn't empty on first visit
+      btn.textContent = "Setting up demo...";
+      try {
+        await fetch("/demo/seed", { method: "POST" });
+      } catch (_) { /* non-critical */ }
+
       toast("Logged in as " + user.discord_username, "success");
       showPage("dashboard");
     } catch (e) {
@@ -86,7 +93,6 @@
   };
 
   window.logout = function () {
-    // Clear the session cookie by making a request (or just clear client state)
     user = null;
     isAdmin = false;
     document.cookie = "p2s_session=; Max-Age=0; path=/";
@@ -96,21 +102,28 @@
 
   // ── Dashboard ────────────────────────────────────────
   async function loadDashboard() {
-    // Load status
+    // Load all dashboard data in parallel
+    await Promise.all([loadStatus(), loadAccruals(), loadPayouts()]);
+  }
+
+  async function loadStatus() {
     try {
       const r = await fetch("/me/status");
       if (r.ok) {
         const s = await r.json();
         $("#stat-accrued").textContent = parseFloat(s.accrued_rewards_ban || 0).toFixed(2);
-        $("#stat-linked").textContent = s.linked ? "Yes" : "No";
+        const linkedEl = $("#stat-linked");
+        linkedEl.textContent = s.linked ? "Yes" : "No";
+        linkedEl.style.color = s.linked ? "var(--success)" : "var(--text-muted)";
         $("#stat-verified").textContent = s.last_verified_status || "none";
         $("#stat-verified-at").textContent = s.last_verified_at
           ? new Date(s.last_verified_at).toLocaleString()
           : "never";
       }
     } catch (_) {}
+  }
 
-    // Load recent accruals
+  async function loadAccruals() {
     try {
       const r = await fetch("/me/accruals?limit=10");
       if (r.ok) {
@@ -118,8 +131,9 @@
         renderAccruals(data.accruals || []);
       }
     } catch (_) {}
+  }
 
-    // Load recent payouts
+  async function loadPayouts() {
     try {
       const r = await fetch("/me/payouts?limit=10");
       if (r.ok) {
@@ -133,7 +147,7 @@
     const tbody = $("#accruals-tbody");
     if (!tbody) return;
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No accruals yet. Seed demo data or wait for the scheduler.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No accruals yet. Click "Seed Demo Data" to generate sample data.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map((a) => `
@@ -151,7 +165,7 @@
     const tbody = $("#payouts-tbody");
     if (!tbody) return;
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No payouts yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No payouts yet. Run the scheduler to settle pending accruals.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map((p) => `
@@ -159,7 +173,7 @@
         <td>${p.id}</td>
         <td>${parseFloat(p.amount_ban).toFixed(2)} BAN</td>
         <td><span class="badge badge-${p.status}">${p.status}</span></td>
-        <td title="${p.tx_hash || ""}">${p.tx_hash ? p.tx_hash.substring(0, 16) + "..." : "-"}</td>
+        <td class="tx-hash" title="${p.tx_hash || ""}">${p.tx_hash ? p.tx_hash.substring(0, 12) + "..." : "-"}</td>
         <td>${p.created_at ? new Date(p.created_at).toLocaleString() : "-"}</td>
       </tr>
     `).join("");
@@ -167,14 +181,13 @@
 
   // ── Wallet ───────────────────────────────────────────
   async function loadWallet() {
-    // Show current status
     try {
       const r = await fetch("/me/status");
       if (r.ok) {
         const s = await r.json();
         const status = $("#wallet-status");
         if (status) {
-          status.textContent = s.linked ? "Wallet linked" : "No wallet linked";
+          status.textContent = s.linked ? "Linked" : "Not linked";
           status.className = "badge " + (s.linked ? "badge-ok" : "badge-pending");
         }
       }
@@ -256,13 +269,13 @@
         if (!tbody) return;
         const events = data.events || [];
         if (events.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No audit events.</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No audit events yet.</td></tr>';
           return;
         }
         tbody.innerHTML = events.map((e) => `
           <tr>
             <td>${e.created_at ? new Date(e.created_at).toLocaleString() : "-"}</td>
-            <td>${e.action}</td>
+            <td><span class="badge badge-ok">${e.action}</span></td>
             <td>${e.actor_email || "-"}</td>
             <td>${e.target_type || "-"}</td>
             <td>${e.summary || "-"}</td>
