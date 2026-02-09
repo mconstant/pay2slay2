@@ -64,8 +64,8 @@ def validate_health(url: str, retries: int = DEFAULT_RETRIES, delay: int = DEFAU
                             return True
                         else:
                             print(f"✗ Unexpected response: {data}")
-                    except Exception:
-                        print(f"✗ Invalid JSON response: {response.text[:100]}")
+                    except Exception as e:
+                        print(f"✗ Invalid JSON response ({type(e).__name__}): {response.text[:200]}...")
                 else:
                     print(f"✗ HTTP {response.status_code}")
                     

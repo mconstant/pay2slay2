@@ -171,7 +171,7 @@ jobs:
           API_URL="${{ steps.terraform.outputs.api_url }}"
           
           # If not available, try to extract from services
-          if [ -z "$API_URL" ] || [ "$API_URL" = "" ]; then
+          if [ -z "$API_URL" ]; then
             echo "Extracting UI URL from services output..."
             services_json=$(terraform output -json services 2>/dev/null || echo '[]')
             API_URL=$(echo "$services_json" | jq -r '.[] | select(.name=="api") | .uris[0]' 2>/dev/null || echo '')
@@ -198,8 +198,11 @@ jobs:
           UI_URL="${{ steps.ui_url.outputs.ui_url }}"
           echo "Running health check validation for: ${UI_URL}"
           
-          # Install httpx if not available
-          pip install httpx || true
+          # Install httpx if not available - fail if installation fails
+          if ! pip install -q httpx; then
+            echo "::error::Failed to install httpx. Cannot run health check."
+            exit 1
+          fi
           
           # Run health check with retries (10 attempts, 6 seconds between)
           python3 scripts/infra/validate_health.py "${UI_URL}" 10 6
