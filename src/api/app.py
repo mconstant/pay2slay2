@@ -1,14 +1,18 @@
 import os
 from collections.abc import Awaitable, Callable
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Request, Response
-from fastapi.responses import PlainTextResponse
+from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from src.lib.http import correlation_middleware
 from src.lib.observability import get_logger, setup_structlog
 from src.lib.ratelimit import build_rate_limiters, rate_limit_middleware_factory
 from src.lib.region import infer_region_from_request
+
+_STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
 
 
 def _init_db(app: FastAPI, log: Any) -> None:
@@ -167,14 +171,24 @@ def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup lo
     from .admin import router as admin_router
     from .auth import router as auth_router
     from .config import router as config_router
+    from .demo import router as demo_router
     from .user import router as user_router
 
     app.include_router(auth_router)
     app.include_router(config_router)
     app.include_router(user_router)
     app.include_router(admin_router)
+    app.include_router(demo_router)
 
     _register_health(app)
     _register_metrics(app)
+
+    # Serve frontend static files and SPA fallback
+    if _STATIC_DIR.is_dir():
+        app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+
+        @app.get("/")
+        def index() -> FileResponse:  # pragma: no cover
+            return FileResponse(str(_STATIC_DIR / "index.html"))
 
     return app

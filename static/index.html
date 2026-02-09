@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pay2Slay Faucet</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<!-- Dry-run banner -->
+<div class="dry-run-banner">DRY RUN MODE — no real transactions will be sent</div>
+
+<!-- Header -->
+<header>
+  <div class="brand">
+    <span class="logo">&#127918;</span>
+    <span class="brand-name">Pay2Slay Faucet</span>
+  </div>
+  <div class="user-info" style="display:none;">
+    <span class="username"></span>
+    <button class="btn btn-sm btn-danger" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<!-- Navigation (hidden until logged in) -->
+<nav style="display:none;">
+  <button data-page="dashboard" class="active">Dashboard</button>
+  <button data-page="wallet">Wallet</button>
+  <button data-page="admin">Admin</button>
+</nav>
+
+<!-- Toast -->
+<div class="toast"></div>
+
+<main>
+
+  <!-- ── Login Page ──────────────────────────────── -->
+  <div id="page-login" class="page active login-page">
+    <h1>Pay2Slay</h1>
+    <p class="tagline">Earn Banano for every Fortnite kill.</p>
+
+    <div class="how-it-works">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Link Discord</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Play Fortnite</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Get Banano</div>
+      </div>
+    </div>
+
+    <button id="demo-login-btn" class="btn btn-primary btn-lg" onclick="demoLogin()">
+      Demo Login (Dry Run)
+    </button>
+    <p class="login-hint">Demo mode uses simulated data — no real crypto is sent.</p>
+  </div>
+
+  <!-- ── Dashboard Page ──────────────────────────── -->
+  <div id="page-dashboard" class="page">
+    <div class="section-header">
+      <h2>Dashboard</h2>
+      <div style="display:flex;gap:8px;">
+        <button id="seed-btn" class="btn btn-sm" onclick="seedDemoData()">Seed Demo Data</button>
+        <button id="scheduler-btn" class="btn btn-sm btn-primary" onclick="triggerScheduler()">Run Scheduler Now</button>
+      </div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="value" id="stat-accrued">0.00</div>
+        <div class="label">Accrued BAN</div>
+      </div>
+      <div class="stat-box">
+        <div class="value" id="stat-linked">No</div>
+        <div class="label">Wallet Linked</div>
+      </div>
+      <div class="stat-box">
+        <div class="value" id="stat-verified">none</div>
+        <div class="label">Verification</div>
+      </div>
+      <div class="stat-box">
+        <div class="value" id="stat-verified-at" style="font-size:14px;">never</div>
+        <div class="label">Last Verified</div>
+      </div>
+    </div>
+
+    <!-- Accruals table -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Recent Accruals</h2>
+        <span class="card-subtitle">Kills converted to BAN rewards</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Kills</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+        </thead>
+        <tbody id="accruals-tbody">
+          <tr><td colspan="5" class="empty-state">No accruals yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Payouts table -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Recent Payouts</h2>
+        <span class="card-subtitle">BAN sent to your wallet</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Amount</th><th>Status</th><th>TX Hash</th><th>Date</th></tr>
+        </thead>
+        <tbody id="payouts-tbody">
+          <tr><td colspan="5" class="empty-state">No payouts yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Wallet Page ─────────────────────────────── -->
+  <div id="page-wallet" class="page">
+    <div class="section-header">
+      <h2>Wallet</h2>
+      <span id="wallet-status" class="badge badge-pending">checking...</span>
+    </div>
+
+    <div class="card">
+      <h2>Link Banano Wallet</h2>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">
+        Enter your Banano address (starts with <code>ban_</code>) to receive payouts.
+      </p>
+      <div class="form-group">
+        <label for="wallet-address">Banano Address</label>
+        <input type="text" id="wallet-address" placeholder="ban_1abc..." autocomplete="off">
+      </div>
+      <button class="btn btn-primary" onclick="linkWallet()">Link Wallet</button>
+    </div>
+  </div>
+
+  <!-- ── Admin Page ──────────────────────────────── -->
+  <div id="page-admin" class="page">
+    <h2 style="margin-bottom:16px;">Admin Panel</h2>
+
+    <!-- Admin login -->
+    <div id="admin-login-form" class="card">
+      <h2>Admin Login</h2>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">
+        For the demo, use <strong>admin@example.org</strong>
+      </p>
+      <div class="form-group">
+        <label for="admin-email">Admin Email</label>
+        <input type="email" id="admin-email" value="admin@example.org">
+      </div>
+      <button class="btn btn-primary" onclick="adminLogin()">Login</button>
+    </div>
+
+    <!-- Admin content (after login) -->
+    <div id="admin-authed" style="display:none;">
+      <div class="stat-grid">
+        <div class="stat-box">
+          <div class="value" id="admin-users">0</div>
+          <div class="label">Total Users</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="admin-payouts-ban">0.00</div>
+          <div class="label">BAN Paid Out</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="admin-accruals-ban">0.00</div>
+          <div class="label">BAN Accrued</div>
+        </div>
+        <div class="stat-box">
+          <div class="value" id="admin-abuse">0</div>
+          <div class="label">Abuse Flags</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Audit Log</h2>
+        <table>
+          <thead>
+            <tr><th>Time</th><th>Action</th><th>Actor</th><th>Target</th><th>Summary</th></tr>
+          </thead>
+          <tbody id="audit-tbody">
+            <tr><td colspan="5" class="empty-state">No audit events.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
