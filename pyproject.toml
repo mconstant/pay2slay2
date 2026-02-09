@@ -24,6 +24,8 @@ dependencies = [
   "opentelemetry-sdk>=1.25.0",
   "tenacity>=9.0",
   "python-dotenv>=1.0",
+  "cryptography>=42.0",
+  "ed25519-blake2b>=1.4",
 ]
 
 [project.optional-dependencies]

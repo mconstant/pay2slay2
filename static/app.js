@@ -267,46 +267,161 @@
 
   // ── Admin ────────────────────────────────────────────
   async function loadAdmin() {
+    // Try to authenticate via Discord username (server checks ADMIN_DISCORD_USERNAMES)
+    if (!isAdmin) {
+      try {
+        const r = await fetch("/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        });
+        if (r.ok) {
+          isAdmin = true;
+        }
+      } catch (_) {}
+    }
+
     if (!isAdmin) {
       $("#admin-authed").style.display = "none";
-      $("#admin-login-form").style.display = "block";
+      $("#admin-unauthorized").style.display = "block";
       return;
     }
-    $("#admin-login-form").style.display = "none";
+    $("#admin-unauthorized").style.display = "none";
     $("#admin-authed").style.display = "block";
     await Promise.all([loadAdminStats(), loadAdminAudit()]);
   }
-
-  window.adminLogin = async function () {
-    const email = $("#admin-email").value.trim();
-    if (!email) { toast("Enter admin email", "error"); return; }
-    try {
-      const r = await fetch("/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
-      });
-      if (!r.ok) throw new Error("Unauthorized");
-      isAdmin = true;
-      toast("Admin authenticated", "success");
-      loadAdmin();
-    } catch (e) {
-      toast("Admin login failed: " + e.message, "error");
-    }
-  };
 
   async function loadAdminStats() {
     try {
       const r = await fetch("/admin/stats");
       if (r.ok) {
         const s = await r.json();
+        // System stats
         $("#admin-users").textContent = s.users_total;
         $("#admin-payouts-ban").textContent = parseFloat(s.payouts_sent_ban).toFixed(2);
+        $("#admin-payouts-pending").textContent = parseFloat(s.payouts_pending_ban || 0).toFixed(2);
         $("#admin-accruals-ban").textContent = parseFloat(s.accruals_total_ban).toFixed(2);
+        $("#admin-accruals-pending").textContent = parseFloat(s.accruals_pending_ban || 0).toFixed(2);
         $("#admin-abuse").textContent = s.abuse_flags;
+
+        // Operator wallet
+        if (s.operator_balance_ban !== null) {
+          $("#admin-operator-balance").textContent = parseFloat(s.operator_balance_ban).toFixed(2);
+        } else {
+          $("#admin-operator-balance").textContent = "—";
+        }
+        if (s.operator_pending_ban !== null) {
+          $("#admin-operator-pending").textContent = parseFloat(s.operator_pending_ban).toFixed(2);
+        } else {
+          $("#admin-operator-pending").textContent = "—";
+        }
+        if (s.operator_account) {
+          $("#admin-operator-account").textContent = s.operator_account;
+        }
+
+        // Payout config
+        $("#admin-ban-per-kill").textContent = parseFloat(s.ban_per_kill || 0).toFixed(2);
+        $("#admin-daily-cap").textContent = s.daily_payout_cap || "—";
+        $("#admin-weekly-cap").textContent = s.weekly_payout_cap || "—";
+        $("#admin-scheduler").textContent = s.scheduler_minutes || "—";
+
+        // Dry run status
+        const dryRunEl = $("#admin-dry-run-status");
+        if (dryRunEl) {
+          if (s.dry_run) {
+            dryRunEl.innerHTML = '<span class="badge badge-pending">🧪 DRY RUN MODE</span> No real transactions';
+          } else {
+            dryRunEl.innerHTML = '<span class="badge badge-sent">🚀 LIVE MODE</span> Real Banano transactions';
+          }
+        }
       }
     } catch (_) {}
+
+    // Load operator seed status
+    await loadOperatorSeedStatus();
   }
+
+  async function loadOperatorSeedStatus() {
+    const statusEl = $("#operator-seed-status");
+    const addressEl = $("#operator-seed-address");
+    const qrContainerEl = $("#operator-qr-code");
+    const qrCanvasEl = $("#operator-qr-canvas");
+    if (!statusEl) return;
+    try {
+      const r = await fetch("/admin/config/operator-seed/status");
+      if (r.ok) {
+        const data = await r.json();
+        if (data.configured) {
+          const date = data.updated_at ? new Date(data.updated_at).toLocaleDateString() : "unknown";
+          statusEl.innerHTML = `<span class="badge badge-sent">✓ Configured</span> Last updated: ${date} by ${data.set_by || "unknown"}`;
+          // Show derived address
+          if (addressEl && data.address) {
+            addressEl.innerHTML = `<strong>Derived Address:</strong><br><code style="font-size:11px;word-break:break-all;">${data.address}</code>`;
+            addressEl.style.display = "block";
+            // Generate QR code for the address
+            if (qrContainerEl && qrCanvasEl && typeof qrcode !== "undefined") {
+              qrCanvasEl.innerHTML = "";
+              const qr = qrcode(0, "M");
+              qr.addData(data.address);
+              qr.make();
+              qrCanvasEl.innerHTML = qr.createSvgTag(5, 0);
+              qrContainerEl.style.display = "block";
+            }
+            // Update the operator wallet display to use this address
+            const balanceEl = $("#admin-operator-balance");
+            const accountEl = $("#admin-operator-account");
+            if (accountEl) {
+              accountEl.textContent = data.address;
+            }
+          }
+        } else {
+          statusEl.innerHTML = '<span class="badge badge-pending">⚠ Not configured</span> Set a seed to enable payouts';
+          if (addressEl) addressEl.style.display = "none";
+          if (qrContainerEl) qrContainerEl.style.display = "none";
+        }
+      }
+    } catch (_) {
+      statusEl.textContent = "Unable to check status";
+    }
+  }
+
+  window.saveOperatorSeed = async function () {
+    const input = $("#operator-seed-input");
+    const seed = input.value.trim();
+    if (!seed) {
+      toast("Enter a wallet seed", "error");
+      return;
+    }
+    if (!/^[0-9a-fA-F]{64}$/.test(seed)) {
+      toast("Seed must be 64 hexadecimal characters", "error");
+      return;
+    }
+    if (!confirm("Save this operator seed? This will encrypt and store it securely.")) {
+      return;
+    }
+    const btn = $("#save-seed-btn");
+    btn.disabled = true;
+    btn.textContent = "Saving...";
+    try {
+      const r = await fetch("/admin/config/operator-seed", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seed }),
+      });
+      if (!r.ok) {
+        const err = await r.json();
+        throw new Error(err.detail || "Failed to save");
+      }
+      toast("Operator seed saved securely", "success");
+      input.value = "";
+      await loadOperatorSeedStatus();
+    } catch (e) {
+      toast("Failed to save seed: " + e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Save Seed Securely";
+    }
+  };
 
   async function loadAdminAudit() {
     try {
@@ -349,6 +464,30 @@
     } finally {
       btn.disabled = false;
       btn.textContent = "Seed Demo Data";
+    }
+  };
+
+  // ── Clear Demo Data ──────────────────────────────────
+  window.clearDemoData = async function () {
+    if (!confirm("Clear all demo users and their data? This cannot be undone.")) return;
+    const btn = $("#clear-demo-btn");
+    btn.disabled = true;
+    btn.textContent = "Clearing...";
+    try {
+      const r = await fetch("/demo/clear", { method: "POST" });
+      if (!r.ok) throw new Error(await r.text());
+      const data = await r.json();
+      if (data.cleared) {
+        toast(`Cleared: ${data.users} users, ${data.accruals} accruals, ${data.payouts} payouts`, "success");
+      } else {
+        toast(data.message || "No demo data to clear", "info");
+      }
+      loadAdminStats();
+    } catch (e) {
+      toast("Clear failed: " + e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "🗑️ Clear Demo Data";
     }
   };
 

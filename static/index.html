@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pay2Slay Faucet</title>
   <link rel="stylesheet" href="/static/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
 <body>
 
@@ -165,37 +166,108 @@
   <div id="page-admin" class="page">
     <h2 style="margin-bottom:16px;">Admin Panel</h2>
 
-    <!-- Admin login -->
-    <div id="admin-login-form" class="card">
-      <h2>Admin Login</h2>
-      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">
-        For the demo, use <strong>admin@example.org</strong>
+    <!-- Unauthorized message -->
+    <div id="admin-unauthorized" class="card" style="display:none;">
+      <h2>🔒 Access Denied</h2>
+      <p style="color:var(--text-muted);font-size:14px;margin-top:12px;">
+        You don't have admin access. Admin users are configured via <code>ADMIN_DISCORD_USERNAMES</code> in the server environment.
       </p>
-      <div class="form-group">
-        <label for="admin-email">Admin Email</label>
-        <input type="email" id="admin-email" value="admin@example.org">
-      </div>
-      <button class="btn btn-primary" onclick="adminLogin()">Login</button>
     </div>
 
     <!-- Admin content (after login) -->
     <div id="admin-authed" style="display:none;">
-      <div class="stat-grid">
-        <div class="stat-box">
-          <div class="value" id="admin-users">0</div>
-          <div class="label">Total Users</div>
+      <!-- Operator Wallet Card -->
+      <div class="card" style="margin-bottom:20px;">
+        <h2>💰 Operator Wallet</h2>
+        <div class="stat-grid" style="margin-top:16px;">
+          <div class="stat-box">
+            <div class="value" id="admin-operator-balance">—</div>
+            <div class="label">Available BAN</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-operator-pending">—</div>
+            <div class="label">Pending BAN</div>
+          </div>
         </div>
-        <div class="stat-box">
-          <div class="value" id="admin-payouts-ban">0.00</div>
-          <div class="label">BAN Paid Out</div>
+        <p id="admin-operator-account" style="font-size:11px;color:var(--text-muted);margin-top:12px;word-break:break-all;"></p>
+
+        <!-- Operator Seed Config -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+          <h3 style="font-size:14px;margin-bottom:12px;">🔐 Operator Seed</h3>
+          <p id="operator-seed-status" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+            Checking...
+          </p>
+          <p id="operator-seed-address" style="font-size:12px;color:var(--text);margin-bottom:12px;padding:8px;background:var(--bg);border-radius:4px;display:none;">
+          </p>
+          <div id="operator-qr-code" style="display:none;text-align:center;margin-bottom:16px;padding:16px;background:#fff;border-radius:8px;">
+            <div id="operator-qr-canvas"></div>
+            <p style="font-size:11px;color:#666;margin-top:8px;margin-bottom:0;">Scan to send BAN to operator wallet</p>
+          </div>
+          <div class="form-group" style="margin-bottom:12px;">
+            <label for="operator-seed-input">Wallet Seed (64 hex characters)</label>
+            <input type="password" id="operator-seed-input" placeholder="Enter 64-character hex seed" autocomplete="off" style="font-family:monospace;">
+          </div>
+          <button id="save-seed-btn" class="btn btn-primary btn-sm" onclick="saveOperatorSeed()">
+            Save Seed Securely
+          </button>
+          <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+            ⚠️ The seed is encrypted at rest. Never share your seed with anyone.
+          </p>
         </div>
-        <div class="stat-box">
-          <div class="value" id="admin-accruals-ban">0.00</div>
-          <div class="label">BAN Accrued</div>
+      </div>
+
+      <!-- Payout Config Card -->
+      <div class="card" style="margin-bottom:20px;">
+        <h2>⚙️ Payout Configuration</h2>
+        <div class="stat-grid" style="margin-top:16px;">
+          <div class="stat-box">
+            <div class="value" id="admin-ban-per-kill">—</div>
+            <div class="label">BAN per Kill</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-daily-cap">—</div>
+            <div class="label">Daily Cap</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-weekly-cap">—</div>
+            <div class="label">Weekly Cap</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-scheduler">—</div>
+            <div class="label">Scheduler (min)</div>
+          </div>
         </div>
-        <div class="stat-box">
-          <div class="value" id="admin-abuse">0</div>
-          <div class="label">Abuse Flags</div>
+        <p id="admin-dry-run-status" style="margin-top:12px;"></p>
+      </div>
+
+      <!-- System Stats -->
+      <div class="card" style="margin-bottom:20px;">
+        <h2>📊 System Statistics</h2>
+        <div class="stat-grid" style="margin-top:16px;">
+          <div class="stat-box">
+            <div class="value" id="admin-users">0</div>
+            <div class="label">Total Users</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-payouts-ban">0.00</div>
+            <div class="label">BAN Paid Out</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-payouts-pending">0.00</div>
+            <div class="label">BAN Pending</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-accruals-ban">0.00</div>
+            <div class="label">BAN Accrued</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-accruals-pending">0.00</div>
+            <div class="label">BAN Unsettled</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-abuse">0</div>
+            <div class="label">Abuse Flags</div>
+          </div>
         </div>
       </div>
 
@@ -209,6 +281,19 @@
             <tr><td colspan="5" class="empty-state">No audit events.</td></tr>
           </tbody>
         </table>
+      </div>
+
+      <!-- Admin Actions -->
+      <div id="admin-actions" class="card" style="margin-top:20px;">
+        <h2>🛠️ Admin Actions</h2>
+        <p style="color:var(--text-muted);font-size:13px;margin:12px 0;">
+          These actions are only available when DEMO_MODE is enabled.
+        </p>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <button id="clear-demo-btn" class="btn btn-danger" onclick="clearDemoData()">
+            🗑️ Clear Demo Data
+          </button>
+        </div>
       </div>
     </div>
   </div>

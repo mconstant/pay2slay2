@@ -154,3 +154,18 @@ class AbuseFlag(Base, TimestampMixin):
     flag_type: Mapped[str] = mapped_column(String(64))  # e.g., kill_rate_spike
     severity: Mapped[str] = mapped_column(String(16), default="low")  # low/med/high
     detail: Mapped[str | None] = mapped_column(String(500))
+
+
+class SecureConfig(Base, TimestampMixin):
+    """Encrypted key-value store for sensitive configuration (e.g., wallet seeds).
+
+    Values are encrypted at rest using Fernet with SESSION_SECRET as key base.
+    """
+
+    __tablename__ = "secure_config"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    key: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    encrypted_value: Mapped[str] = mapped_column(String(500))  # base64-encoded ciphertext
+    set_by: Mapped[str | None] = mapped_column(String(255))  # admin who set it
+    description: Mapped[str | None] = mapped_column(String(255))
