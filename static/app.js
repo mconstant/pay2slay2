@@ -49,6 +49,15 @@
         isDryRun = !!(productConfig.feature_flags && productConfig.feature_flags.dry_run_banner);
         const banner = $(".dry-run-banner");
         if (banner && isDryRun) banner.classList.add("visible");
+        // Hide demo-only elements when not in dry run mode
+        const seedBtn = $("#seed-btn");
+        const schedulerBtn = $("#scheduler-btn");
+        const demoLoginBtn = $("#demo-login-btn");
+        if (!isDryRun) {
+          if (seedBtn) seedBtn.style.display = "none";
+          if (schedulerBtn) schedulerBtn.style.display = "none";
+          if (demoLoginBtn) demoLoginBtn.style.display = "none";
+        }
       }
     } catch (_) { /* config not critical */ }
   }
@@ -171,7 +180,8 @@
     const tbody = $("#accruals-tbody");
     if (!tbody) return;
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No accruals yet. Click "Seed Demo Data" to generate sample data.</td></tr>';
+      const hint = isDryRun ? ' Click "Seed Demo Data" to generate sample data.' : '';
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No accruals yet.${hint}</td></tr>`;
       return;
     }
     tbody.innerHTML = rows.map((a) => `
@@ -189,7 +199,8 @@
     const tbody = $("#payouts-tbody");
     if (!tbody) return;
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No payouts yet. Run the scheduler to settle pending accruals.</td></tr>';
+      const hint = isDryRun ? ' Run the scheduler to settle pending accruals.' : '';
+      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No payouts yet.${hint}</td></tr>`;
       return;
     }
     tbody.innerHTML = rows.map((p) => `
@@ -210,9 +221,22 @@
       if (r.ok) {
         const s = await r.json();
         const status = $("#wallet-status");
+        const linkedCard = $("#wallet-linked-card");
+        const linkedAddr = $("#wallet-linked-address");
+        const formTitle = $("#wallet-form-title");
+        
         if (status) {
           status.textContent = s.linked ? "Linked" : "Not linked";
           status.className = "badge " + (s.linked ? "badge-ok" : "badge-pending");
+        }
+        
+        if (s.linked && s.wallet_address) {
+          if (linkedCard) linkedCard.style.display = "block";
+          if (linkedAddr) linkedAddr.textContent = s.wallet_address;
+          if (formTitle) formTitle.textContent = "Update Wallet";
+        } else {
+          if (linkedCard) linkedCard.style.display = "none";
+          if (formTitle) formTitle.textContent = "Link Banano Wallet";
         }
       }
     } catch (_) {}

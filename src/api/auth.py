@@ -71,15 +71,18 @@ def discord_callback(
         dry_run=integ.dry_run,
     )
     yunite = YuniteService(
-        api_key=integ.yunite_api_key, guild_id=integ.yunite_guild_id, dry_run=integ.dry_run
+        api_key=integ.yunite_api_key,
+        guild_id=integ.yunite_guild_id,
+        base_url=integ.yunite_base_url,
+        dry_run=integ.dry_run,
     )
 
     user_info = discord.exchange_code_for_user(code)
     if not user_info.guild_member:
-        raise HTTPException(status_code=403, detail="Guild membership required")
+        return RedirectResponse(url="/static/link-required.html?reason=guild", status_code=302)
     epic_id = yunite.get_epic_id_for_discord(user_info.user_id)
     if not epic_id:
-        raise HTTPException(status_code=403, detail="Yunite EpicID mapping required")
+        return RedirectResponse(url="/static/link-required.html?reason=epic", status_code=302)
 
     # Upsert user
     existing = db.query(User).filter(User.discord_user_id == user_info.user_id).one_or_none()

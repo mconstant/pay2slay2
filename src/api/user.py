@@ -85,6 +85,7 @@ def me_reverify(
     yunite = YuniteService(
         api_key=integrations.yunite_api_key,
         guild_id=integrations.yunite_guild_id,
+        base_url=integrations.yunite_base_url,
         dry_run=integrations.dry_run,
     )
     epic_id = yunite.get_epic_id_for_discord(user.discord_user_id)
@@ -132,9 +133,16 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
     )
     last_verified_status = latest_ver.status if latest_ver else None
     last_verified_source = latest_ver.source if latest_ver else None
+    # Get linked wallet address (most recent)
+    wallet_address = None
+    if user.wallet_links:
+        # Get the most recently linked wallet
+        latest_wallet = max(user.wallet_links, key=lambda w: w.created_at or w.id)
+        wallet_address = latest_wallet.address
     return JSONResponse(
         {
             "linked": bool(user.wallet_links),
+            "wallet_address": wallet_address,
             "last_verified_at": last_verified_at,
             "last_verified_status": last_verified_status,
             "last_verified_source": last_verified_source,

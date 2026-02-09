@@ -51,6 +51,7 @@ class IntegrationsConfig(BaseModel):
     )
     yunite_api_key: str = Field(...)
     yunite_guild_id: str = Field(...)
+    yunite_base_url: str = Field("https://yunite.xyz/api", description="Yunite API base URL")
     discord_guild_id: str = Field(...)
     discord_oauth_client_id: str = Field(...)
     discord_oauth_client_secret: str = Field(...)
@@ -67,6 +68,7 @@ class ProductConfig(BaseModel):
     banner_url: str = ""
     media_kit_url: str = ""
     default_locale: str = "en"
+    discord_invite_url: str = Field("", description="Public Discord server invite URL")
     feature_flags: dict[str, Any] = Field(default_factory=dict)
 
 

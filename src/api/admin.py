@@ -9,7 +9,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from src.lib.admin_audit import AdminAuditPayload, record_admin_audit
-from src.lib.auth import issue_admin_session, session_secret, verify_admin_session
+from src.lib.auth import issue_admin_session, session_secret, verify_admin_session, verify_session
 from src.lib.observability import get_logger
 from src.models.models import (
     AbuseFlag,
@@ -25,6 +25,13 @@ from src.services.yunite_service import YuniteService
 
 router = APIRouter(prefix="/admin")
 log = get_logger("api.admin")
+
+
+def _get_allowed_discord_usernames() -> set[str]:
+    """Get comma-separated Discord usernames from env, return as lowercase set."""
+    raw = os.getenv("ADMIN_DISCORD_USERNAMES", "")
+    return {u.strip().lower() for u in raw.split(",") if u.strip()}
+
 
 # Admin metrics
 ADMIN_REVERIFY_TOTAL = Counter("admin_reverify_total", "Admin reverify requests", ["result"])
@@ -50,10 +57,46 @@ def _require_admin(request: Request) -> None:
 
 
 @router.post("/login")
-def admin_login(email: str = Body(..., embed=True), db: Session = Depends(_get_db)) -> JSONResponse:  # noqa: B008
-    # Simple login: require active AdminUser with this email, then issue admin cookie
+def admin_login(
+    request: Request,
+    email: str = Body(None, embed=True),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    # Check if user is logged in via Discord and has an allowed username
+    token = request.cookies.get("p2s_session")
+    uid = verify_session(token, session_secret()) if token else None
+
+    allowed_usernames = _get_allowed_discord_usernames()
+
+    if uid and allowed_usernames:
+        # Check if this Discord user is in the allowed list
+        user = db.query(User).filter(User.discord_user_id == uid).one_or_none()
+        if user and user.discord_username:
+            if user.discord_username.lower() in allowed_usernames:
+                # Grant admin access based on Discord username
+                admin_email = f"{user.discord_username}@discord"
+                token = issue_admin_session(admin_email, session_secret())
+                resp = JSONResponse(
+                    {"email": admin_email, "discord_username": user.discord_username}
+                )
+                resp.set_cookie("p2s_admin", token, httponly=True, samesite="lax")
+                record_admin_audit(
+                    db,
+                    AdminAuditPayload(
+                        action="admin_login",
+                        actor_email=admin_email,
+                        target_type="admin_user",
+                        target_id=user.discord_username,
+                        summary="login via Discord username",
+                    ),
+                )
+                db.commit()
+                log.info("admin_login_discord", discord_username=user.discord_username)
+                return resp
+
+    # Fallback to email-based login (for AdminUser table)
     if not email:
-        raise HTTPException(status_code=400, detail="email required")
+        raise HTTPException(status_code=401, detail="Unauthorized")
     admin = (
         db.query(AdminUser)
         .filter(AdminUser.email == email, AdminUser.is_active.is_(True))
@@ -99,6 +142,7 @@ def admin_reverify(
     yunite = YuniteService(
         api_key=integrations.yunite_api_key,
         guild_id=integrations.yunite_guild_id,
+        base_url=integrations.yunite_base_url,
         dry_run=integrations.dry_run,
     )
     epic_id = yunite.get_epic_id_for_discord(discord_id)

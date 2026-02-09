@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Account Linking Required – Pay2Slay</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .link-page {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 100px);
+      padding: 24px;
+      text-align: center;
+    }
+    .link-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 40px;
+      max-width: 520px;
+      width: 100%;
+    }
+    .link-card h1 {
+      font-size: 28px;
+      margin-bottom: 12px;
+      color: var(--accent);
+    }
+    .link-card .subtitle {
+      color: var(--text-muted);
+      font-size: 16px;
+      margin-bottom: 32px;
+    }
+    .error-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+    .error-icon.guild { color: #5865F2; }
+    .error-icon.epic { color: var(--accent); }
+    .steps {
+      text-align: left;
+      margin: 24px 0;
+    }
+    .steps h3 {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .step-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .step-num {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      background: var(--accent);
+      color: #000;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 14px;
+    }
+    .step-content {
+      flex: 1;
+    }
+    .step-content strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+    .step-content p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin: 0;
+    }
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 32px;
+    }
+    .btn-yunite {
+      background: #7289da;
+      color: #fff;
+      border-color: #7289da;
+      font-weight: 600;
+    }
+    .btn-yunite:hover {
+      background: #5b6eae;
+      border-color: #5b6eae;
+    }
+    .help-text {
+      margin-top: 24px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+    .help-text a {
+      color: var(--info);
+      text-decoration: none;
+    }
+    .help-text a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="brand">
+    <span class="logo">🎮</span>
+    <span class="brand-name">Pay2Slay Faucet</span>
+  </div>
+</header>
+
+<main class="link-page">
+  <div class="link-card" id="guild-required" style="display:none;">
+    <div class="error-icon guild">🏠</div>
+    <h1>Join Our Discord Server</h1>
+    <p class="subtitle">You need to be a member of our Discord server to use Pay2Slay.</p>
+    
+    <div class="steps">
+      <h3>What to do</h3>
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Join the Discord Server</strong>
+          <p>Click the button below to join our community Discord server.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Come Back & Login</strong>
+          <p>Once you've joined, return here and try logging in again.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <a href="https://discord.gg/pay2slay" class="btn btn-discord btn-lg" target="_blank" data-discord-invite>
+        Join Discord Server
+      </a>
+      <a href="/auth/discord/login" class="btn btn-lg">
+        Try Login Again
+      </a>
+    </div>
+  </div>
+
+  <div class="link-card" id="epic-required" style="display:none;">
+    <div class="error-icon epic">🎮</div>
+    <h1>Link Your Epic Account</h1>
+    <p class="subtitle">We need to verify your Fortnite account to track your kills and pay you.</p>
+    
+    <div class="steps">
+      <h3>How to link your account</h3>
+      <div class="step-item">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <strong>Open Our Discord Server</strong>
+          <p>Click the button below to join our Discord server.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <strong>Find the Verification Channel</strong>
+          <p>Look for the Yunite verification channel and click the <strong>Link</strong> button to connect your Epic Games account.</p>
+        </div>
+      </div>
+      <div class="step-item">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <strong>Return Here & Login</strong>
+          <p>Once linked, come back and login with Discord again. We'll find your Epic ID automatically.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <a href="https://discord.gg/pay2slay" class="btn btn-discord btn-lg" target="_blank" data-discord-invite>
+        📢 Open Our Discord Server
+      </a>
+      <a href="/auth/discord/login" class="btn btn-lg">
+        Try Login Again
+      </a>
+    </div>
+
+    <p class="help-text">
+      Having trouble? Make sure you're using the same Discord account in our server.
+      <br>Need help? <a href="https://discord.gg/pay2slay" target="_blank" data-discord-invite>Ask in our Discord</a>
+    </p>
+  </div>
+</main>
+
+<script>
+  // Show the appropriate card based on URL param
+  const params = new URLSearchParams(window.location.search);
+  const reason = params.get('reason');
+  
+  if (reason === 'guild') {
+    document.getElementById('guild-required').style.display = 'block';
+  } else {
+    // Default to epic linking (most common)
+    document.getElementById('epic-required').style.display = 'block';
+  }
+
+  // Fetch Discord invite URL from config and update all links
+  fetch('/config/product')
+    .then(res => res.json())
+    .then(cfg => {
+      if (cfg.discord_invite_url) {
+        document.querySelectorAll('a[data-discord-invite]').forEach(link => {
+          link.href = cfg.discord_invite_url;
+        });
+      }
+    })
+    .catch(err => console.warn('Could not fetch config:', err));
+</script>
+
+</body>
+</html>

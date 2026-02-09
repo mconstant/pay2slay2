@@ -3,5 +3,6 @@ org_name: "Example Org"
 banner_url: ""
 media_kit_url: ""
 default_locale: en
+discord_invite_url: ${DISCORD_INVITE_URL}
 feature_flags:
   dry_run_banner: true

@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest:*)",
+      "Bash(pip --version:*)",
+      "Bash(.venv/bin/python:*)",
+      "Bash(PYTHONPATH=. .venv/bin/python:*)",
+      "Bash(P2S_DRY_RUN=true PYTHONPATH=. .venv/bin/python:*)",
+      "Bash(P2S_DRY_RUN=true PYTHONPATH=/Users/mconstant/src/pay2slay2 /Users/mconstant/src/pay2slay2/.venv/bin/python:*)",
+      "Bash(PYTHONPATH=/Users/mconstant/src/pay2slay2 /Users/mconstant/src/pay2slay2/.venv/bin/python -m pytest:*)",
+      "Bash(PYTHONPATH=/Users/mconstant/src/pay2slay2 /Users/mconstant/src/pay2slay2/.venv/bin/python:*)",
+      "Bash(pkill:*)",
+      "Bash(pip install:*)",
+      "Bash(source:*)",
+      "Bash(/Users/mconstant/src/pay2slay2/.venv/bin/python -m pip install:*)",
+      "Bash(/Users/mconstant/src/pay2slay2/.venv/bin/python -m pytest:*)",
+      "Bash(.venv/bin/pip install:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(# Quick smoke test - start server, test the flow, stop rm -f pay2slay.db .venv/bin/python -m uvicorn src.api.app:create_app --factory --port 8000 & sleep 2 echo \"\"=== Login ===\"\" curl -s -c /tmp/p2s_test.txt -X POST http://localhost:8000/auth/demo-login)",
+      "Bash(python3:*)",
+      "Bash(__NEW_LINE_51197eb8d200b1bf__ echo \"\")",
+      "Bash(__NEW_LINE_d3b0fd290ac8344e__ echo \"\")",
+      "Bash(__NEW_LINE_bb5ade33fedfc79c__ echo \"\")",
+      "Bash(__NEW_LINE_42b623cfd242b9ad__ echo \"\")",
+      "Bash(python3 -m json.tool echo \"\" echo \"=== Frontend ===\" curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/ curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/static/app.js curl -s -o /dev/null -w \"HTTP %{http_code}\\\\n\" http://localhost:8000/static/style.css pkill -f \"uvicorn src.api.app\" echo \"DONE\")",
+      "Bash(git checkout:*)",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr create:*)",
+      "Bash(git pull:*)",
+      "Bash(git status:*)"
+    ]
+  }
+}
