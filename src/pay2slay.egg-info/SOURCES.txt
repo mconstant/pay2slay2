@@ -18,6 +18,7 @@ src/lib/__init__.py
 src/lib/admin_audit.py
 src/lib/auth.py
 src/lib/config.py
+src/lib/crypto.py
 src/lib/db.py
 src/lib/deploy_validate.py
 src/lib/http.py

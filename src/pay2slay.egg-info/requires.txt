@@ -10,6 +10,9 @@ prometheus-client>=0.20
 opentelemetry-instrumentation-fastapi>=0.47b0
 opentelemetry-sdk>=1.25.0
 tenacity>=9.0
+python-dotenv>=1.0
+cryptography>=42.0
+ed25519-blake2b>=1.4
 
 [dev]
 pytest>=8.2

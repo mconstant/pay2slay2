@@ -7,6 +7,12 @@ All notable changes to this project will be documented in this file.
 - Introduced soft signature verification and structured image metadata artifact (image_sha, digest, signature_status, repository_type, arch, pre/post digests).
 - Added deployment-time repository mapping & floating tag rejection.
 - Added SBOM linkage and signature verification contract descriptors (placeholders pending full SBOM generation).
+- **Akash deployment enhancements**:
+  - Added automatic selection of cheapest audited Akash providers via SDL attributes (`audited: true`) and `signedBy` constraints.
+  - Added UI URL extraction and output in deployment workflow with GitHub Actions step summary.
+  - Added post-deployment health check validation with configurable retry logic (`scripts/infra/validate_health.py`).
+  - Updated Terraform outputs to expose `api_url` and `api_endpoints` for easy access to deployed services.
+  - Added comprehensive unit tests for health check validation script.
 
 ## [0.2.0] - 2025-09-25
 ### Added

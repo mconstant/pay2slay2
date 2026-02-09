@@ -45,3 +45,16 @@ output "services" {
   description = "List of services created by the Akash deployment (replicas, uris, ips, forwarded_ports)."
   value       = akash_deployment.p2s.services
 }
+
+output "api_url" {
+  description = "Primary URL for the deployed API/UI service"
+  value       = try(akash_deployment.p2s.services[0].uris[0], "")
+}
+
+output "api_endpoints" {
+  description = "All available API endpoints (URIs and forwarded ports)"
+  value = {
+    uris = try([for s in akash_deployment.p2s.services : s.uris if s.name == "api"], [])
+    forwarded_ports = try([for s in akash_deployment.p2s.services : s.forwarded_ports if s.name == "api"], [])
+  }
+}
