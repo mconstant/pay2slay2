@@ -323,3 +323,56 @@ def _settle_users(db: Session, users: list[User], now: datetime, epoch_min: int)
             a.payout_id = payout.id
         settled += 1
     return settled
+
+
+@router.post("/demo/clear")
+def demo_clear(
+    request: Request,
+    _: None = Depends(_require_demo_mode),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Clear all demo data (users starting with 'demo_' and their related records)."""
+    demo_ids = [d[0] for d in _DEMO_USERS]
+
+    # Get demo user IDs
+    demo_users = db.query(User).filter(User.discord_user_id.in_(demo_ids)).all()
+    demo_user_ids = [u.id for u in demo_users]
+
+    if not demo_user_ids:
+        return JSONResponse({"cleared": False, "message": "No demo data found"})
+
+    # Delete related records
+    payouts_deleted = (
+        db.query(Payout).filter(Payout.user_id.in_(demo_user_ids)).delete(synchronize_session=False)
+    )
+    accruals_deleted = (
+        db.query(RewardAccrual)
+        .filter(RewardAccrual.user_id.in_(demo_user_ids))
+        .delete(synchronize_session=False)
+    )
+    verifications_deleted = (
+        db.query(VerificationRecord)
+        .filter(VerificationRecord.user_id.in_(demo_user_ids))
+        .delete(synchronize_session=False)
+    )
+    wallets_deleted = (
+        db.query(WalletLink)
+        .filter(WalletLink.user_id.in_(demo_user_ids))
+        .delete(synchronize_session=False)
+    )
+    users_deleted = (
+        db.query(User).filter(User.id.in_(demo_user_ids)).delete(synchronize_session=False)
+    )
+
+    db.commit()
+
+    return JSONResponse(
+        {
+            "cleared": True,
+            "users": users_deleted,
+            "accruals": accruals_deleted,
+            "payouts": payouts_deleted,
+            "verifications": verifications_deleted,
+            "wallets": wallets_deleted,
+        }
+    )

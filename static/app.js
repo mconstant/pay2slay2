@@ -382,6 +382,30 @@
     }
   };
 
+  // ── Clear Demo Data ──────────────────────────────────
+  window.clearDemoData = async function () {
+    if (!confirm("Clear all demo users and their data? This cannot be undone.")) return;
+    const btn = $("#clear-demo-btn");
+    btn.disabled = true;
+    btn.textContent = "Clearing...";
+    try {
+      const r = await fetch("/demo/clear", { method: "POST" });
+      if (!r.ok) throw new Error(await r.text());
+      const data = await r.json();
+      if (data.cleared) {
+        toast(`Cleared: ${data.users} users, ${data.accruals} accruals, ${data.payouts} payouts`, "success");
+      } else {
+        toast(data.message || "No demo data to clear", "info");
+      }
+      loadAdminStats();
+    } catch (e) {
+      toast("Clear failed: " + e.message, "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "🗑️ Clear Demo Data";
+    }
+  };
+
   // ── Trigger Scheduler ────────────────────────────────
   window.triggerScheduler = async function () {
     const btn = $("#scheduler-btn");
