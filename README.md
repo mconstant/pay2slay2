@@ -6,6 +6,31 @@
 
 Banano payouts for Fortnite kills. FastAPI backend, SQLAlchemy ORM, Alembic migrations, and a simple scheduler that settles rewards and (optionally) pays out via a Banano node.
 
+## QuickStart
+
+Get up and running in minutes:
+
+```bash
+# Clone the repository
+git clone https://github.com/mconstant/pay2slay2.git
+cd pay2slay2
+
+# Create a virtual environment and install dependencies
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+pip install -e '.[dev]'
+
+# Run the API server (in one terminal)
+make api
+
+# Run the scheduler (in another terminal)
+make scheduler
+```
+
+The API will be available at http://localhost:8000 and the scheduler will run with a Prometheus metrics server on port 8001.
+
+For more detailed setup instructions, see `docs/quickstart.md`.
+
 ## Features (current)
 - Discord OAuth + Yunite EpicID mapping (dry-run friendly)
 - User endpoints: link wallet, status (with last verification details)
