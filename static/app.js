@@ -344,6 +344,8 @@
   async function loadOperatorSeedStatus() {
     const statusEl = $("#operator-seed-status");
     const addressEl = $("#operator-seed-address");
+    const qrContainerEl = $("#operator-qr-code");
+    const qrCanvasEl = $("#operator-qr-canvas");
     if (!statusEl) return;
     try {
       const r = await fetch("/admin/config/operator-seed/status");
@@ -356,6 +358,15 @@
           if (addressEl && data.address) {
             addressEl.innerHTML = `<strong>Derived Address:</strong><br><code style="font-size:11px;word-break:break-all;">${data.address}</code>`;
             addressEl.style.display = "block";
+            // Generate QR code for the address
+            if (qrContainerEl && qrCanvasEl && typeof qrcode !== "undefined") {
+              qrCanvasEl.innerHTML = "";
+              const qr = qrcode(0, "M");
+              qr.addData(data.address);
+              qr.make();
+              qrCanvasEl.innerHTML = qr.createSvgTag(5, 0);
+              qrContainerEl.style.display = "block";
+            }
             // Update the operator wallet display to use this address
             const balanceEl = $("#admin-operator-balance");
             const accountEl = $("#admin-operator-account");
@@ -366,6 +377,7 @@
         } else {
           statusEl.innerHTML = '<span class="badge badge-pending">⚠ Not configured</span> Set a seed to enable payouts';
           if (addressEl) addressEl.style.display = "none";
+          if (qrContainerEl) qrContainerEl.style.display = "none";
         }
       }
     } catch (_) {

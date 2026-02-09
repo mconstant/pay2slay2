@@ -12,6 +12,17 @@ from sqlalchemy.orm import Session
 from ...models.models import Payout, RewardAccrual, User, WalletLink
 from ..banano_client import BananoClient
 
+# Module-level metrics (registered once to avoid duplication errors)
+_payout_amount_hist = Histogram(
+    "payout_amount_ban",
+    "Distribution of payout amounts (BAN)",
+    buckets=(0.0001, 0.001, 0.01, 0.1, 1.0, 5.0, 10.0, 25.0, 50.0),
+)
+_accrual_lag_gauge = Gauge(
+    "payout_accrual_lag_minutes",
+    "Minutes between oldest unsettled accrual and payout creation",
+)
+
 
 @dataclass
 class PayoutResult:
@@ -27,16 +38,9 @@ class PayoutService:
         self.session = session
         self.dry_run = dry_run
         self.banano = banano
-        # Metrics (T066)
-        self._payout_amount_hist = Histogram(
-            "payout_amount_ban",
-            "Distribution of payout amounts (BAN)",
-            buckets=(0.0001, 0.001, 0.01, 0.1, 1.0, 5.0, 10.0, 25.0, 50.0),
-        )
-        self._accrual_lag_gauge = Gauge(
-            "payout_accrual_lag_minutes",
-            "Minutes between oldest unsettled accrual and payout creation",
-        )
+        # Use module-level metrics (T066)
+        self._payout_amount_hist = _payout_amount_hist
+        self._accrual_lag_gauge = _accrual_lag_gauge
 
     def _get_primary_address(self, user: User) -> str | None:
         q = select(WalletLink).where(WalletLink.user_id == user.id, WalletLink.is_primary == True)  # noqa: E712

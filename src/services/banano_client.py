@@ -40,7 +40,7 @@ def _blake2b_checksum(pubkey: bytes) -> bytes:
 def seed_to_address(seed_hex: str, index: int = 0) -> str | None:
     """Derive a Banano address from a 64-char hex seed.
 
-    Uses Blake2b to derive private key, then Ed25519 to get public key.
+    Uses Blake2b to derive private key, then Ed25519-Blake2b to get public key.
     Returns ban_... address or None if derivation fails.
     """
     try:
@@ -53,23 +53,11 @@ def seed_to_address(seed_hex: str, index: int = 0) -> str | None:
         h = hashlib.blake2b(seed_bytes + index.to_bytes(4, "big"), digest_size=32)
         private_key = h.digest()
 
-        # Get public key via Ed25519
-        # We need nacl or ed25519 library - use hashlib for the signing key derivation
-        # Actually, for Ed25519 public key derivation we need a proper library
-        # Let's use the built-in hashlib with a workaround
-        try:
-            from nacl.signing import SigningKey  # type: ignore[import-not-found]
+        # Get public key via Ed25519-Blake2b (Nano/Banano use Blake2b instead of SHA-512)
+        import ed25519_blake2b  # type: ignore[import-not-found]
 
-            signing_key = SigningKey(private_key)
-            public_key = bytes(signing_key.verify_key)
-        except ImportError:
-            # Fallback: try cryptography library
-            from cryptography.hazmat.primitives.asymmetric.ed25519 import (  # type: ignore[import-not-found]
-                Ed25519PrivateKey,
-            )
-
-            priv = Ed25519PrivateKey.from_private_bytes(private_key)
-            public_key = priv.public_key().public_bytes_raw()
+        signing_key = ed25519_blake2b.SigningKey(private_key)
+        public_key = signing_key.get_verifying_key().to_bytes()
 
         # Encode public key to address
         # Banano address: ban_ + 52 chars (4-bit padding + 256-bit pubkey) + 8 chars checksum
