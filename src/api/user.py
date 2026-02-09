@@ -138,7 +138,7 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
             "last_verified_at": last_verified_at,
             "last_verified_status": last_verified_status,
             "last_verified_source": last_verified_source,
-            "accrued_rewards_ban": total_accrued,
+            "accrued_rewards_ban": float(total_accrued),
         }
     )
 
