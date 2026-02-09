@@ -278,6 +278,7 @@ def admin_audit_query(  # noqa: PLR0913 - explicit filter params acceptable here
 
 @router.get("/stats")
 def admin_stats(
+    request: Request,
     _: None = Depends(_require_admin),
     db: Session = Depends(_get_db),  # noqa: B008
 ) -> JSONResponse:
@@ -295,15 +296,66 @@ def admin_stats(
         .scalar()
         or 0
     )
+    payouts_pending_sum = (
+        db.query(func.coalesce(func.sum(Payout.amount_ban), 0))
+        .filter(Payout.status == "pending")
+        .scalar()
+        or 0
+    )
     accruals_sum = db.query(func.coalesce(func.sum(RewardAccrual.amount_ban), 0)).scalar() or 0
+    accruals_pending = (
+        db.query(func.coalesce(func.sum(RewardAccrual.amount_ban), 0))
+        .filter(RewardAccrual.settled.is_(False))
+        .scalar()
+        or 0
+    )
     abuse_flags = db.query(func.count(AbuseFlag.id)).scalar() or 0
+
+    # Get operator balance from Banano node
+    app_state = getattr(request.app, "state", None)
+    cfg_obj = getattr(app_state, "config", None)
+    integrations = getattr(cfg_obj, "integrations", None)
+    payout_cfg = getattr(cfg_obj, "payout", None)
+
+    operator_balance: float | None = None
+    operator_pending: float | None = None
+    operator_account = os.getenv("P2S_OPERATOR_ACCOUNT", "")
+
+    if integrations and operator_account:
+        try:
+            banano = BananoClient(
+                node_url=integrations.node_rpc,
+                dry_run=integrations.dry_run,
+            )
+            operator_balance, operator_pending = banano.account_balance(operator_account)
+        except Exception as e:
+            log.warning("Failed to fetch operator balance", error=str(e))
+
+    # Get payout config values
+    ban_per_kill = payout_cfg.payout_amount_ban_per_kill if payout_cfg else 0
+    daily_cap = payout_cfg.daily_payout_cap if payout_cfg else 0
+    weekly_cap = payout_cfg.weekly_payout_cap if payout_cfg else 0
+    scheduler_minutes = payout_cfg.scheduler_minutes if payout_cfg else 0
+
     return JSONResponse(
         {
             "users_total": user_count,
             "verifications_ok": verifications_ok,
             "payouts_sent_ban": float(payouts_sent_sum),
+            "payouts_pending_ban": float(payouts_pending_sum),
             "accruals_total_ban": float(accruals_sum),
+            "accruals_pending_ban": float(accruals_pending),
             "abuse_flags": abuse_flags,
+            # Operator wallet
+            "operator_account": operator_account,
+            "operator_balance_ban": operator_balance,
+            "operator_pending_ban": operator_pending,
+            # Payout config
+            "ban_per_kill": float(ban_per_kill),
+            "daily_payout_cap": daily_cap,
+            "weekly_payout_cap": weekly_cap,
+            "scheduler_minutes": scheduler_minutes,
+            "dry_run": integrations.dry_run if integrations else True,
         }
     )
 

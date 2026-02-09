@@ -180,22 +180,74 @@
 
     <!-- Admin content (after login) -->
     <div id="admin-authed" style="display:none;">
-      <div class="stat-grid">
-        <div class="stat-box">
-          <div class="value" id="admin-users">0</div>
-          <div class="label">Total Users</div>
+      <!-- Operator Wallet Card -->
+      <div class="card" style="margin-bottom:20px;">
+        <h2>💰 Operator Wallet</h2>
+        <div class="stat-grid" style="margin-top:16px;">
+          <div class="stat-box">
+            <div class="value" id="admin-operator-balance">—</div>
+            <div class="label">Available BAN</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-operator-pending">—</div>
+            <div class="label">Pending BAN</div>
+          </div>
         </div>
-        <div class="stat-box">
-          <div class="value" id="admin-payouts-ban">0.00</div>
-          <div class="label">BAN Paid Out</div>
+        <p id="admin-operator-account" style="font-size:11px;color:var(--text-muted);margin-top:12px;word-break:break-all;"></p>
+      </div>
+
+      <!-- Payout Config Card -->
+      <div class="card" style="margin-bottom:20px;">
+        <h2>⚙️ Payout Configuration</h2>
+        <div class="stat-grid" style="margin-top:16px;">
+          <div class="stat-box">
+            <div class="value" id="admin-ban-per-kill">—</div>
+            <div class="label">BAN per Kill</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-daily-cap">—</div>
+            <div class="label">Daily Cap</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-weekly-cap">—</div>
+            <div class="label">Weekly Cap</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-scheduler">—</div>
+            <div class="label">Scheduler (min)</div>
+          </div>
         </div>
-        <div class="stat-box">
-          <div class="value" id="admin-accruals-ban">0.00</div>
-          <div class="label">BAN Accrued</div>
-        </div>
-        <div class="stat-box">
-          <div class="value" id="admin-abuse">0</div>
-          <div class="label">Abuse Flags</div>
+        <p id="admin-dry-run-status" style="margin-top:12px;"></p>
+      </div>
+
+      <!-- System Stats -->
+      <div class="card" style="margin-bottom:20px;">
+        <h2>📊 System Statistics</h2>
+        <div class="stat-grid" style="margin-top:16px;">
+          <div class="stat-box">
+            <div class="value" id="admin-users">0</div>
+            <div class="label">Total Users</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-payouts-ban">0.00</div>
+            <div class="label">BAN Paid Out</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-payouts-pending">0.00</div>
+            <div class="label">BAN Pending</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-accruals-ban">0.00</div>
+            <div class="label">BAN Accrued</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-accruals-pending">0.00</div>
+            <div class="label">BAN Unsettled</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="admin-abuse">0</div>
+            <div class="label">Abuse Flags</div>
+          </div>
         </div>
       </div>
 

@@ -300,10 +300,44 @@
       const r = await fetch("/admin/stats");
       if (r.ok) {
         const s = await r.json();
+        // System stats
         $("#admin-users").textContent = s.users_total;
         $("#admin-payouts-ban").textContent = parseFloat(s.payouts_sent_ban).toFixed(2);
+        $("#admin-payouts-pending").textContent = parseFloat(s.payouts_pending_ban || 0).toFixed(2);
         $("#admin-accruals-ban").textContent = parseFloat(s.accruals_total_ban).toFixed(2);
+        $("#admin-accruals-pending").textContent = parseFloat(s.accruals_pending_ban || 0).toFixed(2);
         $("#admin-abuse").textContent = s.abuse_flags;
+
+        // Operator wallet
+        if (s.operator_balance_ban !== null) {
+          $("#admin-operator-balance").textContent = parseFloat(s.operator_balance_ban).toFixed(2);
+        } else {
+          $("#admin-operator-balance").textContent = "—";
+        }
+        if (s.operator_pending_ban !== null) {
+          $("#admin-operator-pending").textContent = parseFloat(s.operator_pending_ban).toFixed(2);
+        } else {
+          $("#admin-operator-pending").textContent = "—";
+        }
+        if (s.operator_account) {
+          $("#admin-operator-account").textContent = s.operator_account;
+        }
+
+        // Payout config
+        $("#admin-ban-per-kill").textContent = parseFloat(s.ban_per_kill || 0).toFixed(2);
+        $("#admin-daily-cap").textContent = s.daily_payout_cap || "—";
+        $("#admin-weekly-cap").textContent = s.weekly_payout_cap || "—";
+        $("#admin-scheduler").textContent = s.scheduler_minutes || "—";
+
+        // Dry run status
+        const dryRunEl = $("#admin-dry-run-status");
+        if (dryRunEl) {
+          if (s.dry_run) {
+            dryRunEl.innerHTML = '<span class="badge badge-pending">🧪 DRY RUN MODE</span> No real transactions';
+          } else {
+            dryRunEl.innerHTML = '<span class="badge badge-sent">🚀 LIVE MODE</span> Real Banano transactions';
+          }
+        }
       }
     } catch (_) {}
   }
