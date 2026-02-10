@@ -26,6 +26,7 @@ dependencies = [
   "python-dotenv>=1.0",
   "cryptography>=42.0",
   "ed25519-blake2b>=1.4",
+  "bananopie>=0.0.2",
 ]
 
 [project.optional-dependencies]
@@ -66,5 +67,5 @@ strict = true
 packages = ["src"]
 
 [[tool.mypy.overrides]]
-module = ["cryptography.*", "ed25519_blake2b", "dotenv"]
+module = ["cryptography.*", "ed25519_blake2b", "dotenv", "bananopie"]
 ignore_missing_imports = true

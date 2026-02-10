@@ -150,7 +150,10 @@ jobs:
           TF_VAR_yunite_api_key: ${{ secrets.YUNITE_API_KEY }}
           TF_VAR_yunite_guild_id: ${{ vars.YUNITE_GUILD_ID }}
           TF_VAR_fortnite_api_key: ${{ secrets.FORTNITE_API_KEY }}
-          TF_VAR_banano_node_rpc: ${{ vars.BANANO_NODE_RPC }}
+          TF_VAR_banano_node_rpc: ${{ vars.BANANO_NODE_RPC || 'https://kaliumapi.appditto.com/api' }}
+          TF_VAR_p2s_operator_account: ${{ vars.P2S_OPERATOR_ACCOUNT }}
+          TF_VAR_min_operator_balance_ban: ${{ vars.MIN_OPERATOR_BALANCE_BAN || '50' }}
+          TF_VAR_admin_discord_usernames: ${{ vars.ADMIN_DISCORD_USERNAMES }}
         run: |
           if [ -z "${AKASH_ACCOUNT_ADDRESS}" ]; then
             echo "AKASH_ACCOUNT_ADDRESS not populated at runtime (should have been set earlier)." >&2
@@ -224,15 +227,6 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ✅ Health Check" >> $GITHUB_STEP_SUMMARY
           echo "Health check passed for: ${UI_URL}/healthz" >> $GITHUB_STEP_SUMMARY
-          
-      - name: Derive Banano RPC endpoint
-        id: banano_rpc
-        working-directory: infra/akash
-        run: |
-          echo "Deriving Banano RPC endpoint (internal port ${INTERNAL_PORT})..."
-          services_json=$(terraform output -json services 2>/dev/null || echo '[]')
-          endpoint=$(echo "$services_json" | jq -r --arg p "$INTERNAL_PORT" '.[] | select(.name=="banano") | .forwarded_ports[] | select(.port==($p|tonumber)) | "\(.host):\(.external_port)"' | grep -v '^:$' | head -n1 || true)
-          echo "Banano RPC endpoint available: $endpoint"
           
       - name: Deployment Summary
         if: always()

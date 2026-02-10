@@ -141,10 +141,8 @@ class PayoutService:
             time.sleep(sleep_for)
             success = _attempt_send()
         attempts_counter.labels(result="success" if success else "failed").inc()
-        # Advance cursor if payout succeeded (sum accrual kills added to cursor)
+        # Cursor is now advanced during accrual (not here) to prevent duplicate counting.
         if payout.status == "sent":
-            total_kills = sum(a.kills for a in accruals)
-            user.last_settled_kill_count += total_kills
             user.last_settlement_at = datetime.now(UTC)
         return PayoutResult(
             user_id=user.id,

@@ -132,4 +132,23 @@ variable "fortnite_base_url" {
 variable "banano_node_rpc" {
   type        = string
   description = "Banano node RPC endpoint."
+  default     = "https://kaliumapi.appditto.com/api"
+}
+
+variable "p2s_operator_account" {
+  type        = string
+  description = "Operator Banano address for balance checks."
+  default     = ""
+}
+
+variable "min_operator_balance_ban" {
+  type        = string
+  description = "Minimum operator BAN balance to continue payouts."
+  default     = "50"
+}
+
+variable "admin_discord_usernames" {
+  type        = string
+  description = "Comma-separated Discord usernames allowed admin access."
+  default     = ""
 }

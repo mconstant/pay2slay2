@@ -23,6 +23,7 @@ from src.models.models import (
     VerificationRecord,
 )
 from src.services.banano_client import BananoClient, seed_to_address
+from src.services.fortnite_service import FortniteService, seed_kill_baseline
 from src.services.yunite_service import YuniteService
 
 router = APIRouter(prefix="/admin")
@@ -147,8 +148,18 @@ def admin_reverify(
         base_url=integrations.yunite_base_url,
         dry_run=integrations.dry_run,
     )
+    old_epic_id = user.epic_account_id
     epic_id = yunite.get_epic_id_for_discord(discord_id)
     user.epic_account_id = epic_id
+    # Seed kill baseline so only kills after linking earn payouts
+    if epic_id and epic_id != old_epic_id:
+        fortnite = FortniteService(
+            api_key=integrations.fortnite_api_key,
+            base_url=integrations.fortnite_base_url,
+            per_minute_limit=int(integrations.rate_limits.get("fortnite_per_min", 60)),
+            dry_run=integrations.dry_run,
+        )
+        user.last_settled_kill_count = seed_kill_baseline(fortnite, epic_id)
     # Do not change guild membership here; separate Discord check would be needed
     vr = VerificationRecord(
         user_id=user.id,

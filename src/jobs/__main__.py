@@ -4,16 +4,19 @@ import os
 import random
 import time
 
+from dotenv import load_dotenv
 from prometheus_client import Counter, start_http_server
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
 
-from src.lib.config import get_config
-from src.lib.observability import get_logger, get_tracer
-from src.services.fortnite_service import FortniteService
+load_dotenv()
+from sqlalchemy import create_engine  # noqa: E402
+from sqlalchemy.orm import Session, sessionmaker  # noqa: E402
 
-from .accrual import AccrualJobConfig, run_accrual
-from .settlement import SchedulerConfig, run_settlement
+from src.lib.config import get_config  # noqa: E402
+from src.lib.observability import get_logger, get_tracer  # noqa: E402
+from src.services.fortnite_service import FortniteService  # noqa: E402
+
+from .accrual import AccrualJobConfig, run_accrual  # noqa: E402
+from .settlement import SchedulerConfig, run_settlement  # noqa: E402
 
 log = get_logger("jobs.main")
 JOB_ERRORS = Counter("scheduler_errors_total", "Unhandled errors in main scheduler loop")
