@@ -24,9 +24,26 @@ resource "akash_deployment" "p2s" {
     services:
       api:
         image: ${local.image}
+        env:
+          - SESSION_SECRET=${var.session_secret}
+          - P2S_DRY_RUN=${var.p2s_dry_run}
+          - DEMO_MODE=${var.demo_mode}
+          - DISCORD_CLIENT_ID=${var.discord_client_id}
+          - DISCORD_CLIENT_SECRET=${var.discord_client_secret}
+          - DISCORD_REDIRECT_URI=${var.discord_redirect_uri}
+          - YUNITE_API_KEY=${var.yunite_api_key}
+          - YUNITE_GUILD_ID=${var.yunite_guild_id}
+          - YUNITE_BASE_URL=${var.yunite_base_url}
+          - FORTNITE_API_KEY=${var.fortnite_api_key}
+          - FORTNITE_BASE_URL=${var.fortnite_base_url}
+          - BANANO_NODE_RPC=${var.banano_node_rpc}
+          - DATABASE_URL=sqlite:///pay2slay.db
+          - PAY2SLAY_AUTO_MIGRATE=1
         expose:
           - port: 8000
             as: 80
+            accept:
+              - ${var.domain_name}
             to:
               - global: true
       banano:

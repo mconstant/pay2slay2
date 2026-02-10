@@ -16,6 +16,10 @@ on:
       akash_account_address:
         description: 'Akash wallet address (akash1...) if not set via repo variable'
         required: false
+      domain_name:
+        description: 'Domain name for the API service'
+        required: false
+        default: 'pay2slay.cc'
 
 permissions:
   contents: read
@@ -138,6 +142,15 @@ jobs:
           TF_VAR_image_repo: ${{ env.IMAGE_REPO }}
           TF_VAR_akash_node: ${{ github.event.inputs.akash_network }}
           TF_VAR_akash_chain_id: ${{ env.AKASH_CHAIN_ID }}
+          TF_VAR_domain_name: ${{ github.event.inputs.domain_name || 'pay2slay.cc' }}
+          TF_VAR_session_secret: ${{ secrets.SESSION_SECRET }}
+          TF_VAR_discord_client_id: ${{ secrets.DISCORD_CLIENT_ID }}
+          TF_VAR_discord_client_secret: ${{ secrets.DISCORD_CLIENT_SECRET }}
+          TF_VAR_discord_redirect_uri: "https://${{ github.event.inputs.domain_name || 'pay2slay.cc' }}/auth/discord/callback"
+          TF_VAR_yunite_api_key: ${{ secrets.YUNITE_API_KEY }}
+          TF_VAR_yunite_guild_id: ${{ vars.YUNITE_GUILD_ID }}
+          TF_VAR_fortnite_api_key: ${{ secrets.FORTNITE_API_KEY }}
+          TF_VAR_banano_node_rpc: ${{ vars.BANANO_NODE_RPC || 'https://kaliumapi.appditto.com/api' }}
         run: |
           if [ -z "${AKASH_ACCOUNT_ADDRESS}" ]; then
             echo "AKASH_ACCOUNT_ADDRESS not populated at runtime (should have been set earlier)." >&2
@@ -223,15 +236,28 @@ jobs:
           
       - name: Deployment Summary
         if: always()
+        working-directory: infra/akash
         run: |
+          DOMAIN="${{ github.event.inputs.domain_name || 'pay2slay.cc' }}"
+          PROVIDER_HOST="${{ steps.ui_url.outputs.ui_url || 'unavailable' }}"
+
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📋 Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Details" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **UI URL:** ${{ steps.ui_url.outputs.ui_url || 'unavailable' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Domain:** ${DOMAIN}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Provider URL:** ${PROVIDER_HOST}" >> $GITHUB_STEP_SUMMARY
           echo "- **Deployment ID:** ${{ steps.terraform.outputs.deployment_id || 'unavailable' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Image Tag:** ${IMAGE_TAG}" >> $GITHUB_STEP_SUMMARY
           echo "- **Image Repo:** ${IMAGE_REPO}" >> $GITHUB_STEP_SUMMARY
           echo "- **Provider Selection:** Cheapest audited provider (via SDL attributes)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## DNS Setup" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Point your domain to the Akash provider:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${DOMAIN}  CNAME  ${PROVIDER_HOST}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "The provider's ingress handles TLS automatically via Let's Encrypt." >> $GITHUB_STEP_SUMMARY
           
       - name: Upload Artifact
         uses: badgerhobbs/terraform-state@v2

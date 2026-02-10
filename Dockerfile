@@ -14,7 +14,10 @@ RUN pip install --no-cache-dir -e '.[dev]'
 
 COPY src ./src
 COPY configs ./configs
+COPY static ./static
+COPY alembic ./alembic
+COPY alembic.ini ./
 
 EXPOSE 8000
 
-CMD ["uvicorn", "src.api.app:create_app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uvicorn", "src.api.app:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]

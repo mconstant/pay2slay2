@@ -1,0 +1,17 @@
+.git
+.github
+.venv
+.env
+.claude
+.ruff_cache
+__pycache__
+*.pyc
+pay2slay.db
+*.egg-info
+infra
+tests
+scripts
+docs
+.pre-commit-config.yaml
+.gitignore
+Makefile
