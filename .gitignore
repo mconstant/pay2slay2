@@ -63,3 +63,5 @@ configs/*.secrets.yaml
 sbom.json
 sbom*.spdx.json
 *.sbom.json
+
+.claude/
