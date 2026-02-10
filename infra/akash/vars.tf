@@ -2,10 +2,10 @@
 # Variables for Akash Deployment
 ###############################################
 
-variable "akash_mnemonic" {
-  type        = string
-  description = "24-word mnemonic for the Akash account (injected via TF_VAR_akash_mnemonic)."
-}
+# variable "akash_mnemonic" {
+#   type        = string
+#   description = "24-word mnemonic for the Akash account (injected via TF_VAR_akash_mnemonic)."
+# }
 
 variable "akash_node" {
   type        = string
