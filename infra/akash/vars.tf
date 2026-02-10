@@ -63,7 +63,6 @@ variable "akash_account_address" {
 variable "domain_name" {
   type        = string
   description = "Domain name for the API service (routed via Akash ingress)."
-  default     = "pay2slay.cc"
 }
 
 variable "session_secret" {
@@ -98,7 +97,7 @@ variable "discord_client_secret" {
 variable "discord_redirect_uri" {
   type        = string
   description = "Discord OAuth redirect URI (must match Discord app settings)."
-  default     = "https://pay2slay.cc/auth/discord/callback"
+  sensitive   = true
 }
 
 variable "yunite_api_key" {
@@ -133,5 +132,4 @@ variable "fortnite_base_url" {
 variable "banano_node_rpc" {
   type        = string
   description = "Banano node RPC endpoint."
-  default     = "https://kaliumapi.appditto.com/api"
 }

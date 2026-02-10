@@ -17,9 +17,8 @@ on:
         description: 'Akash wallet address (akash1...) if not set via repo variable'
         required: false
       domain_name:
-        description: 'Domain name for the API service'
-        required: false
-        default: 'pay2slay.cc'
+        description: 'Domain name for the API service (e.g. pay2slay.cc)'
+        required: true
 
 permissions:
   contents: read
@@ -142,15 +141,15 @@ jobs:
           TF_VAR_image_repo: ${{ env.IMAGE_REPO }}
           TF_VAR_akash_node: ${{ github.event.inputs.akash_network }}
           TF_VAR_akash_chain_id: ${{ env.AKASH_CHAIN_ID }}
-          TF_VAR_domain_name: ${{ github.event.inputs.domain_name || 'pay2slay.cc' }}
+          TF_VAR_domain_name: ${{ github.event.inputs.domain_name }}
           TF_VAR_session_secret: ${{ secrets.SESSION_SECRET }}
           TF_VAR_discord_client_id: ${{ secrets.DISCORD_CLIENT_ID }}
           TF_VAR_discord_client_secret: ${{ secrets.DISCORD_CLIENT_SECRET }}
-          TF_VAR_discord_redirect_uri: "https://${{ github.event.inputs.domain_name || 'pay2slay.cc' }}/auth/discord/callback"
+          TF_VAR_discord_redirect_uri: ${{ secrets.DISCORD_REDIRECT_URI }}
           TF_VAR_yunite_api_key: ${{ secrets.YUNITE_API_KEY }}
           TF_VAR_yunite_guild_id: ${{ vars.YUNITE_GUILD_ID }}
           TF_VAR_fortnite_api_key: ${{ secrets.FORTNITE_API_KEY }}
-          TF_VAR_banano_node_rpc: ${{ vars.BANANO_NODE_RPC || 'https://kaliumapi.appditto.com/api' }}
+          TF_VAR_banano_node_rpc: ${{ vars.BANANO_NODE_RPC }}
         run: |
           if [ -z "${AKASH_ACCOUNT_ADDRESS}" ]; then
             echo "AKASH_ACCOUNT_ADDRESS not populated at runtime (should have been set earlier)." >&2
@@ -238,7 +237,7 @@ jobs:
         if: always()
         working-directory: infra/akash
         run: |
-          DOMAIN="${{ github.event.inputs.domain_name || 'pay2slay.cc' }}"
+          DOMAIN="${{ github.event.inputs.domain_name }}"
           PROVIDER_HOST="${{ steps.ui_url.outputs.ui_url || 'unavailable' }}"
 
           echo "" >> $GITHUB_STEP_SUMMARY
