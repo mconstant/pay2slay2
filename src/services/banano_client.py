@@ -54,7 +54,7 @@ def seed_to_address(seed_hex: str, index: int = 0) -> str | None:
         private_key = h.digest()
 
         # Get public key via Ed25519-Blake2b (Nano/Banano use Blake2b instead of SHA-512)
-        import ed25519_blake2b  # type: ignore[import-not-found]
+        import ed25519_blake2b
 
         signing_key = ed25519_blake2b.SigningKey(private_key)
         public_key = signing_key.get_verifying_key().to_bytes()

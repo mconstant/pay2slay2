@@ -101,7 +101,7 @@ def _register_health(app: FastAPI) -> None:
 def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup logic
     """Create and return the FastAPI application instance."""
     # Load .env before anything reads os.getenv
-    from dotenv import load_dotenv  # type: ignore[import-not-found]  # local import
+    from dotenv import load_dotenv
 
     load_dotenv()
 
