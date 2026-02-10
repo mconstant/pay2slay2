@@ -60,13 +60,10 @@ resource "akash_deployment" "p2s" {
             storage:
               size: ${var.storage_size}
       placement:
-        westcoast:
-          attributes:
-            audited: true
+        preferred:
           signedBy:
             anyOf:
-              - "akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63"
-              - "akash18qa2a2ltfyvkyj0ggj3hkvuj6twzyumuaru9s4"
+              - "${var.preferred_providers}"
           pricing:
             api:
               denom: uakt

@@ -1,0 +1,51 @@
+---
+version: "2.0"
+services:
+  api:
+    image: ${IMAGE}
+    env:
+      - SESSION_SECRET=${SESSION_SECRET}
+      - P2S_DRY_RUN=${P2S_DRY_RUN}
+      - DEMO_MODE=${DEMO_MODE}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - DISCORD_REDIRECT_URI=${DISCORD_REDIRECT_URI}
+      - YUNITE_API_KEY=${YUNITE_API_KEY}
+      - YUNITE_GUILD_ID=${YUNITE_GUILD_ID}
+      - YUNITE_BASE_URL=${YUNITE_BASE_URL}
+      - FORTNITE_API_KEY=${FORTNITE_API_KEY}
+      - FORTNITE_BASE_URL=${FORTNITE_BASE_URL}
+      - BANANO_NODE_RPC=${BANANO_NODE_RPC}
+      - P2S_OPERATOR_ACCOUNT=${P2S_OPERATOR_ACCOUNT}
+      - MIN_OPERATOR_BALANCE_BAN=${MIN_OPERATOR_BALANCE_BAN}
+      - ADMIN_DISCORD_USERNAMES=${ADMIN_DISCORD_USERNAMES}
+      - DATABASE_URL=sqlite:///pay2slay.db
+      - PAY2SLAY_AUTO_MIGRATE=1
+    expose:
+      - port: 8000
+        as: 80
+        accept:
+          - ${DOMAIN_NAME}
+        to:
+          - global: true
+profiles:
+  compute:
+    api:
+      resources:
+        cpu:
+          units: 0.5
+        memory:
+          size: 512Mi
+        storage:
+          size: 1Gi
+  placement:
+    dcloud:
+      pricing:
+        api:
+          denom: uakt
+          amount: 10000
+deployment:
+  api:
+    dcloud:
+      profile: api
+      count: 1
