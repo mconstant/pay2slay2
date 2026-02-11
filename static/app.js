@@ -1,37 +1,59 @@
-/* Pay2Slay Faucet – MVP UI Logic */
+/* Pay2Slay Faucet – UI with hash routing & auto-refresh */
 (function () {
   "use strict";
 
   // ── State ────────────────────────────────────────────
-  let user = null;        // { discord_user_id, discord_username, epic_account_id }
+  let user = null;
   let isAdmin = false;
   let productConfig = null;
   let isDryRun = false;
+  let refreshTimer = null;
+  const REFRESH_INTERVAL = 30000; // 30s auto-refresh
 
   // ── DOM refs ─────────────────────────────────────────
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => document.querySelectorAll(sel);
 
+  // Pages that require auth
+  const AUTH_PAGES = new Set(["dashboard", "wallet", "admin"]);
+  const ALL_PAGES = new Set(["leaderboard", "dashboard", "wallet", "admin", "login"]);
+
   // ── Init ─────────────────────────────────────────────
   async function init() {
     await loadProductConfig();
     setupNav();
+    await checkExistingSession();
+    updateNavVisibility();
+    // Route to current hash (or default to leaderboard)
+    handleHashChange();
+    window.addEventListener("hashchange", handleHashChange);
+    // Start auto-refresh
+    startAutoRefresh();
+  }
 
-    // Check if user already has a session (e.g., returning from OAuth redirect)
-    const hasSession = await checkExistingSession();
-    if (hasSession) {
-      showPage("dashboard");
-    } else {
+  // ── Hash Routing ────────────────────────────────────
+  function handleHashChange() {
+    const hash = window.location.hash.replace("#", "") || "leaderboard";
+    const page = ALL_PAGES.has(hash) ? hash : "leaderboard";
+
+    if (AUTH_PAGES.has(page) && !user) {
+      // Need login — show login page but preserve intended destination
       showPage("login");
+      return;
     }
+    showPage(page);
+  }
+
+  function navigate(page) {
+    window.location.hash = page;
   }
 
   async function checkExistingSession() {
     try {
       const r = await fetch("/me/status");
       if (r.ok) {
-        // Session cookie is valid — user is logged in
-        user = { discord_username: "You" };
+        const s = await r.json();
+        user = { discord_username: s.discord_username || "You" };
         $(".username").textContent = user.discord_username;
         return true;
       }
@@ -50,13 +72,12 @@
         const banner = $(".dry-run-banner");
         if (banner && isDryRun) banner.classList.add("visible");
         // Hide demo-only elements when not in dry run mode
-        const seedBtn = $("#seed-btn");
-        const schedulerBtn = $("#scheduler-btn");
-        const demoLoginBtn = $("#demo-login-btn");
         if (!isDryRun) {
-          if (seedBtn) seedBtn.style.display = "none";
-          if (schedulerBtn) schedulerBtn.style.display = "none";
-          if (demoLoginBtn) demoLoginBtn.style.display = "none";
+          const ids = ["seed-btn", "scheduler-btn", "demo-login-btn", "demo-login-btn-2"];
+          ids.forEach(function (id) {
+            const el = $("#" + id);
+            if (el) el.style.display = "none";
+          });
         }
       }
     } catch (_) { /* config not critical */ }
@@ -64,65 +85,82 @@
 
   // ── Navigation ───────────────────────────────────────
   function setupNav() {
-    $$("nav button").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const page = btn.dataset.page;
-        if (page === "login" || (!user && page !== "login")) return;
-        showPage(page);
+    $$("nav button").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        navigate(btn.dataset.page);
       });
     });
   }
 
-  function showPage(name) {
-    $$(".page").forEach((p) => p.classList.remove("active"));
-    const el = $(`#page-${name}`);
-    if (el) el.classList.add("active");
-
-    $$("nav button").forEach((b) => b.classList.remove("active"));
-    const navBtn = $(`nav button[data-page="${name}"]`);
-    if (navBtn) navBtn.classList.add("active");
-
-    // Update nav visibility
-    const navEl = $("nav");
-    if (navEl) navEl.style.display = user ? "flex" : "none";
+  function updateNavVisibility() {
+    $$("nav button.auth-only").forEach(function (btn) {
+      btn.style.display = user ? "" : "none";
+    });
     const userInfo = $(".user-info");
     if (userInfo) userInfo.style.display = user ? "flex" : "none";
+    // Hide login CTA on leaderboard if logged in
+    const cta = $("#leaderboard-login-cta");
+    if (cta) cta.style.display = user ? "none" : "";
+  }
+
+  function showPage(name) {
+    $$(".page").forEach(function (p) { p.classList.remove("active"); });
+    const el = $("#page-" + name);
+    if (el) el.classList.add("active");
+
+    $$("nav button").forEach(function (b) { b.classList.remove("active"); });
+    const navBtn = $('nav button[data-page="' + name + '"]');
+    if (navBtn) navBtn.classList.add("active");
+
+    updateNavVisibility();
 
     // Load data for page
+    loadPageData(name);
+  }
+
+  function loadPageData(name) {
+    if (name === "leaderboard") loadLeaderboard();
     if (name === "dashboard" && user) loadDashboard();
     if (name === "wallet" && user) loadWallet();
     if (name === "admin" && user) loadAdmin();
   }
 
+  // ── Auto-refresh ───────────────────────────────────
+  function startAutoRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
+    refreshTimer = setInterval(function () {
+      const hash = window.location.hash.replace("#", "") || "leaderboard";
+      const page = ALL_PAGES.has(hash) ? hash : "leaderboard";
+      if (page === "login") return;
+      loadPageData(page);
+    }, REFRESH_INTERVAL);
+  }
+
   // ── Login ────────────────────────────────────────────
   window.discordLogin = function () {
-    // Redirect to server-side Discord OAuth flow
     window.location.href = "/auth/discord/login";
   };
 
   window.demoLogin = async function () {
-    const btn = $("#demo-login-btn");
-    btn.disabled = true;
-    btn.textContent = "Logging in...";
+    const btn = $("#demo-login-btn") || $("#demo-login-btn-2");
+    if (btn) { btn.disabled = true; btn.textContent = "Logging in..."; }
     try {
       const r = await fetch("/auth/demo-login", { method: "POST" });
       if (!r.ok) throw new Error(await r.text());
       user = await r.json();
       $(".username").textContent = user.discord_username;
 
-      // Auto-seed demo data so dashboard isn't empty on first visit
-      btn.textContent = "Setting up demo...";
-      try {
-        await fetch("/demo/seed", { method: "POST" });
-      } catch (_) { /* non-critical */ }
+      // Auto-seed demo data
+      if (btn) btn.textContent = "Setting up demo...";
+      try { await fetch("/demo/seed", { method: "POST" }); } catch (_) {}
 
       toast("Logged in as " + user.discord_username, "success");
-      showPage("dashboard");
+      updateNavVisibility();
+      navigate("dashboard");
     } catch (e) {
       toast("Login failed: " + e.message, "error");
     } finally {
-      btn.disabled = false;
-      btn.textContent = "Demo Login";
+      if (btn) { btn.disabled = false; btn.textContent = "Demo Login"; }
     }
   };
 
@@ -131,8 +169,46 @@
     isAdmin = false;
     document.cookie = "p2s_session=; Max-Age=0; path=/";
     document.cookie = "p2s_admin=; Max-Age=0; path=/";
-    showPage("login");
+    updateNavVisibility();
+    navigate("leaderboard");
   };
+
+  // ── Leaderboard ────────────────────────────────────
+  async function loadLeaderboard() {
+    try {
+      const r = await fetch("/api/leaderboard?limit=50");
+      if (r.ok) {
+        const data = await r.json();
+        renderLeaderboard(data.players || []);
+        const countEl = $("#leaderboard-count");
+        if (countEl) countEl.textContent = data.total + " players";
+      }
+    } catch (_) {}
+  }
+
+  function renderLeaderboard(rows) {
+    const tbody = $("#leaderboard-tbody");
+    if (!tbody) return;
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No players yet. Be the first!</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function (p, i) {
+      return '<tr>' +
+        '<td class="rank">' + (i + 1) + '</td>' +
+        '<td class="player-name">' + escapeHtml(p.discord_username) + '</td>' +
+        '<td>' + p.total_kills + '</td>' +
+        '<td>' + parseFloat(p.total_accrued_ban).toFixed(2) + '</td>' +
+        '<td>' + parseFloat(p.total_paid_ban).toFixed(2) + '</td>' +
+        '</tr>';
+    }).join("");
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
 
   // ── Dashboard ────────────────────────────────────────
   async function loadDashboard() {
@@ -152,6 +228,11 @@
         $("#stat-verified-at").textContent = s.last_verified_at
           ? new Date(s.last_verified_at).toLocaleString()
           : "never";
+        // Update username if we get it from the status response
+        if (s.discord_username && user) {
+          user.discord_username = s.discord_username;
+          $(".username").textContent = s.discord_username;
+        }
       }
     } catch (_) {}
   }
@@ -181,18 +262,18 @@
     if (!tbody) return;
     if (rows.length === 0) {
       const hint = isDryRun ? ' Click "Seed Demo Data" to generate sample data.' : '';
-      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No accruals yet.${hint}</td></tr>`;
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No accruals yet.' + hint + '</td></tr>';
       return;
     }
-    tbody.innerHTML = rows.map((a) => `
-      <tr>
-        <td>${a.id}</td>
-        <td>${a.kills}</td>
-        <td>${parseFloat(a.amount_ban).toFixed(2)} BAN</td>
-        <td><span class="badge ${a.settled ? "badge-sent" : "badge-pending"}">${a.settled ? "settled" : "pending"}</span></td>
-        <td>${a.created_at ? new Date(a.created_at).toLocaleString() : "-"}</td>
-      </tr>
-    `).join("");
+    tbody.innerHTML = rows.map(function (a) {
+      return '<tr>' +
+        '<td>' + a.id + '</td>' +
+        '<td>' + a.kills + '</td>' +
+        '<td>' + parseFloat(a.amount_ban).toFixed(2) + ' BAN</td>' +
+        '<td><span class="badge ' + (a.settled ? "badge-sent" : "badge-pending") + '">' + (a.settled ? "settled" : "pending") + '</span></td>' +
+        '<td>' + (a.created_at ? new Date(a.created_at).toLocaleString() : "-") + '</td>' +
+        '</tr>';
+    }).join("");
   }
 
   function renderPayouts(rows) {
@@ -200,18 +281,18 @@
     if (!tbody) return;
     if (rows.length === 0) {
       const hint = isDryRun ? ' Run the scheduler to settle pending accruals.' : '';
-      tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No payouts yet.${hint}</td></tr>`;
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No payouts yet.' + hint + '</td></tr>';
       return;
     }
-    tbody.innerHTML = rows.map((p) => `
-      <tr>
-        <td>${p.id}</td>
-        <td>${parseFloat(p.amount_ban).toFixed(2)} BAN</td>
-        <td><span class="badge badge-${p.status}">${p.status}</span></td>
-        <td class="tx-hash" title="${p.tx_hash || ""}">${p.tx_hash ? p.tx_hash.substring(0, 12) + "..." : "-"}</td>
-        <td>${p.created_at ? new Date(p.created_at).toLocaleString() : "-"}</td>
-      </tr>
-    `).join("");
+    tbody.innerHTML = rows.map(function (p) {
+      return '<tr>' +
+        '<td>' + p.id + '</td>' +
+        '<td>' + parseFloat(p.amount_ban).toFixed(2) + ' BAN</td>' +
+        '<td><span class="badge badge-' + p.status + '">' + p.status + '</span></td>' +
+        '<td class="tx-hash" title="' + (p.tx_hash || "") + '">' + (p.tx_hash ? p.tx_hash.substring(0, 12) + "..." : "-") + '</td>' +
+        '<td>' + (p.created_at ? new Date(p.created_at).toLocaleString() : "-") + '</td>' +
+        '</tr>';
+    }).join("");
   }
 
   // ── Wallet ───────────────────────────────────────────
@@ -224,12 +305,12 @@
         const linkedCard = $("#wallet-linked-card");
         const linkedAddr = $("#wallet-linked-address");
         const formTitle = $("#wallet-form-title");
-        
+
         if (status) {
           status.textContent = s.linked ? "Linked" : "Not linked";
           status.className = "badge " + (s.linked ? "badge-ok" : "badge-pending");
         }
-        
+
         if (s.linked && s.wallet_address) {
           if (linkedCard) linkedCard.style.display = "block";
           if (linkedAddr) linkedAddr.textContent = s.wallet_address;
@@ -253,7 +334,7 @@
         body: JSON.stringify({ banano_address: addr }),
       });
       if (!r.ok) {
-        const err = await r.json().catch(() => ({ detail: "Failed" }));
+        const err = await r.json().catch(function () { return { detail: "Failed" }; });
         throw new Error(err.detail || "Failed");
       }
       const data = await r.json();
@@ -267,7 +348,6 @@
 
   // ── Admin ────────────────────────────────────────────
   async function loadAdmin() {
-    // Try to authenticate via Discord username (server checks ADMIN_DISCORD_USERNAMES)
     if (!isAdmin) {
       try {
         const r = await fetch("/admin/login", {
@@ -275,9 +355,7 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({}),
         });
-        if (r.ok) {
-          isAdmin = true;
-        }
+        if (r.ok) isAdmin = true;
       } catch (_) {}
     }
 
@@ -296,7 +374,6 @@
       const r = await fetch("/admin/stats");
       if (r.ok) {
         const s = await r.json();
-        // System stats
         $("#admin-users").textContent = s.users_total;
         $("#admin-payouts-ban").textContent = parseFloat(s.payouts_sent_ban).toFixed(2);
         $("#admin-payouts-pending").textContent = parseFloat(s.payouts_pending_ban || 0).toFixed(2);
@@ -304,40 +381,36 @@
         $("#admin-accruals-pending").textContent = parseFloat(s.accruals_pending_ban || 0).toFixed(2);
         $("#admin-abuse").textContent = s.abuse_flags;
 
-        // Operator wallet
         if (s.operator_balance_ban !== null) {
           $("#admin-operator-balance").textContent = parseFloat(s.operator_balance_ban).toFixed(2);
         } else {
-          $("#admin-operator-balance").textContent = "—";
+          $("#admin-operator-balance").textContent = "\u2014";
         }
         if (s.operator_pending_ban !== null) {
           $("#admin-operator-pending").textContent = parseFloat(s.operator_pending_ban).toFixed(2);
         } else {
-          $("#admin-operator-pending").textContent = "—";
+          $("#admin-operator-pending").textContent = "\u2014";
         }
         if (s.operator_account) {
           $("#admin-operator-account").textContent = s.operator_account;
         }
 
-        // Payout config
         $("#admin-ban-per-kill").textContent = parseFloat(s.ban_per_kill || 0).toFixed(2);
-        $("#admin-daily-cap").textContent = s.daily_payout_cap || "—";
-        $("#admin-weekly-cap").textContent = s.weekly_payout_cap || "—";
-        $("#admin-scheduler").textContent = s.scheduler_minutes || "—";
+        $("#admin-daily-cap").textContent = s.daily_payout_cap || "\u2014";
+        $("#admin-weekly-cap").textContent = s.weekly_payout_cap || "\u2014";
+        $("#admin-scheduler").textContent = s.scheduler_minutes || "\u2014";
 
-        // Dry run status
         const dryRunEl = $("#admin-dry-run-status");
         if (dryRunEl) {
           if (s.dry_run) {
-            dryRunEl.innerHTML = '<span class="badge badge-pending">🧪 DRY RUN MODE</span> No real transactions';
+            dryRunEl.innerHTML = '<span class="badge badge-pending">DRY RUN MODE</span> No real transactions';
           } else {
-            dryRunEl.innerHTML = '<span class="badge badge-sent">🚀 LIVE MODE</span> Real Banano transactions';
+            dryRunEl.innerHTML = '<span class="badge badge-sent">LIVE MODE</span> Real Banano transactions';
           }
         }
       }
     } catch (_) {}
 
-    // Load operator seed status
     await loadOperatorSeedStatus();
   }
 
@@ -353,12 +426,10 @@
         const data = await r.json();
         if (data.configured) {
           const date = data.updated_at ? new Date(data.updated_at).toLocaleDateString() : "unknown";
-          statusEl.innerHTML = `<span class="badge badge-sent">✓ Configured</span> Last updated: ${date} by ${data.set_by || "unknown"}`;
-          // Show derived address
+          statusEl.innerHTML = '<span class="badge badge-sent">Configured</span> Last updated: ' + date + ' by ' + escapeHtml(data.set_by || "unknown");
           if (addressEl && data.address) {
-            addressEl.innerHTML = `<strong>Derived Address:</strong><br><code style="font-size:11px;word-break:break-all;">${data.address}</code>`;
+            addressEl.innerHTML = '<strong>Derived Address:</strong><br><code style="font-size:11px;word-break:break-all;">' + escapeHtml(data.address) + '</code>';
             addressEl.style.display = "block";
-            // Generate QR code for the address
             if (qrContainerEl && qrCanvasEl && typeof qrcode !== "undefined") {
               qrCanvasEl.innerHTML = "";
               const qr = qrcode(0, "M");
@@ -367,15 +438,11 @@
               qrCanvasEl.innerHTML = qr.createSvgTag(5, 0);
               qrContainerEl.style.display = "block";
             }
-            // Update the operator wallet display to use this address
-            const balanceEl = $("#admin-operator-balance");
             const accountEl = $("#admin-operator-account");
-            if (accountEl) {
-              accountEl.textContent = data.address;
-            }
+            if (accountEl) accountEl.textContent = data.address;
           }
         } else {
-          statusEl.innerHTML = '<span class="badge badge-pending">⚠ Not configured</span> Set a seed to enable payouts';
+          statusEl.innerHTML = '<span class="badge badge-pending">Not configured</span> Set a seed to enable payouts';
           if (addressEl) addressEl.style.display = "none";
           if (qrContainerEl) qrContainerEl.style.display = "none";
         }
@@ -388,17 +455,11 @@
   window.saveOperatorSeed = async function () {
     const input = $("#operator-seed-input");
     const seed = input.value.trim();
-    if (!seed) {
-      toast("Enter a wallet seed", "error");
-      return;
-    }
+    if (!seed) { toast("Enter a wallet seed", "error"); return; }
     if (!/^[0-9a-fA-F]{64}$/.test(seed)) {
-      toast("Seed must be 64 hexadecimal characters", "error");
-      return;
+      toast("Seed must be 64 hexadecimal characters", "error"); return;
     }
-    if (!confirm("Save this operator seed? This will encrypt and store it securely.")) {
-      return;
-    }
+    if (!confirm("Save this operator seed? This will encrypt and store it securely.")) return;
     const btn = $("#save-seed-btn");
     btn.disabled = true;
     btn.textContent = "Saving...";
@@ -406,7 +467,7 @@
       const r = await fetch("/admin/config/operator-seed", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ seed }),
+        body: JSON.stringify({ seed: seed }),
       });
       if (!r.ok) {
         const err = await r.json();
@@ -435,15 +496,15 @@
           tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No audit events yet.</td></tr>';
           return;
         }
-        tbody.innerHTML = events.map((e) => `
-          <tr>
-            <td>${e.created_at ? new Date(e.created_at).toLocaleString() : "-"}</td>
-            <td><span class="badge badge-ok">${e.action}</span></td>
-            <td>${e.actor_email || "-"}</td>
-            <td>${e.target_type || "-"}</td>
-            <td>${e.summary || "-"}</td>
-          </tr>
-        `).join("");
+        tbody.innerHTML = events.map(function (e) {
+          return '<tr>' +
+            '<td>' + (e.created_at ? new Date(e.created_at).toLocaleString() : "-") + '</td>' +
+            '<td><span class="badge badge-ok">' + escapeHtml(e.action) + '</span></td>' +
+            '<td>' + escapeHtml(e.actor_email || "-") + '</td>' +
+            '<td>' + escapeHtml(e.target_type || "-") + '</td>' +
+            '<td>' + escapeHtml(e.summary || "-") + '</td>' +
+            '</tr>';
+        }).join("");
       }
     } catch (_) {}
   }
@@ -478,7 +539,7 @@
       if (!r.ok) throw new Error(await r.text());
       const data = await r.json();
       if (data.cleared) {
-        toast(`Cleared: ${data.users} users, ${data.accruals} accruals, ${data.payouts} payouts`, "success");
+        toast("Cleared: " + data.users + " users, " + data.accruals + " accruals, " + data.payouts + " payouts", "success");
       } else {
         toast(data.message || "No demo data to clear", "info");
       }
@@ -487,7 +548,7 @@
       toast("Clear failed: " + e.message, "error");
     } finally {
       btn.disabled = false;
-      btn.textContent = "🗑️ Clear Demo Data";
+      btn.textContent = "Clear Demo Data";
     }
   };
 
@@ -515,7 +576,7 @@
     const el = $(".toast");
     el.textContent = msg;
     el.className = "toast toast-" + type + " visible";
-    setTimeout(() => el.classList.remove("visible"), 3000);
+    setTimeout(function () { el.classList.remove("visible"); }, 3000);
   }
 
   // ── Boot ─────────────────────────────────────────────

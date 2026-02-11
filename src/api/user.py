@@ -152,6 +152,7 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
         wallet_address = latest_wallet.address
     return JSONResponse(
         {
+            "discord_username": user.discord_username,
             "linked": bool(user.wallet_links),
             "wallet_address": wallet_address,
             "last_verified_at": last_verified_at,

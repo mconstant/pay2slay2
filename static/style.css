@@ -377,6 +377,22 @@ td.tx-hash {
   color: var(--text-muted);
 }
 
+/* ── Leaderboard ────────────────────────────────────── */
+.rank {
+  font-weight: 700;
+  color: var(--accent);
+  width: 40px;
+}
+.player-name {
+  font-weight: 600;
+}
+.login-cta {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 640px) {
   main { padding: 16px; }
@@ -386,4 +402,5 @@ td.tx-hash {
   .login-page h1 { font-size: 36px; }
   .how-it-works { gap: 10px; }
   .step-arrow { font-size: 16px; }
+  .login-cta { flex-direction: column; align-items: center; }
 }
