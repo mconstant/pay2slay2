@@ -19,7 +19,7 @@ services:
       - P2S_OPERATOR_ACCOUNT=${P2S_OPERATOR_ACCOUNT}
       - MIN_OPERATOR_BALANCE_BAN=${MIN_OPERATOR_BALANCE_BAN}
       - ADMIN_DISCORD_USERNAMES=${ADMIN_DISCORD_USERNAMES}
-      - DATABASE_URL=sqlite:///pay2slay.db
+      - DATABASE_URL=sqlite:////data/pay2slay.db
       - PAY2SLAY_AUTO_MIGRATE=1
     expose:
       - port: 8000
@@ -28,6 +28,10 @@ services:
           - ${DOMAIN_NAME}
         to:
           - global: true
+    params:
+      storage:
+        data:
+          mount: /data
 profiles:
   compute:
     api:
@@ -37,7 +41,12 @@ profiles:
         memory:
           size: 512Mi
         storage:
-          size: 1Gi
+          - size: 1Gi
+          - name: data
+            size: 1Gi
+            attributes:
+              persistent: true
+              class: beta3
   placement:
     dcloud:
       pricing:
