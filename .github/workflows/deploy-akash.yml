@@ -98,6 +98,11 @@ jobs:
           cert-content: ${{ secrets.AKASH_CERT }}
           cert-id: ${{ vars.AKASH_CERT_ID }}
 
+      - name: Override Akash env (action may clobber job-level vars)
+        run: |
+          echo "AKASH_NODE=${{ github.event.inputs.akash_network }}" >> $GITHUB_ENV
+          echo "AKASH_GAS_ADJUSTMENT=1.5" >> $GITHUB_ENV
+
       - name: Resolve Akash account address
         run: |
           if [ -n "${{ vars.AKASH_ACCOUNT_ADDRESS }}" ]; then
