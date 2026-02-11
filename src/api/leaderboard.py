@@ -92,7 +92,13 @@ def activity_feed(
     limit = min(max(limit, 1), 100)
 
     accruals = (
-        db.query(RewardAccrual, User.discord_username)
+        db.query(
+            User.discord_username,
+            RewardAccrual.kills,
+            RewardAccrual.amount_ban,
+            RewardAccrual.settled,
+            RewardAccrual.created_at,
+        )
         .join(User, User.id == RewardAccrual.user_id)
         .order_by(RewardAccrual.created_at.desc())
         .limit(limit)
@@ -100,7 +106,13 @@ def activity_feed(
     )
 
     payouts = (
-        db.query(Payout, User.discord_username)
+        db.query(
+            User.discord_username,
+            Payout.amount_ban,
+            Payout.status,
+            Payout.tx_hash,
+            Payout.created_at,
+        )
         .join(User, User.id == Payout.user_id)
         .order_by(Payout.created_at.desc())
         .limit(limit)
@@ -111,23 +123,23 @@ def activity_feed(
         {
             "accruals": [
                 {
-                    "discord_username": username or "Unknown",
+                    "discord_username": a.discord_username or "Unknown",
                     "kills": a.kills,
                     "amount_ban": float(a.amount_ban),
                     "settled": a.settled,
                     "created_at": a.created_at.isoformat() if a.created_at else None,
                 }
-                for a, username in accruals
+                for a in accruals
             ],
             "payouts": [
                 {
-                    "discord_username": username or "Unknown",
+                    "discord_username": p.discord_username or "Unknown",
                     "amount_ban": float(p.amount_ban),
                     "status": p.status,
                     "tx_hash": p.tx_hash,
                     "created_at": p.created_at.isoformat() if p.created_at else None,
                 }
-                for p, username in payouts
+                for p in payouts
             ],
         }
     )
