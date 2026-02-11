@@ -1,4 +1,8 @@
+import json
+import os
+import time as _time
 from collections.abc import Generator
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
@@ -143,3 +147,20 @@ def activity_feed(
             ],
         }
     )
+
+
+@router.get("/api/scheduler/countdown")
+def scheduler_countdown() -> JSONResponse:
+    """Public endpoint returning seconds until next scheduler cycle."""
+    hb_path = Path(os.getenv("P2S_HEARTBEAT_FILE", "/tmp/scheduler_heartbeat.json"))
+    if not hb_path.exists():
+        return JSONResponse({"next_cycle_in": None, "interval_seconds": None})
+    try:
+        data = json.loads(hb_path.read_text())
+        last_ts = data.get("ts", 0)
+        interval = data.get("interval_seconds") or int(os.getenv("P2S_INTERVAL_SECONDS", "1200"))
+        next_ts = last_ts + interval
+        remaining = max(0, int(next_ts - _time.time()))
+        return JSONResponse({"next_cycle_in": remaining, "interval_seconds": interval})
+    except Exception:
+        return JSONResponse({"next_cycle_in": None, "interval_seconds": None})

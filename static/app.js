@@ -643,6 +643,23 @@
     }
   };
 
+  // ── Trigger Settlement ─────────────────────────────
+  window.triggerSettlement = async function () {
+    const btn = document.querySelector('[onclick="triggerSettlement()"]');
+    if (btn) { btn.disabled = true; btn.textContent = "Settling..."; }
+    try {
+      const r = await fetch("/admin/scheduler/settle", { method: "POST" });
+      if (!r.ok) throw new Error(await r.text());
+      const data = await r.json();
+      toast("Settlement: " + data.candidates + " candidates, " + data.payouts + " payouts, " + data.accruals_settled + " settled", "success");
+      loadPageData("admin");
+    } catch (e) {
+      toast("Settlement failed: " + e.message, "error");
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = "Settle Payouts"; }
+    }
+  };
+
   // ── Toast ────────────────────────────────────────────
   function toast(msg, type) {
     const el = $(".toast");
@@ -651,6 +668,53 @@
     setTimeout(function () { el.classList.remove("visible"); }, 3000);
   }
 
+  // ── Cycle Countdown ─────────────────────────────────
+  let countdownRemaining = null;
+  let countdownTimer = null;
+
+  async function fetchCountdown() {
+    try {
+      const r = await fetch("/api/scheduler/countdown");
+      if (r.ok) {
+        const d = await r.json();
+        if (d.next_cycle_in !== null) {
+          countdownRemaining = d.next_cycle_in;
+          if (!countdownTimer) {
+            countdownTimer = setInterval(tickCountdown, 1000);
+          }
+          renderCountdown();
+        }
+      }
+    } catch (_) {}
+  }
+
+  function tickCountdown() {
+    if (countdownRemaining === null) return;
+    countdownRemaining = Math.max(0, countdownRemaining - 1);
+    renderCountdown();
+    if (countdownRemaining <= 0) {
+      // Re-fetch after cycle should have fired
+      setTimeout(fetchCountdown, 5000);
+    }
+  }
+
+  function renderCountdown() {
+    const el = $("#cycle-countdown");
+    if (!el) return;
+    if (countdownRemaining === null) {
+      el.textContent = "Next cycle: --:--";
+      return;
+    }
+    var m = Math.floor(countdownRemaining / 60);
+    var s = countdownRemaining % 60;
+    el.textContent = "Next cycle: " + m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
   // ── Boot ─────────────────────────────────────────────
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", function () {
+    init();
+    fetchCountdown();
+    // Re-sync countdown from server every 60s
+    setInterval(fetchCountdown, 60000);
+  });
 })();

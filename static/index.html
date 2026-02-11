@@ -328,6 +328,7 @@
         <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
           <p id="admin-scheduler-status" style="font-size:13px;margin:0;"></p>
           <button class="btn btn-sm btn-primary" onclick="triggerScheduler()">Run Scheduler Now</button>
+          <button class="btn btn-sm" onclick="triggerSettlement()">Settle Payouts</button>
         </div>
       </div>
 
@@ -390,6 +391,10 @@
   </div>
 
 </main>
+
+<footer id="cycle-footer">
+  <span id="cycle-countdown">Next cycle: --:--</span>
+</footer>
 
 <script src="/static/app.js"></script>
 </body>

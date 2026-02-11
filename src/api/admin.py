@@ -545,3 +545,30 @@ def admin_trigger_scheduler(
     except Exception as exc:
         log.error("admin_scheduler_trigger_error", error=str(exc))
         return JSONResponse({"status": "error", "detail": str(exc)}, status_code=500)
+
+
+@router.post("/scheduler/settle")
+def admin_trigger_settlement(
+    request: Request,
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Run settlement only — pay out unsettled accruals (admin only)."""
+    from src.jobs.__main__ import _build_scheduler_components
+    from src.jobs.settlement import run_settlement
+
+    try:
+        cfg, _fortnite, _accrual_cfg = _build_scheduler_components()
+        counters = run_settlement(db, cfg)
+        db.commit()
+        return JSONResponse(
+            {
+                "status": "ok",
+                "candidates": counters["candidates"],
+                "payouts": counters["payouts"],
+                "accruals_settled": counters["accruals_settled"],
+            }
+        )
+    except Exception as exc:
+        log.error("admin_settlement_trigger_error", error=str(exc))
+        return JSONResponse({"status": "error", "detail": str(exc)}, status_code=500)
