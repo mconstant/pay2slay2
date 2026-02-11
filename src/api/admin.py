@@ -1,6 +1,9 @@
+import json
 import os
+import time as _time
 from collections.abc import Generator
 from datetime import UTC, datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -497,3 +500,48 @@ def admin_get_operator_seed_status(
             }
         )
     return JSONResponse({"configured": False, "address": None, "set_by": None, "updated_at": None})
+
+
+@router.get("/scheduler/status")
+def admin_scheduler_status(
+    _: None = Depends(_require_admin),
+) -> JSONResponse:
+    """Read the scheduler heartbeat file to report if the background process is alive."""
+    hb_path = Path(os.getenv("P2S_HEARTBEAT_FILE", "/tmp/scheduler_heartbeat.json"))
+    if not hb_path.exists():
+        return JSONResponse({"alive": False, "detail": "no heartbeat file"})
+    try:
+        data = json.loads(hb_path.read_text())
+        age = _time.time() - data.get("ts", 0)
+        interval = int(os.getenv("P2S_INTERVAL_SECONDS", "1200"))
+        alive = age < interval * 2  # allow up to 2x the interval before declaring dead
+        return JSONResponse(
+            {
+                "alive": alive,
+                "last_heartbeat_ago_sec": round(age, 1),
+                "status": data.get("status"),
+                "pid": data.get("pid"),
+                "error": data.get("error"),
+            }
+        )
+    except Exception as exc:
+        return JSONResponse({"alive": False, "detail": str(exc)})
+
+
+@router.post("/scheduler/trigger")
+def admin_trigger_scheduler(
+    request: Request,
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Run one accrual+settlement cycle synchronously (admin only, works in production)."""
+    from src.jobs.__main__ import _build_scheduler_components, _run_once
+
+    try:
+        cfg, fortnite, accrual_cfg = _build_scheduler_components()
+        _run_once(db, cfg, fortnite, accrual_cfg)
+        db.commit()
+        return JSONResponse({"status": "ok", "detail": "Scheduler cycle completed"})
+    except Exception as exc:
+        log.error("admin_scheduler_trigger_error", error=str(exc))
+        return JSONResponse({"status": "error", "detail": str(exc)}, status_code=500)

@@ -415,7 +415,7 @@
     }
     $("#admin-unauthorized").style.display = "none";
     $("#admin-authed").style.display = "block";
-    await Promise.all([loadAdminStats(), loadAdminAudit()]);
+    await Promise.all([loadAdminStats(), loadAdminAudit(), loadSchedulerStatus()]);
   }
 
   async function loadAdminStats() {
@@ -461,6 +461,25 @@
     } catch (_) {}
 
     await loadOperatorSeedStatus();
+  }
+
+  async function loadSchedulerStatus() {
+    const el = $("#admin-scheduler-status");
+    if (!el) return;
+    try {
+      const r = await fetch("/admin/scheduler/status");
+      if (r.ok) {
+        const d = await r.json();
+        if (d.alive) {
+          const ago = Math.round(d.last_heartbeat_ago_sec);
+          el.innerHTML = '<span class="badge badge-sent">alive</span> Last heartbeat ' + ago + 's ago';
+        } else {
+          el.innerHTML = '<span class="badge badge-failed">dead</span> ' + (d.error || d.detail || "not running");
+        }
+      }
+    } catch (_) {
+      el.innerHTML = '<span class="badge badge-pending">unknown</span>';
+    }
   }
 
   async function loadOperatorSeedStatus() {
@@ -607,10 +626,14 @@
     btn.disabled = true;
     btn.textContent = "Running...";
     try {
-      const r = await fetch("/demo/run-scheduler", { method: "POST" });
+      // Try admin endpoint first, fall back to demo endpoint
+      let r = await fetch("/admin/scheduler/trigger", { method: "POST" });
+      if (r.status === 401) {
+        r = await fetch("/demo/run-scheduler", { method: "POST" });
+      }
       if (!r.ok) throw new Error(await r.text());
       const data = await r.json();
-      toast("Scheduler: " + data.summary, "success");
+      toast("Scheduler: " + (data.summary || data.detail), "success");
       loadDashboard();
     } catch (e) {
       toast("Scheduler failed: " + e.message, "error");

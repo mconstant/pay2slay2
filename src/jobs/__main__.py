@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+import json
 import os
 import random
 import time
+from pathlib import Path
 
 from dotenv import load_dotenv
 from prometheus_client import Counter, start_http_server
+
+HEARTBEAT_PATH = Path(os.getenv("P2S_HEARTBEAT_FILE", "/tmp/scheduler_heartbeat.json"))
 
 load_dotenv()
 from sqlalchemy import create_engine  # noqa: E402
@@ -101,6 +105,17 @@ def _run_once(
         log.error("settlement_cycle_error", error=str(exc))
 
 
+def _write_heartbeat(status: str = "ok", error: str | None = None) -> None:
+    """Write scheduler heartbeat to a shared file the API can read."""
+    try:
+        data = {"ts": time.time(), "status": status, "pid": os.getpid()}
+        if error:
+            data["error"] = error[:500]
+        HEARTBEAT_PATH.write_text(json.dumps(data))
+    except Exception:
+        pass  # best-effort
+
+
 def main() -> None:
     metrics_port = int(os.getenv("P2S_METRICS_PORT", "8001"))
     db_url = os.getenv("DATABASE_URL", "sqlite:///pay2slay.db")
@@ -110,6 +125,8 @@ def main() -> None:
     engine = create_engine(db_url)
     session_local = sessionmaker(bind=engine)
     cfg, fortnite, accrual_cfg = _build_scheduler_components()
+    _write_heartbeat("started")
+    log.info("scheduler_started", interval=cfg.interval_seconds, dry_run=cfg.dry_run)
     jitter = float(os.getenv("P2S_START_JITTER_SEC", "0"))
     if jitter > 0:
         sleep_for = random.uniform(0, jitter)
@@ -121,10 +138,12 @@ def main() -> None:
         session: Session = session_local()
         try:
             _run_once(session, cfg, fortnite, accrual_cfg)
+            _write_heartbeat("ok")
             backoff = 1.0  # reset after success path
         except Exception as loop_exc:  # pragma: no cover
             JOB_ERRORS.inc()
             log.error("scheduler_loop_error", error=str(loop_exc), backoff=backoff)
+            _write_heartbeat("error", str(loop_exc))
             time.sleep(backoff)
             backoff = min(backoff * 2, max_backoff)
         finally:

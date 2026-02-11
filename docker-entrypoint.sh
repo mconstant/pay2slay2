@@ -7,9 +7,9 @@ if [ "${PAY2SLAY_AUTO_MIGRATE}" = "1" ]; then
     python -m alembic upgrade head || echo "Migration warning (non-fatal): tables may already exist"
 fi
 
-# Start scheduler in background
+# Start scheduler in background (log output so crashes aren't silent)
 echo "Starting scheduler..."
-python -m src.jobs &
+python -m src.jobs 2>&1 | while IFS= read -r line; do echo "[scheduler] $line"; done &
 
 # Start API server (foreground)
 echo "Starting API server..."
