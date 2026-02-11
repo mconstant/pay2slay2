@@ -144,6 +144,17 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           DSEQ="${{ secrets.AKASH_DEPLOYMENT_DSEQ }}"
+          ACTION="${{ github.event.inputs.action }}"
+
+          if [ "$ACTION" = "deploy" ] && [ -n "$DSEQ" ]; then
+            echo "Action is 'deploy' — closing old deployment $DSEQ first..."
+            provider-services tx deployment close \
+              --dseq $DSEQ \
+              --from deployer \
+              --yes 2>/dev/null || echo "Old deployment already closed or not found"
+            sleep 5
+            DSEQ=""
+          fi
 
           if [ -n "$DSEQ" ]; then
             echo "Updating existing deployment $DSEQ..."
