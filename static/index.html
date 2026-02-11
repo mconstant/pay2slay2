@@ -325,7 +325,10 @@
           </div>
         </div>
         <p id="admin-dry-run-status" style="margin-top:12px;"></p>
-        <p id="admin-scheduler-status" style="margin-top:8px;font-size:13px;"></p>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+          <p id="admin-scheduler-status" style="font-size:13px;margin:0;"></p>
+          <button class="btn btn-sm btn-primary" onclick="triggerScheduler()">Run Scheduler Now</button>
+        </div>
       </div>
 
       <!-- System Stats -->

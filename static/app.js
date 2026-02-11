@@ -73,7 +73,7 @@
         if (banner && isDryRun) banner.classList.add("visible");
         // Hide demo-only elements when not in dry run mode
         if (!isDryRun) {
-          const ids = ["seed-btn", "scheduler-btn", "demo-login-btn", "demo-login-btn-2"];
+          const ids = ["seed-btn", "demo-login-btn", "demo-login-btn-2"];
           ids.forEach(function (id) {
             const el = $("#" + id);
             if (el) el.style.display = "none";
