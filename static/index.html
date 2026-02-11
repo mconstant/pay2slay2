@@ -27,6 +27,7 @@
 <!-- Navigation -->
 <nav>
   <button data-page="leaderboard" class="active">Leaderboard</button>
+  <button data-page="activity">Activity</button>
   <button data-page="dashboard" class="auth-only">Dashboard</button>
   <button data-page="wallet" class="auth-only">Wallet</button>
   <button data-page="admin" class="auth-only">Admin</button>
@@ -78,6 +79,44 @@
           </tr>
         </thead>
         <tbody id="leaderboard-tbody">
+          <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Activity Feed Page (public) -->
+  <div id="page-activity" class="page">
+    <div class="section-header">
+      <h2>Activity</h2>
+      <span class="card-subtitle">Recent kills and payouts across all players</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Recent Accruals</h2>
+        <span class="card-subtitle">Kills converted to BAN rewards</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Player</th><th>Kills</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+        </thead>
+        <tbody id="feed-accruals-tbody">
+          <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Recent Payouts</h2>
+        <span class="card-subtitle">BAN sent to player wallets</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Player</th><th>Amount</th><th>Status</th><th>TX Hash</th><th>Date</th></tr>
+        </thead>
+        <tbody id="feed-payouts-tbody">
           <tr><td colspan="5" class="empty-state">Loading...</td></tr>
         </tbody>
       </table>

@@ -16,7 +16,7 @@
 
   // Pages that require auth
   const AUTH_PAGES = new Set(["dashboard", "wallet", "admin"]);
-  const ALL_PAGES = new Set(["leaderboard", "dashboard", "wallet", "admin", "login"]);
+  const ALL_PAGES = new Set(["leaderboard", "activity", "dashboard", "wallet", "admin", "login"]);
 
   // ── Init ─────────────────────────────────────────────
   async function init() {
@@ -120,6 +120,7 @@
 
   function loadPageData(name) {
     if (name === "leaderboard") loadLeaderboard();
+    if (name === "activity") loadActivityFeed();
     if (name === "dashboard" && user) loadDashboard();
     if (name === "wallet" && user) loadWallet();
     if (name === "admin" && user) loadAdmin();
@@ -208,6 +209,54 @@
     const div = document.createElement("div");
     div.textContent = str;
     return div.innerHTML;
+  }
+
+  // ── Activity Feed ──────────────────────────────────
+  async function loadActivityFeed() {
+    try {
+      const r = await fetch("/api/feed?limit=30");
+      if (r.ok) {
+        const data = await r.json();
+        renderFeedAccruals(data.accruals || []);
+        renderFeedPayouts(data.payouts || []);
+      }
+    } catch (_) {}
+  }
+
+  function renderFeedAccruals(rows) {
+    const tbody = $("#feed-accruals-tbody");
+    if (!tbody) return;
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No accruals yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function (a) {
+      return '<tr>' +
+        '<td class="player-name">' + escapeHtml(a.discord_username) + '</td>' +
+        '<td>' + a.kills + '</td>' +
+        '<td>' + parseFloat(a.amount_ban).toFixed(2) + ' BAN</td>' +
+        '<td><span class="badge ' + (a.settled ? "badge-sent" : "badge-pending") + '">' + (a.settled ? "settled" : "pending") + '</span></td>' +
+        '<td>' + (a.created_at ? new Date(a.created_at).toLocaleString() : "-") + '</td>' +
+        '</tr>';
+    }).join("");
+  }
+
+  function renderFeedPayouts(rows) {
+    const tbody = $("#feed-payouts-tbody");
+    if (!tbody) return;
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No payouts yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(function (p) {
+      return '<tr>' +
+        '<td class="player-name">' + escapeHtml(p.discord_username) + '</td>' +
+        '<td>' + parseFloat(p.amount_ban).toFixed(2) + ' BAN</td>' +
+        '<td><span class="badge badge-' + p.status + '">' + p.status + '</span></td>' +
+        '<td class="tx-hash" title="' + (p.tx_hash || "") + '">' + (p.tx_hash ? p.tx_hash.substring(0, 12) + "..." : "-") + '</td>' +
+        '<td>' + (p.created_at ? new Date(p.created_at).toLocaleString() : "-") + '</td>' +
+        '</tr>';
+    }).join("");
   }
 
   // ── Dashboard ────────────────────────────────────────
