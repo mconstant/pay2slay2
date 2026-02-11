@@ -572,3 +572,81 @@ def admin_trigger_settlement(
     except Exception as exc:
         log.error("admin_settlement_trigger_error", error=str(exc))
         return JSONResponse({"status": "error", "detail": str(exc)}, status_code=500)
+
+
+@router.get("/scheduler/config")
+def admin_get_scheduler_config(
+    _: None = Depends(_require_admin),
+) -> JSONResponse:
+    """Return current scheduler interval overrides."""
+    from src.jobs.__main__ import SCHEDULER_CONFIG_PATH
+
+    default_interval = int(os.getenv("P2S_INTERVAL_SECONDS", "1200"))
+    result = {
+        "accrual_interval_seconds": default_interval,
+        "settlement_interval_seconds": default_interval,
+    }
+    if SCHEDULER_CONFIG_PATH.exists():
+        try:
+            data = json.loads(SCHEDULER_CONFIG_PATH.read_text())
+            if "accrual_interval_seconds" in data:
+                result["accrual_interval_seconds"] = int(data["accrual_interval_seconds"])
+            if "settlement_interval_seconds" in data:
+                result["settlement_interval_seconds"] = int(data["settlement_interval_seconds"])
+        except Exception:
+            pass
+    return JSONResponse(result)
+
+
+@router.post("/scheduler/config")
+def admin_set_scheduler_config(
+    request: Request,
+    accrual_interval_seconds: int | None = Body(None),
+    settlement_interval_seconds: int | None = Body(None),
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Update scheduler intervals on the fly. Min 30 seconds."""
+    from src.jobs.__main__ import SCHEDULER_CONFIG_PATH
+
+    # Read existing overrides
+    current: dict[str, int] = {}
+    if SCHEDULER_CONFIG_PATH.exists():
+        try:
+            current = json.loads(SCHEDULER_CONFIG_PATH.read_text())
+        except Exception:
+            pass
+
+    default_interval = int(os.getenv("P2S_INTERVAL_SECONDS", "1200"))
+    if accrual_interval_seconds is not None:
+        current["accrual_interval_seconds"] = max(30, accrual_interval_seconds)
+    if settlement_interval_seconds is not None:
+        current["settlement_interval_seconds"] = max(30, settlement_interval_seconds)
+
+    SCHEDULER_CONFIG_PATH.write_text(json.dumps(current))
+
+    token = request.cookies.get("p2s_admin")
+    admin_email = verify_admin_session(token, session_secret()) if token else "unknown"
+    record_admin_audit(
+        db,
+        AdminAuditPayload(
+            action="update_scheduler_config",
+            actor_email=admin_email,
+            target_type="scheduler",
+            target_id="intervals",
+            summary=f"accrual={current.get('accrual_interval_seconds', default_interval)}s, "
+            f"settlement={current.get('settlement_interval_seconds', default_interval)}s",
+        ),
+    )
+    db.commit()
+    log.info("scheduler_config_updated", **current)
+
+    return JSONResponse(
+        {
+            "status": "ok",
+            "accrual_interval_seconds": current.get("accrual_interval_seconds", default_interval),
+            "settlement_interval_seconds": current.get(
+                "settlement_interval_seconds", default_interval
+            ),
+        }
+    )

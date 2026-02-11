@@ -408,7 +408,7 @@ td.tx-hash {
   color: var(--text-muted);
   z-index: 100;
 }
-#cycle-footer #cycle-countdown {
+#cycle-footer span[id^="cycle-countdown"] {
   font-family: "SF Mono", "Fira Code", monospace;
   color: var(--accent);
   font-weight: 600;

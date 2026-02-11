@@ -330,6 +330,25 @@
           <button class="btn btn-sm btn-primary" onclick="triggerScheduler()">Run Scheduler Now</button>
           <button class="btn btn-sm" onclick="triggerSettlement()">Settle Payouts</button>
         </div>
+
+        <!-- Cycle Interval Controls -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+          <h3 style="font-size:14px;margin-bottom:12px;">Cycle Intervals</h3>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+            <div class="form-group" style="margin-bottom:0;flex:1;min-width:140px;">
+              <label for="accrual-interval-input">Accrual (seconds)</label>
+              <input type="number" id="accrual-interval-input" min="30" step="30" placeholder="1200">
+            </div>
+            <div class="form-group" style="margin-bottom:0;flex:1;min-width:140px;">
+              <label for="settlement-interval-input">Settlement (seconds)</label>
+              <input type="number" id="settlement-interval-input" min="30" step="30" placeholder="1200">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="saveSchedulerConfig()">Save Intervals</button>
+          </div>
+          <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+            Changes take effect on the next scheduler loop iteration. Min 30 seconds.
+          </p>
+        </div>
       </div>
 
       <!-- System Stats -->
@@ -393,7 +412,9 @@
 </main>
 
 <footer id="cycle-footer">
-  <span id="cycle-countdown">Next cycle: --:--</span>
+  <span id="cycle-countdown-accrual">Accrual: --:--</span>
+  <span style="margin:0 12px;color:var(--border);">|</span>
+  <span id="cycle-countdown-settlement">Settlement: --:--</span>
 </footer>
 
 <script src="/static/app.js"></script>

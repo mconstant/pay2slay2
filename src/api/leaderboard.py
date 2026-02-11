@@ -151,16 +151,34 @@ def activity_feed(
 
 @router.get("/api/scheduler/countdown")
 def scheduler_countdown() -> JSONResponse:
-    """Public endpoint returning seconds until next scheduler cycle."""
+    """Public endpoint returning seconds until next accrual and settlement cycles."""
     hb_path = Path(os.getenv("P2S_HEARTBEAT_FILE", "/tmp/scheduler_heartbeat.json"))
+    empty = {
+        "next_accrual_in": None,
+        "next_settlement_in": None,
+        "accrual_interval_seconds": None,
+        "settlement_interval_seconds": None,
+    }
     if not hb_path.exists():
-        return JSONResponse({"next_cycle_in": None, "interval_seconds": None})
+        return JSONResponse(empty)
     try:
         data = json.loads(hb_path.read_text())
-        last_ts = data.get("ts", 0)
-        interval = data.get("interval_seconds") or int(os.getenv("P2S_INTERVAL_SECONDS", "1200"))
-        next_ts = last_ts + interval
-        remaining = max(0, int(next_ts - _time.time()))
-        return JSONResponse({"next_cycle_in": remaining, "interval_seconds": interval})
+        now = _time.time()
+        default_interval = int(os.getenv("P2S_INTERVAL_SECONDS", "1200"))
+
+        accrual_interval = data.get("accrual_interval_seconds") or default_interval
+        settlement_interval = data.get("settlement_interval_seconds") or default_interval
+
+        last_accrual = data.get("last_accrual_ts") or data.get("ts", 0)
+        last_settlement = data.get("last_settlement_ts") or data.get("ts", 0)
+
+        return JSONResponse(
+            {
+                "next_accrual_in": max(0, int(last_accrual + accrual_interval - now)),
+                "next_settlement_in": max(0, int(last_settlement + settlement_interval - now)),
+                "accrual_interval_seconds": accrual_interval,
+                "settlement_interval_seconds": settlement_interval,
+            }
+        )
     except Exception:
-        return JSONResponse({"next_cycle_in": None, "interval_seconds": None})
+        return JSONResponse(empty)

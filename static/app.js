@@ -415,7 +415,7 @@
     }
     $("#admin-unauthorized").style.display = "none";
     $("#admin-authed").style.display = "block";
-    await Promise.all([loadAdminStats(), loadAdminAudit(), loadSchedulerStatus()]);
+    await Promise.all([loadAdminStats(), loadAdminAudit(), loadSchedulerStatus(), loadSchedulerConfig()]);
   }
 
   async function loadAdminStats() {
@@ -481,6 +481,40 @@
       el.innerHTML = '<span class="badge badge-pending">unknown</span>';
     }
   }
+
+  async function loadSchedulerConfig() {
+    try {
+      const r = await fetch("/admin/scheduler/config");
+      if (r.ok) {
+        const d = await r.json();
+        var ai = $("#accrual-interval-input");
+        var si = $("#settlement-interval-input");
+        if (ai) ai.value = d.accrual_interval_seconds;
+        if (si) si.value = d.settlement_interval_seconds;
+      }
+    } catch (_) {}
+  }
+
+  window.saveSchedulerConfig = async function () {
+    var ai = $("#accrual-interval-input");
+    var si = $("#settlement-interval-input");
+    var body = {};
+    if (ai && ai.value) body.accrual_interval_seconds = parseInt(ai.value, 10);
+    if (si && si.value) body.settlement_interval_seconds = parseInt(si.value, 10);
+    try {
+      var r = await fetch("/admin/scheduler/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      var d = await r.json();
+      toast("Intervals updated: accrual=" + d.accrual_interval_seconds + "s, settlement=" + d.settlement_interval_seconds + "s", "success");
+      fetchCountdown();
+    } catch (e) {
+      toast("Failed: " + e.message, "error");
+    }
+  };
 
   async function loadOperatorSeedStatus() {
     const statusEl = $("#operator-seed-status");
@@ -669,7 +703,8 @@
   }
 
   // ── Cycle Countdown ─────────────────────────────────
-  let countdownRemaining = null;
+  let accrualRemaining = null;
+  let settlementRemaining = null;
   let countdownTimer = null;
 
   async function fetchCountdown() {
@@ -677,37 +712,38 @@
       const r = await fetch("/api/scheduler/countdown");
       if (r.ok) {
         const d = await r.json();
-        if (d.next_cycle_in !== null) {
-          countdownRemaining = d.next_cycle_in;
-          if (!countdownTimer) {
-            countdownTimer = setInterval(tickCountdown, 1000);
-          }
-          renderCountdown();
+        if (d.next_accrual_in !== null) accrualRemaining = d.next_accrual_in;
+        if (d.next_settlement_in !== null) settlementRemaining = d.next_settlement_in;
+        if (!countdownTimer) {
+          countdownTimer = setInterval(tickCountdown, 1000);
         }
+        renderCountdown();
       }
     } catch (_) {}
   }
 
   function tickCountdown() {
-    if (countdownRemaining === null) return;
-    countdownRemaining = Math.max(0, countdownRemaining - 1);
+    if (accrualRemaining !== null) accrualRemaining = Math.max(0, accrualRemaining - 1);
+    if (settlementRemaining !== null) settlementRemaining = Math.max(0, settlementRemaining - 1);
     renderCountdown();
-    if (countdownRemaining <= 0) {
-      // Re-fetch after cycle should have fired
+    if ((accrualRemaining !== null && accrualRemaining <= 0) ||
+        (settlementRemaining !== null && settlementRemaining <= 0)) {
       setTimeout(fetchCountdown, 5000);
     }
   }
 
+  function fmtTime(sec) {
+    if (sec === null) return "--:--";
+    var m = Math.floor(sec / 60);
+    var s = sec % 60;
+    return m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
   function renderCountdown() {
-    const el = $("#cycle-countdown");
-    if (!el) return;
-    if (countdownRemaining === null) {
-      el.textContent = "Next cycle: --:--";
-      return;
-    }
-    var m = Math.floor(countdownRemaining / 60);
-    var s = countdownRemaining % 60;
-    el.textContent = "Next cycle: " + m + ":" + (s < 10 ? "0" : "") + s;
+    var a = $("#cycle-countdown-accrual");
+    var s = $("#cycle-countdown-settlement");
+    if (a) a.textContent = "Accrual: " + fmtTime(accrualRemaining);
+    if (s) s.textContent = "Settlement: " + fmtTime(settlementRemaining);
   }
 
   // ── Boot ─────────────────────────────────────────────

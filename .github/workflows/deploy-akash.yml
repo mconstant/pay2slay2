@@ -11,8 +11,9 @@ on:
         required: true
         default: 'latest'
       domain_name:
-        description: 'Domain name for the API service (e.g. pay2slay.cc)'
+        description: 'Domain name for the API service'
         required: true
+        default: 'pay2slay.cc'
       action:
         description: 'Deployment action'
         required: true
