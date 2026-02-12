@@ -115,6 +115,7 @@ def activity_feed(
             Payout.amount_ban,
             Payout.status,
             Payout.tx_hash,
+            Payout.error_detail,
             Payout.created_at,
         )
         .join(User, User.id == Payout.user_id)
@@ -141,6 +142,7 @@ def activity_feed(
                     "amount_ban": float(p.amount_ban),
                     "status": p.status,
                     "tx_hash": p.tx_hash,
+                    "error_detail": p.error_detail,
                     "created_at": p.created_at.isoformat() if p.created_at else None,
                 }
                 for p in payouts

@@ -216,10 +216,18 @@ def admin_payouts_retry(
     integrations = getattr(cfg_obj, "integrations", None)
     if integrations is None:
         raise HTTPException(status_code=500, detail="Config not loaded")
-    banano = BananoClient(node_url=integrations.node_rpc, dry_run=integrations.dry_run)
-    source_wallet = os.getenv("P2S_OPERATOR_WALLET", "operator")
-    amount_raw = str(float(payout.amount_ban))
-    tx = banano.send(source_wallet=source_wallet, to_address=payout.address, amount_raw=amount_raw)
+    # Load operator seed for bananopie signing
+    seed_row = db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+    seed = decrypt_value(seed_row.encrypted_value) if seed_row else None
+    banano = BananoClient(node_url=integrations.node_rpc, dry_run=integrations.dry_run, seed=seed)
+    amount_ban = payout.amount_ban
+    amount_raw = banano.ban_to_raw(amount_ban)
+    tx = banano.send(
+        source_wallet="operator",
+        to_address=payout.address,
+        amount_raw=amount_raw,
+        amount_ban=amount_ban,
+    )
     if tx:
         payout.tx_hash = tx
         payout.status = "sent"
