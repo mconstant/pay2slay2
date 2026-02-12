@@ -32,7 +32,12 @@ def get_product_config() -> JSONResponse:
 
 @router.get("/config/payout")
 def get_payout_config() -> JSONResponse:
-    """Return payout configuration including scheduler timing."""
+    """Return payout configuration including scheduler timing.
+    
+    This endpoint is intentionally public (no authentication required) as it only
+    exposes non-sensitive timing and reward configuration that is useful for
+    displaying UI elements like countdown timers.
+    """
     cfg = get_config()
     payout = cfg.payout
     return JSONResponse(

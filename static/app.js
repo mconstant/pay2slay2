@@ -7,8 +7,8 @@
   let isAdmin = false;
   let productConfig = null;
   let isDryRun = false;
-  let schedulerIntervalMinutes = 20; // Default from payout.yaml
-  let lastSchedulerRun = null; // Track when the last run happened
+  let schedulerIntervalMinutes = 20; // Default from configs/payout.yaml
+  let countdownStartTime = Date.now(); // Track when countdown started
 
   // ── DOM refs ─────────────────────────────────────────
   const $ = (sel) => document.querySelector(sel);
@@ -540,10 +540,10 @@
     const now = Date.now();
     const intervalMs = schedulerIntervalMinutes * 60 * 1000;
     
-    // Estimate next run based on current time and interval
-    // We assume the scheduler runs on regular intervals
-    const msIntoCurrentInterval = now % intervalMs;
-    const msUntilNext = intervalMs - msIntoCurrentInterval;
+    // Calculate time elapsed since countdown started
+    const elapsed = now - countdownStartTime;
+    // Calculate time until next run (cycles through the interval)
+    const msUntilNext = intervalMs - (elapsed % intervalMs);
     
     // Format time as HH:MM:SS
     const formatTime = (ms) => {
@@ -557,6 +557,7 @@
     const accrualEl = $("#countdown-accrual");
     const settlementEl = $("#countdown-settlement");
     
+    // Both accrual and settlement run together in the same scheduler cycle
     if (accrualEl) accrualEl.textContent = formatTime(msUntilNext);
     if (settlementEl) settlementEl.textContent = formatTime(msUntilNext);
   }
