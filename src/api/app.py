@@ -108,7 +108,7 @@ def _register_health(app: FastAPI) -> None:
 
     @app.get("/healthz")
     def healthz() -> dict[str, str]:  # pragma: no cover
-        return {"status": "ok"}
+        return {"status": "ok", "version": os.environ.get("IMAGE_TAG", "dev")}
 
     @app.get("/livez")
     def livez() -> dict[str, str]:  # pragma: no cover
