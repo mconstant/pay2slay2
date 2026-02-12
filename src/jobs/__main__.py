@@ -316,6 +316,9 @@ def main() -> None:
         log.info("startup_jitter", sleep_for=round(sleep_for, 3))
         time.sleep(sleep_for)
     state = _LoopState()
+    # Offset settlement by half the interval so accruals get settled
+    # mid-cycle (~10 min) instead of waiting a full cycle (~20 min).
+    state.last_settlement_ts = time.time() - overrides["settlement_interval_seconds"] / 2
     while True:  # pragma: no cover
         _scheduler_loop(session_local, cfg, fortnite, accrual_cfg, state)
 
