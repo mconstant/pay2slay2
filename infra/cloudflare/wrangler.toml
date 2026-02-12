@@ -1,0 +1,7 @@
+name = "pay2slay-proxy"
+main = "worker.js"
+compatibility_date = "2026-02-12"
+
+routes = [
+  { pattern = "pay2slay.cc/*", zone_name = "pay2slay.cc" }
+]

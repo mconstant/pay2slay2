@@ -339,6 +339,13 @@ jobs:
             echo "::warning::Could not extract service URL from lease status"
           fi
 
+      - name: Update Cloudflare Worker origin
+        if: github.event.inputs.action != 'close' && steps.status.outputs.ui_url != 'unavailable' && steps.status.outputs.ui_url != ''
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: bash scripts/infra/update_cf_origin.sh "${{ steps.status.outputs.ui_url }}"
+
       - name: Validate Health Check
         if: github.event.inputs.action != 'close' && steps.status.outputs.ui_url != 'unavailable' && steps.status.outputs.ui_url != ''
         run: |
