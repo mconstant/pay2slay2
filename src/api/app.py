@@ -15,6 +15,35 @@ from src.lib.region import infer_region_from_request
 _STATIC_DIR = Path(__file__).resolve().parent.parent.parent / "static"
 
 
+def _ensure_schema_columns(engine: Any, log: Any) -> None:
+    """Idempotently add columns that migrations would add.
+
+    Handles the gap where create_all() created tables from an older model
+    but Alembic migrations couldn't run (e.g. init migration conflicts).
+    """
+    from sqlalchemy import text
+
+    additions = [
+        ("payouts", "idempotency_key", "VARCHAR(128)"),
+        ("payouts", "attempt_count", "INTEGER DEFAULT 1"),
+        ("payouts", "first_attempt_at", "DATETIME"),
+        ("payouts", "last_attempt_at", "DATETIME"),
+        ("payouts", "error_detail", "VARCHAR(500)"),
+        ("users", "last_settled_kill_count", "INTEGER DEFAULT 0"),
+        ("users", "last_settlement_at", "DATETIME"),
+        ("users", "region_code", "VARCHAR(8)"),
+        ("users", "abuse_flags", "VARCHAR(500)"),
+    ]
+    with engine.connect() as conn:
+        for table, col, col_type in additions:
+            try:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {col} {col_type}"))
+                conn.commit()
+                log.info("schema_added_column", table=table, column=col)
+            except Exception:
+                pass  # Column already exists
+
+
 def _init_db(app: FastAPI, log: Any) -> None:
     from src.lib.db import make_engine, make_session_factory  # local import
     from src.models.base import Base
@@ -40,6 +69,9 @@ def _init_db(app: FastAPI, log: Any) -> None:
 
     # Create tables if brand new
     Base.metadata.create_all(bind=engine)
+
+    # Ensure columns that migrations would add exist (handles create_all/migration gaps)
+    _ensure_schema_columns(engine, log)
 
     # Apply migrations for column additions / constraints
     if os.getenv("PAY2SLAY_AUTO_MIGRATE") == "1":  # pragma: no cover
