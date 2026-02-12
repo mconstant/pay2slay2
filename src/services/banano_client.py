@@ -139,7 +139,11 @@ class BananoClient:
                 str(amount_ban) if amount_ban is not None else str(self.raw_to_ban(amount_raw))
             )
             result = wallet.send(to=to_address, amount=ban_str)
-            return result.get("hash") if isinstance(result, dict) else None
+            if isinstance(result, dict):
+                if "hash" in result:
+                    return str(result["hash"])
+                raise RuntimeError(f"bananopie send failed: {result}")
+            raise RuntimeError(f"bananopie send unexpected response: {result!r}")
         data = self._post(
             {
                 "action": "send",
