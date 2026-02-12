@@ -661,15 +661,19 @@
     const btn = $("#scheduler-btn") || document.querySelector('[onclick="triggerScheduler()"]');
     if (btn) { btn.disabled = true; btn.textContent = "Running..."; }
     try {
-      // Try admin endpoint first, fall back to demo endpoint
-      let r = await fetch("/admin/scheduler/trigger", { method: "POST" });
+      var r = await fetch("/admin/scheduler/trigger", { method: "POST" });
       if (r.status === 401) {
-        r = await fetch("/demo/run-scheduler", { method: "POST" });
+        // Not admin — try demo endpoint only if dry-run mode
+        if (isDryRun) {
+          r = await fetch("/demo/run-scheduler", { method: "POST" });
+        } else {
+          throw new Error("Admin access required");
+        }
       }
       if (!r.ok) throw new Error(await r.text());
-      const data = await r.json();
+      var data = await r.json();
       toast("Scheduler: " + (data.summary || data.detail), "success");
-      loadDashboard();
+      loadPageData(window.location.hash.replace("#", "") || "activity");
     } catch (e) {
       toast("Scheduler failed: " + e.message, "error");
     } finally {

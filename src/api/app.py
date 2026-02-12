@@ -196,6 +196,9 @@ def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup lo
 
         @app.get("/")
         def index() -> FileResponse:  # pragma: no cover
-            return FileResponse(str(_STATIC_DIR / "index.html"))
+            return FileResponse(
+                str(_STATIC_DIR / "index.html"),
+                headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
+            )
 
     return app

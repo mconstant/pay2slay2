@@ -6,7 +6,10 @@ from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from src.lib.auth import session_secret, verify_session
+from src.lib.observability import get_logger
 from src.models.models import Payout, RewardAccrual, User, VerificationRecord, WalletLink
+
+log = get_logger("api.user")
 
 # Banano address heuristic length bounds
 BANANO_ADDR_MIN_LEN = 20
@@ -179,35 +182,41 @@ def me_payouts(  # noqa: PLR0913 - explicit filter params acceptable for clarity
     user = db.query(User).filter(User.discord_user_id == uid).one_or_none()
     if not user:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    q = db.query(Payout).filter(Payout.user_id == user.id)
-    if status:
-        q = q.filter(Payout.status == status)
-    # sorting
-    if sort.lstrip("-") not in {"created_at", "amount_ban", "status"}:
-        raise HTTPException(status_code=400, detail="invalid sort field")
-    desc = sort.startswith("-")
-    field = sort.lstrip("-")
-    col = getattr(Payout, field)
-    q = q.order_by(col.desc() if desc else col.asc())
-    q = q.offset(offset).limit(min(limit, 100))
-    rows = q.all()
-    return JSONResponse(
-        {
-            "payouts": [
-                {
-                    "id": p.id,
-                    "amount_ban": float(p.amount_ban),
-                    "status": p.status,
-                    "tx_hash": p.tx_hash,
-                    "created_at": p.created_at.isoformat() if p.created_at else None,
-                }
-                for p in rows
-            ],
-            "count": len(rows),
-            "limit": limit,
-            "offset": offset,
-        }
-    )
+    try:
+        q = db.query(Payout).filter(Payout.user_id == user.id)
+        if status:
+            q = q.filter(Payout.status == status)
+        # sorting
+        if sort.lstrip("-") not in {"created_at", "amount_ban", "status"}:
+            raise HTTPException(status_code=400, detail="invalid sort field")
+        is_desc = sort.startswith("-")
+        field = sort.lstrip("-")
+        col = getattr(Payout, field)
+        q = q.order_by(col.desc() if is_desc else col.asc())
+        q = q.offset(offset).limit(min(limit, 100))
+        rows = q.all()
+        return JSONResponse(
+            {
+                "payouts": [
+                    {
+                        "id": p.id,
+                        "amount_ban": float(p.amount_ban),
+                        "status": p.status,
+                        "tx_hash": p.tx_hash,
+                        "created_at": p.created_at.isoformat() if p.created_at else None,
+                    }
+                    for p in rows
+                ],
+                "count": len(rows),
+                "limit": limit,
+                "offset": offset,
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        log.error("me_payouts_error", error=str(exc), user_id=user.id)
+        raise HTTPException(status_code=500, detail=f"Failed to load payouts: {exc}") from exc
 
 
 @router.get("/me/accruals")
