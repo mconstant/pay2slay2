@@ -71,12 +71,18 @@ def test_accrual_settlement_payout_flow(app, db_session: Session):  # type: igno
 
     # Payout (dry-run Banano client)
     class DryBan(BananoClient):
-        def __init__(self):  # type: ignore[super-init-not-called]
-            self.sent = []
+        def __init__(self):  # type: ignore[override]
+            super().__init__(node_url="", dry_run=False)
+            self.sent: list[tuple[str, str, str]] = []
 
-        def send(self, source_wallet: str, to_address: str, amount_raw: str):  # type: ignore[override]
+        def send(
+            self, source_wallet: str, to_address: str, amount_raw: str, **kwargs: object
+        ) -> str:  # type: ignore[override]
             self.sent.append((source_wallet, to_address, amount_raw))
             return "dryrun_tx_hash"
+
+        def has_min_balance(self, min_ban: float, operator_account: str | None = None) -> bool:
+            return True
 
     payout_svc = PayoutService(db_session, banano=DryBan(), dry_run=False)
 

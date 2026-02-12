@@ -117,8 +117,7 @@ class PayoutService:
             try:
                 if not self.banano.has_min_balance(
                     float(amount_ban) * 1.1,  # 10% margin
-                    operator_account=self.banano._seed
-                    and seed_to_address(self.banano._seed)
+                    operator_account=(self.banano._seed and seed_to_address(self.banano._seed))
                     or None,
                 ):
                     payout.status = "failed"
@@ -129,7 +128,10 @@ class PayoutService:
             amount_raw = self.banano.ban_to_raw(amount_ban)
             try:
                 tx = self.banano.send(
-                    source_wallet="operator", to_address=address, amount_raw=amount_raw
+                    source_wallet="operator",
+                    to_address=address,
+                    amount_raw=amount_raw,
+                    amount_ban=amount_ban,
                 )
             except Exception as send_exc:
                 payout.status = "failed"

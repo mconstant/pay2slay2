@@ -120,7 +120,13 @@ class BananoClient:
         pending = self.raw_to_ban(data.get("pending", "0"))
         return (bal, pending)
 
-    def send(self, source_wallet: str, to_address: str, amount_raw: str) -> str | None:
+    def send(
+        self,
+        source_wallet: str,
+        to_address: str,
+        amount_raw: str,
+        amount_ban: Decimal | None = None,
+    ) -> str | None:
         if self.dry_run:
             return "dryrun-tx"
         if self._seed:
@@ -128,7 +134,11 @@ class BananoClient:
 
             rpc = RPC(self.node_url)
             wallet = Wallet(rpc, seed=self._seed, index=0)
-            result = wallet.send(to=to_address, amount=amount_raw)
+            # bananopie expects whole BAN (it calls whole_to_raw internally)
+            ban_str = (
+                str(amount_ban) if amount_ban is not None else str(self.raw_to_ban(amount_raw))
+            )
+            result = wallet.send(to=to_address, amount=ban_str)
             return result.get("hash") if isinstance(result, dict) else None
         data = self._post(
             {
