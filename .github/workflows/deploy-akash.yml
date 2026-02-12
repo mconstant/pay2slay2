@@ -164,11 +164,29 @@ jobs:
 
           if [ -n "$DSEQ" ]; then
             echo "Updating existing deployment $DSEQ..."
-            provider-services tx deployment update deploy-final.yaml \
+            if provider-services tx deployment update deploy-final.yaml \
               --dseq $DSEQ \
               --from deployer \
-              --yes
+              --yes 2>&1 | tee /tmp/update-output.log; then
+              echo "Update succeeded"
+            else
+              if grep -qi "deployment hash\|Invalid.*hash" /tmp/update-output.log; then
+                echo "::warning::Update failed due to SDL hash mismatch — falling back to fresh deploy"
+                provider-services tx deployment close \
+                  --dseq $DSEQ \
+                  --from deployer \
+                  --yes 2>/dev/null || echo "Old deployment already closed"
+                sleep 5
+                DSEQ=""
+              else
+                echo "::error::Deployment update failed"
+                cat /tmp/update-output.log
+                exit 1
+              fi
+            fi
+          fi
 
+          if [ -n "$DSEQ" ]; then
             # Send updated manifest
             PROVIDER=$(provider-services query market lease list \
               --owner $AKASH_FROM --dseq $DSEQ -o json \
