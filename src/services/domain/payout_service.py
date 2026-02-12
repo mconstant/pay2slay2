@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ...models.models import Payout, RewardAccrual, User, WalletLink
-from ..banano_client import BananoClient, seed_to_address
+from ..banano_client import BananoClient
 
 # Module-level metrics (registered once to avoid duplication errors)
 _payout_amount_hist = Histogram(
@@ -113,21 +113,8 @@ class PayoutService:
                 payout.tx_hash = "dryrun"
                 payout.status = "sent"
                 return True
-            # T065: Preflight operator balance check
-            try:
-                op_addr = seed_to_address(self.banano._seed) if self.banano._seed else None
-                min_required = float(amount_ban) * 1.1
-                if not self.banano.has_min_balance(min_required, operator_account=op_addr):
-                    bal, _ = self.banano.account_balance(op_addr) if op_addr else (0.0, 0.0)
-                    payout.status = "failed"
-                    payout.error_detail = (
-                        f"Insufficient operator balance: need {min_required:.2f} BAN, "
-                        f"have {bal:.2f} BAN (addr={op_addr or 'None'})"
-                    )
-                    return False
-            except Exception as bal_exc:
-                # Log but don't block — let the send itself fail if truly underfunded
-                payout.error_detail = f"balance check error: {bal_exc}"
+            # Balance check is handled by the scheduler loop and by bananopie's
+            # Wallet.send() which raises ValueError if insufficient funds.
             amount_raw = self.banano.ban_to_raw(amount_ban)
             try:
                 tx = self.banano.send(
