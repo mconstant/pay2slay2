@@ -24,6 +24,7 @@
     setupNav();
     await checkExistingSession();
     updateNavVisibility();
+    loadFaucetInfo();
     // Route to current hash (or default to leaderboard)
     handleHashChange();
     window.addEventListener("hashchange", handleHashChange);
@@ -415,7 +416,7 @@
     }
     $("#admin-unauthorized").style.display = "none";
     $("#admin-authed").style.display = "block";
-    await Promise.all([loadAdminStats(), loadAdminAudit(), loadSchedulerStatus(), loadSchedulerConfig()]);
+    await Promise.all([loadAdminStats(), loadAdminAudit(), loadSchedulerStatus(), loadSchedulerConfig(), loadPayoutConfig()]);
   }
 
   async function loadAdminStats() {
@@ -701,6 +702,71 @@
     el.className = "toast toast-" + type + " visible";
     setTimeout(function () { el.classList.remove("visible"); }, 3000);
   }
+
+  // ── Faucet Header Info ──────────────────────────────
+  async function loadFaucetInfo() {
+    try {
+      var r = await fetch("/api/faucet/info");
+      if (r.ok) {
+        var d = await r.json();
+        var balEl = $("#faucet-balance-val");
+        if (balEl && d.balance_ban !== null) {
+          balEl.textContent = parseFloat(d.balance_ban).toFixed(2);
+        }
+        var qrEl = $("#faucet-qr");
+        if (qrEl && d.address && typeof qrcode !== "undefined") {
+          qrEl.innerHTML = "";
+          var qr = qrcode(0, "M");
+          qr.addData(d.address);
+          qr.make();
+          qrEl.innerHTML = qr.createSvgTag(2, 0);
+        }
+        var donateEl = $("#faucet-donate");
+        if (donateEl && d.address) {
+          donateEl.style.display = "flex";
+        }
+      }
+    } catch (_) {}
+  }
+
+  // ── Payout Config ────────────────────────────────────
+  async function loadPayoutConfig() {
+    try {
+      var r = await fetch("/admin/payout-config");
+      if (r.ok) {
+        var d = await r.json();
+        var bpk = $("#payout-ban-per-kill-input");
+        var dc = $("#payout-daily-cap-input");
+        var wc = $("#payout-weekly-cap-input");
+        if (bpk) bpk.value = d.payout_amount_ban_per_kill;
+        if (dc) dc.value = d.daily_payout_cap;
+        if (wc) wc.value = d.weekly_payout_cap;
+      }
+    } catch (_) {}
+  }
+
+  window.savePayoutConfig = async function () {
+    var body = {};
+    var bpk = $("#payout-ban-per-kill-input");
+    var dc = $("#payout-daily-cap-input");
+    var wc = $("#payout-weekly-cap-input");
+    if (bpk && bpk.value) body.payout_amount_ban_per_kill = parseFloat(bpk.value);
+    if (dc && dc.value) body.daily_payout_cap = parseInt(dc.value, 10);
+    if (wc && wc.value) body.weekly_payout_cap = parseInt(wc.value, 10);
+    try {
+      var r = await fetch("/admin/payout-config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      var d = await r.json();
+      toast("Payout config updated: " + d.payout_amount_ban_per_kill + " BAN/kill, daily=" + d.daily_payout_cap + ", weekly=" + d.weekly_payout_cap, "success");
+      loadAdminStats();
+    } catch (e) {
+      toast("Failed: " + e.message, "error");
+    }
+  };
 
   // ── Cycle Countdown ─────────────────────────────────
   let accrualRemaining = null;

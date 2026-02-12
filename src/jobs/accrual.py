@@ -68,10 +68,19 @@ def run_accrual(
     Returns counters: users_considered, accruals_created, zero_delta, total_kills.
     """
     app_cfg = get_config()
+    # Check for runtime payout config overrides
+    from src.jobs.__main__ import _read_payout_overrides
+
+    payout_overrides = _read_payout_overrides()
+    ban_per_kill = float(
+        payout_overrides.get(
+            "payout_amount_ban_per_kill", app_cfg.payout.payout_amount_ban_per_kill
+        )
+    )
     svc = AccrualService(
         session,
         fortnite=fortnite,
-        payout_amount_per_kill=app_cfg.payout.payout_amount_ban_per_kill,
+        payout_amount_per_kill=ban_per_kill,
     )
 
     counters = {

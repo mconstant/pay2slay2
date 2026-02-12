@@ -9,7 +9,9 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from src.models.models import Payout, RewardAccrual, User
+from src.lib.crypto import decrypt_value
+from src.models.models import Payout, RewardAccrual, SecureConfig, User
+from src.services.banano_client import BananoClient, seed_to_address
 
 router = APIRouter()
 
@@ -182,3 +184,44 @@ def scheduler_countdown() -> JSONResponse:
         )
     except Exception:
         return JSONResponse(empty)
+
+
+@router.get("/api/faucet/info")
+def faucet_info(
+    request: Request,
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Public endpoint returning faucet wallet address and balance for donation display."""
+    app_state = getattr(request.app, "state", None)
+    cfg_obj = getattr(app_state, "config", None)
+    integrations = getattr(cfg_obj, "integrations", None)
+
+    operator_account = os.getenv("P2S_OPERATOR_ACCOUNT", "")
+
+    # If no env var, try to derive from stored seed
+    if not operator_account:
+        seed_config = (
+            db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+        )
+        if seed_config:
+            decrypted = decrypt_value(seed_config.encrypted_value)
+            if decrypted:
+                operator_account = seed_to_address(decrypted) or ""
+
+    balance: float | None = None
+    if integrations and operator_account:
+        try:
+            banano = BananoClient(
+                node_url=integrations.node_rpc,
+                dry_run=integrations.dry_run,
+            )
+            balance, _pending = banano.account_balance(operator_account)
+        except Exception:
+            pass
+
+    return JSONResponse(
+        {
+            "address": operator_account or None,
+            "balance_ban": balance,
+        }
+    )

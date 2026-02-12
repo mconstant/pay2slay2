@@ -14,6 +14,7 @@ HEARTBEAT_PATH = Path(os.getenv("P2S_HEARTBEAT_FILE", "/tmp/scheduler_heartbeat.
 SCHEDULER_CONFIG_PATH = Path(
     os.getenv("P2S_SCHEDULER_CONFIG_FILE", "/tmp/scheduler_overrides.json")
 )
+PAYOUT_CONFIG_PATH = Path(os.getenv("P2S_PAYOUT_CONFIG_FILE", "/tmp/payout_overrides.json"))
 
 load_dotenv()
 from sqlalchemy import create_engine  # noqa: E402
@@ -37,11 +38,16 @@ def _build_scheduler_components() -> tuple[SchedulerConfig, FortniteService, Acc
     operator_account = os.getenv("P2S_OPERATOR_ACCOUNT", "") or None
     cfg_obj = get_config()
     integrations = cfg_obj.integrations
+    payout_cfg = cfg_obj.payout
+    # Read runtime overrides for payout config
+    payout_overrides = _read_payout_overrides()
+    daily_cap = int(payout_overrides.get("daily_payout_cap", payout_cfg.daily_payout_cap))
+    weekly_cap = int(payout_overrides.get("weekly_payout_cap", payout_cfg.weekly_payout_cap))
     cfg = SchedulerConfig(
         min_operator_balance_ban=min_balance,
         batch_size=None,
-        daily_cap=1,
-        weekly_cap=3,
+        daily_cap=daily_cap,
+        weekly_cap=weekly_cap,
         dry_run=dry_run,
         interval_seconds=interval,
         operator_account=operator_account,
@@ -107,6 +113,17 @@ def _run_once(
     except Exception as exc:  # pragma: no cover
         JOB_ERRORS.inc()
         log.error("settlement_cycle_error", error=str(exc))
+
+
+def _read_payout_overrides() -> dict[str, float | int]:
+    """Read admin-set payout config overrides from the shared config file."""
+    if not PAYOUT_CONFIG_PATH.exists():
+        return {}
+    try:
+        data: dict[str, float | int] = json.loads(PAYOUT_CONFIG_PATH.read_text())
+        return data
+    except Exception:
+        return {}
 
 
 def _read_scheduler_overrides(default_interval: int) -> dict[str, int]:

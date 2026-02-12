@@ -30,6 +30,8 @@ header {
   padding: 16px 24px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  gap: 16px;
+  flex-wrap: wrap;
 }
 header .brand {
   display: flex;
@@ -42,6 +44,51 @@ header .brand {
 header .brand span.logo {
   font-size: 24px;
 }
+
+/* Faucet donation section in header */
+.faucet-donate {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  background: rgba(251,219,30,.08);
+  border: 1px solid var(--accent-dim);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  flex: 1;
+  max-width: 520px;
+  justify-content: center;
+}
+.faucet-qr {
+  flex-shrink: 0;
+  width: 50px;
+  height: 50px;
+  background: #fff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.faucet-qr svg {
+  width: 46px !important;
+  height: 46px !important;
+}
+.faucet-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.faucet-balance {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.faucet-cta {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
 header .user-info {
   display: flex;
   align-items: center;
@@ -424,4 +471,5 @@ td.tx-hash {
   .how-it-works { gap: 10px; }
   .step-arrow { font-size: 16px; }
   .login-cta { flex-direction: column; align-items: center; }
+  .faucet-donate { max-width: 100%; }
 }

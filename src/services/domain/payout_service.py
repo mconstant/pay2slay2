@@ -22,6 +22,12 @@ _accrual_lag_gauge = Gauge(
     "payout_accrual_lag_minutes",
     "Minutes between oldest unsettled accrual and payout creation",
 )
+_payout_attempts_counter = Counter(
+    "payout_attempts_total", "Total payout send attempts", ["result"]
+)
+_retry_latency_hist = Histogram(
+    "payout_retry_latency_seconds", "Delay between payout retry attempts"
+)
 
 
 @dataclass
@@ -123,12 +129,8 @@ class PayoutService:
             payout.status = "sent" if tx else "failed"
             return payout.status == "sent"
 
-        attempts_counter = Counter(
-            "payout_attempts_total", "Total payout send attempts", ["result"]
-        )
-        retry_latency_hist = Histogram(
-            "payout_retry_latency_seconds", "Delay between payout retry attempts"
-        )
+        attempts_counter = _payout_attempts_counter
+        retry_latency_hist = _retry_latency_hist
         success = _attempt_send()
         attempt = 1
         while not success and attempt <= max_retries:

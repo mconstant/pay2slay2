@@ -13,6 +13,7 @@ from sqlalchemy.orm import Session
 
 from src.lib.admin_audit import AdminAuditPayload, record_admin_audit
 from src.lib.auth import issue_admin_session, session_secret, verify_admin_session, verify_session
+from src.lib.config import get_config
 from src.lib.crypto import decrypt_value, encrypt_value, validate_banano_seed
 from src.lib.observability import get_logger
 from src.models.models import (
@@ -357,10 +358,22 @@ def admin_stats(
         except Exception as e:
             log.warning("Failed to fetch operator balance", error=str(e))
 
-    # Get payout config values
-    ban_per_kill = payout_cfg.payout_amount_ban_per_kill if payout_cfg else 0
-    daily_cap = payout_cfg.daily_payout_cap if payout_cfg else 0
-    weekly_cap = payout_cfg.weekly_payout_cap if payout_cfg else 0
+    # Get payout config values (with runtime overrides)
+    from src.jobs.__main__ import _read_payout_overrides
+
+    payout_overrides = _read_payout_overrides()
+    ban_per_kill = float(
+        payout_overrides.get(
+            "payout_amount_ban_per_kill",
+            payout_cfg.payout_amount_ban_per_kill if payout_cfg else 0,
+        )
+    )
+    daily_cap = int(
+        payout_overrides.get("daily_payout_cap", payout_cfg.daily_payout_cap if payout_cfg else 0)
+    )
+    weekly_cap = int(
+        payout_overrides.get("weekly_payout_cap", payout_cfg.weekly_payout_cap if payout_cfg else 0)
+    )
     scheduler_minutes = payout_cfg.scheduler_minutes if payout_cfg else 0
 
     return JSONResponse(
@@ -648,5 +661,86 @@ def admin_set_scheduler_config(
             "settlement_interval_seconds": current.get(
                 "settlement_interval_seconds", default_interval
             ),
+        }
+    )
+
+
+@router.get("/payout-config")
+def admin_get_payout_config(
+    _: None = Depends(_require_admin),
+) -> JSONResponse:
+    """Return current payout configuration with any runtime overrides applied."""
+    from src.jobs.__main__ import _read_payout_overrides
+
+    cfg = get_config()
+    payout = cfg.payout
+    overrides = _read_payout_overrides()
+    return JSONResponse(
+        {
+            "payout_amount_ban_per_kill": overrides.get(
+                "payout_amount_ban_per_kill", payout.payout_amount_ban_per_kill
+            ),
+            "daily_payout_cap": overrides.get("daily_payout_cap", payout.daily_payout_cap),
+            "weekly_payout_cap": overrides.get("weekly_payout_cap", payout.weekly_payout_cap),
+        }
+    )
+
+
+@router.post("/payout-config")
+def admin_set_payout_config(
+    request: Request,
+    payout_amount_ban_per_kill: float | None = Body(None),
+    daily_payout_cap: int | None = Body(None),
+    weekly_payout_cap: int | None = Body(None),
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Update payout configuration at runtime. Changes take effect on next scheduler cycle."""
+    from src.jobs.__main__ import PAYOUT_CONFIG_PATH
+
+    current: dict[str, object] = {}
+    if PAYOUT_CONFIG_PATH.exists():
+        try:
+            current = json.loads(PAYOUT_CONFIG_PATH.read_text())
+        except Exception:
+            pass
+
+    if payout_amount_ban_per_kill is not None:
+        current["payout_amount_ban_per_kill"] = max(0.0, payout_amount_ban_per_kill)
+    if daily_payout_cap is not None:
+        current["daily_payout_cap"] = max(1, daily_payout_cap)
+    if weekly_payout_cap is not None:
+        current["weekly_payout_cap"] = max(1, weekly_payout_cap)
+
+    PAYOUT_CONFIG_PATH.write_text(json.dumps(current))
+
+    token = request.cookies.get("p2s_admin")
+    admin_email = verify_admin_session(token, session_secret()) if token else "unknown"
+    record_admin_audit(
+        db,
+        AdminAuditPayload(
+            action="update_payout_config",
+            actor_email=admin_email,
+            target_type="payout",
+            target_id="config",
+            summary=f"ban_per_kill={current.get('payout_amount_ban_per_kill')}, "
+            f"daily_cap={current.get('daily_payout_cap')}, "
+            f"weekly_cap={current.get('weekly_payout_cap')}",
+        ),
+    )
+    db.commit()
+    log.info("payout_config_updated", **{str(k): v for k, v in current.items()})
+
+    # Return effective config
+    cfg = get_config()
+    payout = cfg.payout
+    return JSONResponse(
+        {
+            "status": "ok",
+            "payout_amount_ban_per_kill": current.get(
+                "payout_amount_ban_per_kill", payout.payout_amount_ban_per_kill
+            ),
+            "daily_payout_cap": current.get("daily_payout_cap", payout.daily_payout_cap),
+            "weekly_payout_cap": current.get("weekly_payout_cap", payout.weekly_payout_cap),
         }
     )
