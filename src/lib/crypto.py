@@ -9,7 +9,7 @@ import base64
 import hashlib
 import os
 
-from cryptography.fernet import Fernet, InvalidToken  # type: ignore[import-not-found]
+from cryptography.fernet import Fernet, InvalidToken
 
 # Banano seed is 64 hex characters (32 bytes)
 BANANO_SEED_HEX_LEN = 64

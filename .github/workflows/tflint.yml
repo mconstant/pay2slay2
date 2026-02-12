@@ -26,16 +26,5 @@ jobs:
       - name: Init TFLint
         run: tflint --init
 
-      - name: Run TFLint (akash-banano)
-        if: always()
-        run: |
-          if [ -d infra/akash-banano ]; then
-            tflint --recursive infra/akash-banano || exit 1
-          fi
-
-      - name: Run TFLint (akash-api)
-        if: always()
-        run: |
-          if [ -d infra/akash-api ]; then
-            tflint --recursive infra/akash-api || exit 1
-          fi
+      - name: Run TFLint (akash)
+        run: tflint --chdir infra/akash

@@ -2,10 +2,10 @@
 # Variables for Akash Deployment
 ###############################################
 
-variable "akash_mnemonic" {
-  type        = string
-  description = "24-word mnemonic for the Akash account (injected via TF_VAR_akash_mnemonic)."
-}
+# variable "akash_mnemonic" {
+#   type        = string
+#   description = "24-word mnemonic for the Akash account (injected via TF_VAR_akash_mnemonic)."
+# }
 
 variable "akash_node" {
   type        = string
@@ -56,4 +56,99 @@ variable "storage_size" {
 variable "akash_account_address" {
   type        = string
   description = "Akash account address (injected via TF_VAR_akash_account_address)."
+}
+
+# --- Application secrets & config ---
+
+variable "domain_name" {
+  type        = string
+  description = "Domain name for the API service (routed via Akash ingress)."
+}
+
+variable "session_secret" {
+  type        = string
+  description = "HMAC secret for sessions & OAuth state."
+  sensitive   = true
+}
+
+variable "p2s_dry_run" {
+  type        = string
+  description = "Whether to run in dry-run mode (true/false)."
+  default     = "false"
+}
+
+variable "demo_mode" {
+  type        = string
+  description = "Enable demo endpoints (1/0)."
+  default     = "0"
+}
+
+variable "discord_client_id" {
+  type        = string
+  description = "Discord OAuth application client ID."
+}
+
+variable "discord_client_secret" {
+  type        = string
+  description = "Discord OAuth application client secret."
+  sensitive   = true
+}
+
+variable "discord_redirect_uri" {
+  type        = string
+  description = "Discord OAuth redirect URI (must match Discord app settings)."
+  sensitive   = true
+}
+
+variable "yunite_api_key" {
+  type        = string
+  description = "Yunite API key for Epic account resolution."
+  sensitive   = true
+}
+
+variable "yunite_guild_id" {
+  type        = string
+  description = "Discord guild ID for Yunite lookups."
+}
+
+variable "yunite_base_url" {
+  type        = string
+  description = "Yunite API base URL."
+  default     = "https://yunite.xyz/api"
+}
+
+variable "fortnite_api_key" {
+  type        = string
+  description = "Fortnite stats API key."
+  sensitive   = true
+}
+
+variable "fortnite_base_url" {
+  type        = string
+  description = "Fortnite stats API base URL."
+  default     = "https://fortnite-api.com/v2"
+}
+
+variable "banano_node_rpc" {
+  type        = string
+  description = "Banano node RPC endpoint."
+  default     = "https://kaliumapi.appditto.com/api"
+}
+
+variable "p2s_operator_account" {
+  type        = string
+  description = "Operator Banano address for balance checks."
+  default     = ""
+}
+
+variable "min_operator_balance_ban" {
+  type        = string
+  description = "Minimum operator BAN balance to continue payouts."
+  default     = "50"
+}
+
+variable "admin_discord_usernames" {
+  type        = string
+  description = "Comma-separated Discord usernames allowed admin access."
+  default     = ""
 }

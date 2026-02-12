@@ -54,7 +54,7 @@ def seed_to_address(seed_hex: str, index: int = 0) -> str | None:
         private_key = h.digest()
 
         # Get public key via Ed25519-Blake2b (Nano/Banano use Blake2b instead of SHA-512)
-        import ed25519_blake2b  # type: ignore[import-not-found]
+        import ed25519_blake2b
 
         signing_key = ed25519_blake2b.SigningKey(private_key)
         public_key = signing_key.get_verifying_key().to_bytes()
@@ -76,9 +76,10 @@ def seed_to_address(seed_hex: str, index: int = 0) -> str | None:
 
 
 class BananoClient:
-    def __init__(self, node_url: str, dry_run: bool = True) -> None:
+    def __init__(self, node_url: str, dry_run: bool = True, seed: str | None = None) -> None:
         self.node_url = node_url
         self.dry_run = dry_run
+        self._seed = seed
         self.http = None if dry_run else httpx.Client(timeout=10)
         # Scale: 10^29 raw = 1 BAN
         self._raw_per_ban = 10**29
@@ -124,6 +125,13 @@ class BananoClient:
     def send(self, source_wallet: str, to_address: str, amount_raw: str) -> str | None:
         if self.dry_run:
             return "dryrun-tx"
+        if self._seed:
+            from bananopie import RPC, Wallet
+
+            rpc = RPC(self.node_url)
+            wallet = Wallet(rpc, seed=self._seed, index=0)
+            result = wallet.send(to=to_address, amount=amount_raw)
+            return result.get("hash") if isinstance(result, dict) else None
         data = self._post(
             {
                 "action": "send",

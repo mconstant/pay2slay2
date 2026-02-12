@@ -153,6 +153,7 @@ main {
   max-width: 960px;
   margin: 0 auto;
   padding: 24px;
+  padding-bottom: 56px;
 }
 .page { display: none; }
 .page.active { display: block; }
@@ -377,6 +378,42 @@ td.tx-hash {
   color: var(--text-muted);
 }
 
+/* ── Leaderboard ────────────────────────────────────── */
+.rank {
+  font-weight: 700;
+  color: var(--accent);
+  width: 40px;
+}
+.player-name {
+  font-weight: 600;
+}
+.login-cta {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* ── Footer countdown ───────────────────────────────── */
+#cycle-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 8px 24px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-muted);
+  z-index: 100;
+}
+#cycle-footer span[id^="cycle-countdown"] {
+  font-family: "SF Mono", "Fira Code", monospace;
+  color: var(--accent);
+  font-weight: 600;
+}
+
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 640px) {
   main { padding: 16px; }
@@ -386,4 +423,5 @@ td.tx-hash {
   .login-page h1 { font-size: 36px; }
   .how-it-works { gap: 10px; }
   .step-arrow { font-size: 16px; }
+  .login-cta { flex-direction: column; align-items: center; }
 }

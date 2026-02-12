@@ -22,9 +22,20 @@ class SchedulerConfig:
     daily_cap: int
     weekly_cap: int
     dry_run: bool
-    interval_seconds: int = 1200  # default 20 minutes
+    interval_seconds: int = 15  # default 20 minutes
     operator_account: str | None = None
     node_url: str = ""  # Banano node RPC endpoint
+
+
+def _load_operator_seed(session: Session) -> str | None:
+    """Load the operator wallet seed from SecureConfig (encrypted at rest)."""
+    from src.lib.crypto import decrypt_value
+    from src.models.models import SecureConfig
+
+    row = session.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+    if not row:
+        return None
+    return decrypt_value(row.encrypted_value)
 
 
 def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
@@ -33,7 +44,8 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
     Note: caps and operator balance checks to be fleshed out in later tasks.
     """
     settlement = SettlementService(session, daily_cap=cfg.daily_cap, weekly_cap=cfg.weekly_cap)
-    banano = BananoClient(node_url=cfg.node_url, dry_run=cfg.dry_run)
+    seed = _load_operator_seed(session)
+    banano = BananoClient(node_url=cfg.node_url, dry_run=cfg.dry_run, seed=seed)
     payout_svc = PayoutService(session, banano=banano, dry_run=cfg.dry_run)
 
     counters = {"candidates": 0, "payouts": 0, "accruals_settled": 0}

@@ -58,7 +58,7 @@ class FortniteService:
         max_retries: int = 2,
         backoff_base: float = 0.25,
         auth_header_name: str = "Authorization",
-        auth_scheme: str = "Bearer",
+        auth_scheme: str = "",
         concurrency_limit: int = 4,
         adaptive: bool = True,
     ) -> None:
@@ -137,8 +137,9 @@ class FortniteService:
             start = time.monotonic()
             try:
                 with self._client_factory() as client:
-                    headers = {self._auth_header_name: f"{self._auth_scheme} {self.api_key}"}
-                    url = f"{self.base_url}/players/{epic_account_id}/stats"
+                    scheme_prefix = f"{self._auth_scheme} " if self._auth_scheme else ""
+                    headers = {self._auth_header_name: f"{scheme_prefix}{self.api_key}"}
+                    url = f"{self.base_url}/stats/br/v2/{epic_account_id}"
 
                     def _do(
                         url: str = url,
@@ -160,7 +161,10 @@ class FortniteService:
                     FORTNITE_LATENCY.observe(time.monotonic() - start)
                     if resp.status_code == HTTP_OK:
                         data: dict[str, Any] = resp.json()
-                        lifetime_kills = int(data.get("lifetime_kills", 0))
+                        # fortnite-api.com nests kills at data.stats.all.overall.kills
+                        stats = data.get("data", {}).get("stats", {})
+                        overall = stats.get("all", {}).get("overall", {})
+                        lifetime_kills = int(overall.get("kills", 0))
                         break
                     # non-200 triggers retry
             except Exception:  # pragma: no cover - network variability
@@ -206,3 +210,13 @@ class FortniteService:
             new_cursor=str(lifetime_kills),
             kills=delta,
         )
+
+
+def seed_kill_baseline(fortnite: FortniteService, epic_account_id: str) -> int:
+    """Fetch current lifetime kills to use as the starting cursor for a newly linked user.
+
+    Called when epic_account_id is first set (or changes) so only kills earned
+    after linking generate payouts.  Returns the baseline kill count.
+    """
+    result = fortnite.get_kills_since(epic_account_id, "0")
+    return int(result.new_cursor) if result.new_cursor else 0

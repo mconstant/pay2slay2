@@ -101,7 +101,7 @@ def _register_health(app: FastAPI) -> None:
 def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup logic
     """Create and return the FastAPI application instance."""
     # Load .env before anything reads os.getenv
-    from dotenv import load_dotenv  # type: ignore[import-not-found]  # local import
+    from dotenv import load_dotenv
 
     load_dotenv()
 
@@ -177,6 +177,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup lo
     from .auth import router as auth_router
     from .config import router as config_router
     from .demo import router as demo_router
+    from .leaderboard import router as leaderboard_router
     from .user import router as user_router
 
     app.include_router(auth_router)
@@ -184,6 +185,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup lo
     app.include_router(user_router)
     app.include_router(admin_router)
     app.include_router(demo_router)
+    app.include_router(leaderboard_router)
 
     _register_health(app)
     _register_metrics(app)

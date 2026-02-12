@@ -24,30 +24,29 @@ resource "akash_deployment" "p2s" {
     services:
       api:
         image: ${local.image}
+        env:
+          - SESSION_SECRET=${var.session_secret}
+          - P2S_DRY_RUN=${var.p2s_dry_run}
+          - DEMO_MODE=${var.demo_mode}
+          - DISCORD_CLIENT_ID=${var.discord_client_id}
+          - DISCORD_CLIENT_SECRET=${var.discord_client_secret}
+          - DISCORD_REDIRECT_URI=${var.discord_redirect_uri}
+          - YUNITE_API_KEY=${var.yunite_api_key}
+          - YUNITE_GUILD_ID=${var.yunite_guild_id}
+          - YUNITE_BASE_URL=${var.yunite_base_url}
+          - FORTNITE_API_KEY=${var.fortnite_api_key}
+          - FORTNITE_BASE_URL=${var.fortnite_base_url}
+          - BANANO_NODE_RPC=${var.banano_node_rpc}
+          - P2S_OPERATOR_ACCOUNT=${var.p2s_operator_account}
+          - MIN_OPERATOR_BALANCE_BAN=${var.min_operator_balance_ban}
+          - ADMIN_DISCORD_USERNAMES=${var.admin_discord_usernames}
+          - DATABASE_URL=sqlite:///pay2slay.db
+          - PAY2SLAY_AUTO_MIGRATE=1
         expose:
           - port: 8000
             as: 80
-            to:
-              - global: true
-      banano:
-        image: xmconstantx/configurable-bananode:stable
-        env:
-          - CONFIG_NODE_WEBSOCKET_ENABLE=true
-          - CONFIG_NODE_RPC_ENABLE=true
-          - CONFIG_SNAPSHOT_URL=https://ledgerfiles.moonano.net/files/rocksdb-2025-09-13.tar.gz
-          - CONFIG_RPC_ENABLE_CONTROL=false
-          - CONFIG_NODE_ROCKSDB_ENABLE=true
-        expose:
-          - port: 7071
-            as: 7071
-            to:
-              - global: true
-          - port: 7072
-            as: 7072
-            to:
-              - global: true
-          - port: 7074
-            as: 7074
+            accept:
+              - ${var.domain_name}
             to:
               - global: true
     profiles:
@@ -60,37 +59,19 @@ resource "akash_deployment" "p2s" {
               size: ${var.memory_size}
             storage:
               size: ${var.storage_size}
-        banano-profile:
-          resources:
-            cpu:
-              units: 2.0
-            memory:
-              size: 2Gi
-            storage:
-              size: 32Gi
       placement:
-        westcoast:
-          attributes:
-            audited: true
+        preferred:
           signedBy:
             anyOf:
-              - "akash1365yvmc4s7awdyj3n2sav7xfx76adc6dnmlx63"
-              - "akash18qa2a2ltfyvkyj0ggj3hkvuj6twzyumuaru9s4"
+              - "${var.preferred_providers}"
           pricing:
             api:
               denom: uakt
               amount: ${var.deployment_price_uakt}
-            banano-profile:
-              denom: uakt
-              amount: 1000
     deployment:
       api:
         westcoast:
           profile: api
-          count: 1
-      banano:
-        westcoast:
-          profile: banano-profile
           count: 1
   EOT
 }

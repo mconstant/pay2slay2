@@ -10,19 +10,29 @@ on:
         description: 'Container image tag to build & deploy'
         required: true
         default: 'latest'
-      ref:
-        description: 'Git ref (branch or tag) to deploy (defaults to workflow run branch)'
-        required: false
-      akash_account_address:
-        description: 'Akash wallet address (akash1...) if not set via repo variable'
-        required: false
+      domain_name:
+        description: 'Domain name for the API service'
+        required: true
+        default: 'pay2slay.cc'
+      action:
+        description: 'Deployment action'
+        required: true
+        default: 'update'
+        type: choice
+        options:
+          - deploy
+          - update
+          - close
 
 permissions:
   contents: read
   packages: write
+  id-token: write
+  actions: write
 
 jobs:
   build_and_push:
+    if: github.event.inputs.action != 'close'
     runs-on: ubuntu-latest
     env:
       IMAGE_TAG: ${{ github.event.inputs.image_tag }}
@@ -45,13 +55,11 @@ jobs:
       - name: Cosign sign image (keyless)
         env:
           COSIGN_EXPERIMENTAL: 1
-        run: |
-            cosign sign --yes ${IMAGE_REPO}:${IMAGE_TAG}
+        run: cosign sign --yes ${IMAGE_REPO}:${IMAGE_TAG}
       - name: Cosign attest SBOM
         env:
           COSIGN_EXPERIMENTAL: 1
-        run: |
-            cosign attest --yes --predicate image.sbom.spdx.json --type spdxjson ${IMAGE_REPO}:${IMAGE_TAG}
+        run: cosign attest --yes --predicate image.sbom.spdx.json --type spdxjson ${IMAGE_REPO}:${IMAGE_TAG}
       - name: Set outputs
         id: meta
         run: |
@@ -64,181 +72,285 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build_and_push
+    if: always() && (needs.build_and_push.result == 'success' || github.event.inputs.action == 'close')
     env:
-      AKASH_CHAIN_ID: "akashnet-2"
-      IMAGE_TAG: ${{ needs.build_and_push.outputs.image_tag }}
-      IMAGE_REPO: ${{ needs.build_and_push.outputs.image_repo }}
-  # Expect AKASH_ACCOUNT_ADDRESS to be provided as a repository variable. It will appear automatically at runtime.
+      AKASH_NODE: ${{ github.event.inputs.akash_network }}
+      AKASH_CHAIN_ID: akashnet-2
+      AKASH_GAS: auto
+      AKASH_GAS_ADJUSTMENT: "1.5"
+      AKASH_GAS_PRICES: 0.025uakt
+      AKASH_SIGN_MODE: amino-json
+      IMAGE_TAG: ${{ needs.build_and_push.outputs.image_tag || github.event.inputs.image_tag }}
+      IMAGE_REPO: ${{ needs.build_and_push.outputs.image_repo || format('ghcr.io/{0}', github.repository) }}
+      PREFERRED_PROVIDERS: ${{ vars.PREFERRED_PROVIDERS || 'akash18ga02jzaq8cw52anyhzkwta5wygufgu6zsz6xc,akash15ksejj7g4su7ljufsg0a8eglvkje94z8qsh68a,akash175llqyjvxfle9qwt740vm46772dzaznpzgm576' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Download Artifact
-        uses: badgerhobbs/terraform-state@v2
-        with:
-            directory: ./infra/akash
-            operation: download
-            location: artifact
-            github_token: ${{ env.GH_PAT }}
-        continue-on-error: true
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+
       - name: Install pass
         run: |
           sudo apt-get update > /dev/null
           sudo apt-get install -yqq pass
+
       - name: Setup Akash CLI
         uses: LumeWeb/akash-action@cfd98517684fe809a107442d56bb4e22e1cfa0a5
         with:
           wallet-name: deployer
-          mnemonic: ${{ env.AKASH_MNEMONIC }}
-          cert-content: ${{ env.CERT_CONTENT }}
+          mnemonic: ${{ secrets.AKASH_MNEMONIC }}
+          cert-content: ${{ secrets.AKASH_CERT }}
           cert-id: ${{ vars.AKASH_CERT_ID }}
-        env:
-          AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
-          CERT_CONTENT: ${{ secrets.AKASH_CERT }}
-      - name: Validate required repository variables
+
+      - name: Override Akash env (action may clobber job-level vars)
         run: |
-          ADDRESS_SOURCE="env"
-          if [ -z "${AKASH_ACCOUNT_ADDRESS}" ]; then
-            if [ -n "${{ github.event.inputs.akash_account_address }}" ]; then
-              export AKASH_ACCOUNT_ADDRESS='${{ github.event.inputs.akash_account_address }}'
-              echo "AKASH_ACCOUNT_ADDRESS=${AKASH_ACCOUNT_ADDRESS}" >> $GITHUB_ENV
-              ADDRESS_SOURCE="input"
-            else
-              echo "Akash account address not provided. Set repo variable AKASH_ACCOUNT_ADDRESS or provide workflow input akash_account_address." >&2
-              exit 1
-            fi
+          echo "AKASH_NODE=${{ github.event.inputs.akash_network }}" >> $GITHUB_ENV
+          echo "AKASH_GAS_ADJUSTMENT=1.5" >> $GITHUB_ENV
+
+      - name: Resolve Akash account address
+        run: |
+          if [ -n "${{ vars.AKASH_ACCOUNT_ADDRESS }}" ]; then
+            echo "AKASH_FROM=${{ vars.AKASH_ACCOUNT_ADDRESS }}" >> $GITHUB_ENV
           else
-            echo "AKASH_ACCOUNT_ADDRESS present from environment (repo variable)."
+            echo "::error::AKASH_ACCOUNT_ADDRESS repo variable not set"
+            exit 1
           fi
-          echo "Resolved Akash account address (${ADDRESS_SOURCE}): ${AKASH_ACCOUNT_ADDRESS}"
+
       - name: Create Akash cert
         run: |
           provider-services tx cert generate client --from deployer --yes
           provider-services tx cert publish client --from deployer --yes
-          # show contents of the .akash directory
-          ls -la /home/runner/.akash
         env:
           CERT_CONTENT: ${{ secrets.AKASH_CERT }}
-      - name: Set up Terraform
-        uses: hashicorp/setup-terraform@v3
-      - name: Configure cloud credentials
+
+      - name: Prepare SDL
         env:
-          AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
+          IMAGE: "${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}"
+          DOMAIN_NAME: ${{ github.event.inputs.domain_name }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          P2S_DRY_RUN: "false"
+          DEMO_MODE: "0"
+          DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
+          DISCORD_CLIENT_SECRET: ${{ secrets.DISCORD_CLIENT_SECRET }}
+          DISCORD_REDIRECT_URI: ${{ secrets.DISCORD_REDIRECT_URI }}
+          YUNITE_API_KEY: ${{ secrets.YUNITE_API_KEY }}
+          YUNITE_GUILD_ID: ${{ vars.YUNITE_GUILD_ID }}
+          YUNITE_BASE_URL: "https://yunite.xyz/api"
+          FORTNITE_API_KEY: ${{ secrets.FORTNITE_API_KEY }}
+          FORTNITE_BASE_URL: "https://fortnite-api.com/v2"
+          BANANO_NODE_RPC: ${{ vars.BANANO_NODE_RPC || 'https://kaliumapi.appditto.com/api' }}
+          P2S_OPERATOR_ACCOUNT: ${{ vars.P2S_OPERATOR_ACCOUNT }}
+          MIN_OPERATOR_BALANCE_BAN: ${{ vars.MIN_OPERATOR_BALANCE_BAN || '50' }}
+          ADMIN_DISCORD_USERNAMES: ${{ vars.ADMIN_DISCORD_USERNAMES }}
         run: |
-          if [ -z "$AKASH_MNEMONIC" ]; then
-            echo "Missing AKASH_MNEMONIC secret" >&2
-            exit 1
-          fi
-      - name: Terraform init/plan/apply
-        id: terraform
-        working-directory: infra/akash
+          envsubst < infra/akash/deploy.yaml > deploy-final.yaml
+          echo "=== Final SDL ==="
+          cat deploy-final.yaml
+
+      - name: Deploy to Akash
+        if: github.event.inputs.action != 'close'
         env:
-          TF_VAR_akash_mnemonic: ${{ secrets.AKASH_MNEMONIC }}
-          TF_VAR_image_tag: ${{ env.IMAGE_TAG }}
-          TF_VAR_image_repo: ${{ env.IMAGE_REPO }}
-          TF_VAR_akash_node: ${{ github.event.inputs.akash_network }}
-          TF_VAR_akash_chain_id: ${{ env.AKASH_CHAIN_ID }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          if [ -z "${AKASH_ACCOUNT_ADDRESS}" ]; then
-            echo "AKASH_ACCOUNT_ADDRESS not populated at runtime (should have been set earlier)." >&2
-            exit 1
+          DSEQ="${{ secrets.AKASH_DEPLOYMENT_DSEQ }}"
+          ACTION="${{ github.event.inputs.action }}"
+
+          if [ "$ACTION" = "deploy" ] && [ -n "$DSEQ" ]; then
+            echo "Action is 'deploy' — closing old deployment $DSEQ first..."
+            provider-services tx deployment close \
+              --dseq $DSEQ \
+              --from deployer \
+              --yes 2>/dev/null || echo "Old deployment already closed or not found"
+            sleep 5
+            DSEQ=""
           fi
-          export TF_VAR_akash_account_address="${AKASH_ACCOUNT_ADDRESS}"
-          echo "Using TF_VAR_akash_account_address=${TF_VAR_akash_account_address}"
-          terraform init -input=false
-          terraform plan -input=false -out=tfplan
-          terraform apply -input=false -auto-approve tfplan
-          
-          # Extract deployment outputs
-          DEPLOYMENT_ID=$(terraform output -raw deployment_id 2>/dev/null || echo 'unavailable')
-          IMAGE=$(terraform output -raw image 2>/dev/null || echo 'unavailable')
-          API_URL=$(terraform output -raw api_url 2>/dev/null || echo '')
-          
-          echo "Deployment ID: ${DEPLOYMENT_ID}"
-          echo "Image: ${IMAGE}"
-          echo "API URL: ${API_URL}"
-          echo "Services (JSON): $(terraform output -json services 2>/dev/null | jq -c '.' || echo 'unavailable')"
-          
-          # Set outputs for later steps
-          echo "deployment_id=${DEPLOYMENT_ID}" >> $GITHUB_OUTPUT
-          echo "api_url=${API_URL}" >> $GITHUB_OUTPUT
-          
-      - name: Extract UI URL
-        id: ui_url
-        working-directory: infra/akash
+
+          if [ -n "$DSEQ" ]; then
+            echo "Updating existing deployment $DSEQ..."
+            provider-services tx deployment update deploy-final.yaml \
+              --dseq $DSEQ \
+              --from deployer \
+              --yes
+
+            # Send updated manifest
+            PROVIDER=$(provider-services query market lease list \
+              --owner $AKASH_FROM --dseq $DSEQ -o json \
+              | jq -r '.leases[0].lease.lease.id.provider // .leases[0].lease.id.provider')
+            echo "Sending manifest to provider: $PROVIDER"
+            provider-services send-manifest deploy-final.yaml \
+              --dseq $DSEQ \
+              --provider $PROVIDER \
+              --from deployer
+
+            echo "DSEQ=$DSEQ" >> $GITHUB_ENV
+            echo "PROVIDER=$PROVIDER" >> $GITHUB_ENV
+            echo "Deployment $DSEQ updated"
+          else
+            echo "Creating new deployment..."
+            provider-services tx deployment create deploy-final.yaml \
+              --from deployer \
+              --yes
+
+            echo "Waiting for deployment to be indexed..."
+            sleep 15
+
+            # Extract DSEQ
+            NEW_DSEQ=$(provider-services query deployment list \
+              --owner $AKASH_FROM --state active -o json \
+              | jq -r '.deployments[-1].deployment.deployment.id.dseq // .deployments[-1].deployment.id.dseq // empty')
+
+            if [ -z "$NEW_DSEQ" ] || [ "$NEW_DSEQ" = "null" ]; then
+              NEW_DSEQ=$(provider-services query deployment list \
+                --owner $AKASH_FROM -o json \
+                | jq -r '.deployments[-1].deployment.deployment.id.dseq // .deployments[-1].deployment.id.dseq // empty')
+            fi
+
+            echo "New DSEQ: $NEW_DSEQ"
+            if [ -z "$NEW_DSEQ" ] || [ "$NEW_DSEQ" = "null" ]; then
+              echo "::error::Failed to find deployment DSEQ"
+              exit 1
+            fi
+
+            # Save DSEQ as repo secret for future updates
+            if gh secret set AKASH_DEPLOYMENT_DSEQ --body "$NEW_DSEQ" 2>/dev/null; then
+              echo "DSEQ saved to repo secrets"
+            else
+              echo "::warning::Could not auto-save DSEQ. Please add AKASH_DEPLOYMENT_DSEQ=$NEW_DSEQ as a repo secret"
+            fi
+            DSEQ="$NEW_DSEQ"
+
+            # Wait for bids
+            echo "Waiting for bids..."
+            BID_COUNT=0
+            for i in {1..12}; do
+              sleep 10
+              BIDS=$(provider-services query market bid list \
+                --owner $AKASH_FROM --dseq $DSEQ -o json)
+              BID_COUNT=$(echo "$BIDS" | jq '.bids | length')
+              echo "Attempt $i: Found $BID_COUNT bids"
+              if [ "$BID_COUNT" -gt 0 ]; then
+                break
+              fi
+            done
+
+            if [ "$BID_COUNT" -eq 0 ]; then
+              echo "::error::No bids received after 2 minutes"
+              exit 1
+            fi
+
+            # Select cheapest bid from preferred providers, fall back to any
+            SELECTED_BID=$(echo "$BIDS" | jq -r --arg providers "$PREFERRED_PROVIDERS" '
+              .bids
+              | map(select(.bid.state == "open" or .bid.bid.state == "open"))
+              | map(select(
+                  (.bid.bid.id.provider // .bid.id.provider) as $p
+                  | ($providers | split(",") | index($p))
+                ))
+              | sort_by((.bid.price.amount // .bid.bid.price.amount) | tonumber)
+              | first
+            ')
+
+            if [ -z "$SELECTED_BID" ] || [ "$SELECTED_BID" = "null" ]; then
+              echo "No preferred provider bid found, selecting cheapest overall..."
+              SELECTED_BID=$(echo "$BIDS" | jq -r '
+                .bids
+                | map(select(.bid.state == "open" or .bid.bid.state == "open"))
+                | sort_by((.bid.price.amount // .bid.bid.price.amount) | tonumber)
+                | first
+              ')
+            fi
+
+            PROVIDER=$(echo "$SELECTED_BID" | jq -r '.bid.bid.id.provider // .bid.id.provider')
+            echo "Selected provider: $PROVIDER"
+
+            # Create lease
+            echo "Creating lease..."
+            provider-services tx market lease create \
+              --dseq $DSEQ \
+              --provider $PROVIDER \
+              --from deployer \
+              --yes
+
+            sleep 10
+
+            # Send manifest
+            echo "Sending manifest..."
+            provider-services send-manifest deploy-final.yaml \
+              --dseq $DSEQ \
+              --provider $PROVIDER \
+              --from deployer
+
+            echo "DSEQ=$DSEQ" >> $GITHUB_ENV
+            echo "PROVIDER=$PROVIDER" >> $GITHUB_ENV
+            echo "Deployment complete! DSEQ: $DSEQ, Provider: $PROVIDER"
+          fi
+
+      - name: Close deployment
+        if: github.event.inputs.action == 'close'
         run: |
-          # Try to get URL from terraform output first
-          API_URL="${{ steps.terraform.outputs.api_url }}"
-          
-          # If not available, try to extract from services
-          if [ -z "$API_URL" ]; then
-            echo "Extracting UI URL from services output..."
-            services_json=$(terraform output -json services 2>/dev/null || echo '[]')
-            API_URL=$(echo "$services_json" | jq -r '.[] | select(.name=="api") | .uris[0]' 2>/dev/null || echo '')
+          DSEQ="${{ secrets.AKASH_DEPLOYMENT_DSEQ }}"
+          if [ -n "$DSEQ" ]; then
+            echo "Closing deployment $DSEQ..."
+            provider-services tx deployment close \
+              --dseq $DSEQ \
+              --from deployer \
+              --yes
+            echo "Deployment closed"
+          else
+            echo "No DSEQ provided, nothing to close"
           fi
-          
-          if [ -z "$API_URL" ] || [ "$API_URL" = "null" ]; then
-            echo "::warning::Could not extract API URL from deployment"
-            API_URL="unavailable"
+
+      - name: Get service status
+        if: github.event.inputs.action != 'close'
+        id: status
+        run: |
+          sleep 10
+          DSEQ="${{ env.DSEQ }}"
+          PROVIDER="${{ env.PROVIDER }}"
+          echo "Checking lease status for DSEQ=$DSEQ provider=$PROVIDER..."
+          STATUS=$(provider-services lease-status \
+            --dseq $DSEQ \
+            --provider $PROVIDER \
+            --from deployer 2>/dev/null || echo "{}")
+          echo "$STATUS" | jq . || echo "$STATUS"
+
+          # Extract service URL
+          SERVICE_URL=$(echo "$STATUS" | jq -r '.services.api.uris[0] // empty' 2>/dev/null || echo "")
+          if [ -n "$SERVICE_URL" ]; then
+            echo "ui_url=$SERVICE_URL" >> $GITHUB_OUTPUT
+            echo "::notice::Deployment live at: https://$SERVICE_URL"
+          else
+            echo "ui_url=unavailable" >> $GITHUB_OUTPUT
+            echo "::warning::Could not extract service URL from lease status"
           fi
-          
-          echo "ui_url=${API_URL}" >> $GITHUB_OUTPUT
-          echo "Deployed UI URL: ${API_URL}"
-          
-          # Add to step summary
-          echo "## 🚀 Deployment Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Deployed UI URL:** ${API_URL}" >> $GITHUB_STEP_SUMMARY
-          echo "**Deployment ID:** ${{ steps.terraform.outputs.deployment_id }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** ${IMAGE_REPO}:${IMAGE_TAG}" >> $GITHUB_STEP_SUMMARY
-          
+
       - name: Validate Health Check
-        if: steps.ui_url.outputs.ui_url != 'unavailable' && steps.ui_url.outputs.ui_url != ''
+        if: github.event.inputs.action != 'close' && steps.status.outputs.ui_url != 'unavailable' && steps.status.outputs.ui_url != ''
         run: |
-          UI_URL="${{ steps.ui_url.outputs.ui_url }}"
-          echo "Running health check validation for: ${UI_URL}"
-          
-          # Install httpx if not available - fail if installation fails
-          if ! pip install -q httpx; then
-            echo "::error::Failed to install httpx. Cannot run health check."
-            exit 1
-          fi
-          
-          # Run health check with retries (10 attempts, 6 seconds between)
+          UI_URL="${{ steps.status.outputs.ui_url }}"
+          echo "Running health check for: ${UI_URL}"
+          pip install -q httpx
           python3 scripts/infra/validate_health.py "${UI_URL}" 10 6
-          
-          # Add result to summary
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## ✅ Health Check" >> $GITHUB_STEP_SUMMARY
+          echo "## Health Check Passed" >> $GITHUB_STEP_SUMMARY
           echo "Health check passed for: ${UI_URL}/healthz" >> $GITHUB_STEP_SUMMARY
-          
-      - name: Derive Banano RPC endpoint
-        id: banano_rpc
-        working-directory: infra/akash
-        run: |
-          echo "Deriving Banano RPC endpoint (internal port ${INTERNAL_PORT})..."
-          services_json=$(terraform output -json services 2>/dev/null || echo '[]')
-          endpoint=$(echo "$services_json" | jq -r --arg p "$INTERNAL_PORT" '.[] | select(.name=="banano") | .forwarded_ports[] | select(.port==($p|tonumber)) | "\(.host):\(.external_port)"' | grep -v '^:$' | head -n1 || true)
-          echo "Banano RPC endpoint available: $endpoint"
-          
+
       - name: Deployment Summary
         if: always()
         run: |
+          DOMAIN="${{ github.event.inputs.domain_name }}"
+          SERVICE_URL="${{ steps.status.outputs.ui_url || 'unavailable' }}"
+
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📋 Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Details" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **UI URL:** ${{ steps.ui_url.outputs.ui_url || 'unavailable' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Deployment ID:** ${{ steps.terraform.outputs.deployment_id || 'unavailable' }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image Tag:** ${IMAGE_TAG}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Image Repo:** ${IMAGE_REPO}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Provider Selection:** Cheapest audited provider (via SDL attributes)" >> $GITHUB_STEP_SUMMARY
-          
-      - name: Upload Artifact
-        uses: badgerhobbs/terraform-state@v2
-        with:
-          directory: ./infra/akash
-          operation: upload
-          location: artifact
-          github_token: ${{ env.GH_PAT }}
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+          echo "- **Domain:** ${DOMAIN}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Provider URL:** ${SERVICE_URL}" >> $GITHUB_STEP_SUMMARY
+          echo "- **DSEQ:** ${{ env.DSEQ || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Provider:** ${{ env.PROVIDER || 'N/A' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image:** ${IMAGE_REPO}:${IMAGE_TAG}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Preferred Providers:** ${PREFERRED_PROVIDERS}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## DNS Setup" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Point your domain to the Akash provider:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "${DOMAIN}  CNAME  ${SERVICE_URL}" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

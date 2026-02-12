@@ -80,6 +80,7 @@ def me_reverify(
     if integrations is None:
         raise HTTPException(status_code=500, detail="Config not loaded")
     # Invoke Yunite to fetch latest epic id
+    from src.services.fortnite_service import FortniteService, seed_kill_baseline
     from src.services.yunite_service import YuniteService
 
     yunite = YuniteService(
@@ -88,8 +89,18 @@ def me_reverify(
         base_url=integrations.yunite_base_url,
         dry_run=integrations.dry_run,
     )
+    old_epic_id = user.epic_account_id
     epic_id = yunite.get_epic_id_for_discord(user.discord_user_id)
     user.epic_account_id = epic_id
+    # Seed kill baseline so only kills after linking earn payouts
+    if epic_id and epic_id != old_epic_id:
+        fortnite = FortniteService(
+            api_key=integrations.fortnite_api_key,
+            base_url=integrations.fortnite_base_url,
+            per_minute_limit=int(integrations.rate_limits.get("fortnite_per_min", 60)),
+            dry_run=integrations.dry_run,
+        )
+        user.last_settled_kill_count = seed_kill_baseline(fortnite, epic_id)
     vr = VerificationRecord(
         user_id=user.id,
         discord_user_id=user.discord_user_id,
@@ -141,6 +152,7 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
         wallet_address = latest_wallet.address
     return JSONResponse(
         {
+            "discord_username": user.discord_username,
             "linked": bool(user.wallet_links),
             "wallet_address": wallet_address,
             "last_verified_at": last_verified_at,

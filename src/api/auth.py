@@ -13,6 +13,7 @@ from src.lib.auth import (
 )
 from src.models.models import User, VerificationRecord
 from src.services.discord_auth_service import DiscordAuthService
+from src.services.fortnite_service import FortniteService, seed_kill_baseline
 from src.services.yunite_service import YuniteService
 
 router = APIRouter()
@@ -87,6 +88,7 @@ def discord_callback(
     # Upsert user
     existing = db.query(User).filter(User.discord_user_id == user_info.user_id).one_or_none()
     region_code = getattr(getattr(request, "state", None), "region_code", None)
+    old_epic_id = existing.epic_account_id if existing else None
     if existing:
         existing.discord_username = user_info.username
         existing.discord_guild_member = True
@@ -103,6 +105,15 @@ def discord_callback(
             region_code=region_code,
         )
         db.add(user)
+    # Seed kill baseline so only kills after linking earn payouts
+    if epic_id and epic_id != old_epic_id:
+        fortnite = FortniteService(
+            api_key=integ.fortnite_api_key,
+            base_url=integ.fortnite_base_url,
+            per_minute_limit=int(integ.rate_limits.get("fortnite_per_min", 60)),
+            dry_run=integ.dry_run,
+        )
+        user.last_settled_kill_count = seed_kill_baseline(fortnite, epic_id)
     db.flush()  # assign user.id for FK usage below
     ver = VerificationRecord(
         user_id=user.id,

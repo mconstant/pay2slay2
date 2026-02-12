@@ -23,9 +23,9 @@ class AccrualResult:
 class AccrualService:
     """Compute kill deltas per user and persist RewardAccrual rows.
 
-    NOTE: FortniteService is currently a stub; real implementation will return deltas or absolute kills.
-    We treat user.last_settled_kill_count as a cursor for unpaid kills. We DO NOT advance it here; only
-    settlement will advance that cursor after payouts are created to maintain idempotency across crashes.
+    The cursor (user.last_settled_kill_count) is advanced here alongside the accrual row in the same
+    DB transaction.  This prevents duplicate accruals when payouts fail — the unsettled accrual rows
+    still track what needs to be paid out.
     """
 
     def __init__(
@@ -85,6 +85,9 @@ class AccrualService:
             settled=False,
         )
         self.session.add(accrual)
+        # Advance cursor so the same kills aren't counted again on the next cycle
+        new_cursor = int(result.new_cursor) if result.new_cursor else user.last_settled_kill_count
+        user.last_settled_kill_count = new_cursor
         return AccrualResult(
             user_id=user.id,
             kills_delta=delta_kills,

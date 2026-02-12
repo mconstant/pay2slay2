@@ -24,11 +24,13 @@
   </div>
 </header>
 
-<!-- Navigation (hidden until logged in) -->
-<nav style="display:none;">
-  <button data-page="dashboard" class="active">Dashboard</button>
-  <button data-page="wallet">Wallet</button>
-  <button data-page="admin">Admin</button>
+<!-- Navigation -->
+<nav>
+  <button data-page="leaderboard" class="active">Leaderboard</button>
+  <button data-page="activity">Activity</button>
+  <button data-page="dashboard" class="auth-only">Dashboard</button>
+  <button data-page="wallet" class="auth-only">Wallet</button>
+  <button data-page="admin" class="auth-only">Admin</button>
 </nav>
 
 <!-- Toast -->
@@ -36,8 +38,93 @@
 
 <main>
 
-  <!-- ── Login Page ──────────────────────────────── -->
-  <div id="page-login" class="page active login-page">
+  <!-- Leaderboard Page (public, default) -->
+  <div id="page-leaderboard" class="page active">
+    <div class="section-header">
+      <h2>Leaderboard</h2>
+      <span class="card-subtitle" id="leaderboard-count"></span>
+    </div>
+
+    <div class="how-it-works">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Link Discord</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">Play Fortnite</div>
+      </div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Get Banano</div>
+      </div>
+    </div>
+
+    <div id="leaderboard-login-cta" class="login-cta">
+      <button class="btn btn-discord" onclick="discordLogin()">Login with Discord</button>
+      <button id="demo-login-btn" class="btn" onclick="demoLogin()">Demo Login</button>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th>Kills</th>
+            <th>Accrued BAN</th>
+            <th>Paid BAN</th>
+          </tr>
+        </thead>
+        <tbody id="leaderboard-tbody">
+          <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Activity Feed Page (public) -->
+  <div id="page-activity" class="page">
+    <div class="section-header">
+      <h2>Activity</h2>
+      <span class="card-subtitle">Recent kills and payouts across all players</span>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Recent Accruals</h2>
+        <span class="card-subtitle">Kills converted to BAN rewards</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Player</th><th>Kills</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+        </thead>
+        <tbody id="feed-accruals-tbody">
+          <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Recent Payouts</h2>
+        <span class="card-subtitle">BAN sent to player wallets</span>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Player</th><th>Amount</th><th>Status</th><th>TX Hash</th><th>Date</th></tr>
+        </thead>
+        <tbody id="feed-payouts-tbody">
+          <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Login Page (shown when navigating to auth pages without session) -->
+  <div id="page-login" class="page login-page">
     <h1>Pay2Slay</h1>
     <p class="tagline">Earn Banano for every Fortnite kill.</p>
 
@@ -62,14 +149,14 @@
       <button class="btn btn-discord btn-lg" onclick="discordLogin()">
         Login with Discord
       </button>
-      <button id="demo-login-btn" class="btn btn-lg" onclick="demoLogin()">
+      <button id="demo-login-btn-2" class="btn btn-lg" onclick="demoLogin()">
         Demo Login
       </button>
     </div>
     <p class="login-hint">Demo mode uses simulated data. Discord login connects your real account.</p>
   </div>
 
-  <!-- ── Dashboard Page ──────────────────────────── -->
+  <!-- Dashboard Page -->
   <div id="page-dashboard" class="page">
     <div class="section-header">
       <h2>Dashboard</h2>
@@ -131,7 +218,7 @@
     </div>
   </div>
 
-  <!-- ── Wallet Page ─────────────────────────────── -->
+  <!-- Wallet Page -->
   <div id="page-wallet" class="page">
     <div class="section-header">
       <h2>Wallet</h2>
@@ -162,13 +249,13 @@
     </div>
   </div>
 
-  <!-- ── Admin Page ──────────────────────────────── -->
+  <!-- Admin Page -->
   <div id="page-admin" class="page">
     <h2 style="margin-bottom:16px;">Admin Panel</h2>
 
     <!-- Unauthorized message -->
     <div id="admin-unauthorized" class="card" style="display:none;">
-      <h2>🔒 Access Denied</h2>
+      <h2>Access Denied</h2>
       <p style="color:var(--text-muted);font-size:14px;margin-top:12px;">
         You don't have admin access. Admin users are configured via <code>ADMIN_DISCORD_USERNAMES</code> in the server environment.
       </p>
@@ -178,7 +265,7 @@
     <div id="admin-authed" style="display:none;">
       <!-- Operator Wallet Card -->
       <div class="card" style="margin-bottom:20px;">
-        <h2>💰 Operator Wallet</h2>
+        <h2>Operator Wallet</h2>
         <div class="stat-grid" style="margin-top:16px;">
           <div class="stat-box">
             <div class="value" id="admin-operator-balance">—</div>
@@ -193,7 +280,7 @@
 
         <!-- Operator Seed Config -->
         <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
-          <h3 style="font-size:14px;margin-bottom:12px;">🔐 Operator Seed</h3>
+          <h3 style="font-size:14px;margin-bottom:12px;">Operator Seed</h3>
           <p id="operator-seed-status" style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
             Checking...
           </p>
@@ -211,14 +298,14 @@
             Save Seed Securely
           </button>
           <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">
-            ⚠️ The seed is encrypted at rest. Never share your seed with anyone.
+            The seed is encrypted at rest. Never share your seed with anyone.
           </p>
         </div>
       </div>
 
       <!-- Payout Config Card -->
       <div class="card" style="margin-bottom:20px;">
-        <h2>⚙️ Payout Configuration</h2>
+        <h2>Payout Configuration</h2>
         <div class="stat-grid" style="margin-top:16px;">
           <div class="stat-box">
             <div class="value" id="admin-ban-per-kill">—</div>
@@ -238,11 +325,35 @@
           </div>
         </div>
         <p id="admin-dry-run-status" style="margin-top:12px;"></p>
+        <div style="display:flex;align-items:center;gap:12px;margin-top:8px;">
+          <p id="admin-scheduler-status" style="font-size:13px;margin:0;"></p>
+          <button class="btn btn-sm btn-primary" onclick="triggerScheduler()">Run Scheduler Now</button>
+          <button class="btn btn-sm" onclick="triggerSettlement()">Settle Payouts</button>
+        </div>
+
+        <!-- Cycle Interval Controls -->
+        <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+          <h3 style="font-size:14px;margin-bottom:12px;">Cycle Intervals</h3>
+          <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;">
+            <div class="form-group" style="margin-bottom:0;flex:1;min-width:140px;">
+              <label for="accrual-interval-input">Accrual (seconds)</label>
+              <input type="number" id="accrual-interval-input" min="30" step="30" placeholder="1200">
+            </div>
+            <div class="form-group" style="margin-bottom:0;flex:1;min-width:140px;">
+              <label for="settlement-interval-input">Settlement (seconds)</label>
+              <input type="number" id="settlement-interval-input" min="30" step="30" placeholder="1200">
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="saveSchedulerConfig()">Save Intervals</button>
+          </div>
+          <p style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+            Changes take effect on the next scheduler loop iteration. Min 30 seconds.
+          </p>
+        </div>
       </div>
 
       <!-- System Stats -->
       <div class="card" style="margin-bottom:20px;">
-        <h2>📊 System Statistics</h2>
+        <h2>System Statistics</h2>
         <div class="stat-grid" style="margin-top:16px;">
           <div class="stat-box">
             <div class="value" id="admin-users">0</div>
@@ -285,13 +396,13 @@
 
       <!-- Admin Actions -->
       <div id="admin-actions" class="card" style="margin-top:20px;">
-        <h2>🛠️ Admin Actions</h2>
+        <h2>Admin Actions</h2>
         <p style="color:var(--text-muted);font-size:13px;margin:12px 0;">
           These actions are only available when DEMO_MODE is enabled.
         </p>
         <div style="display:flex;gap:12px;flex-wrap:wrap;">
           <button id="clear-demo-btn" class="btn btn-danger" onclick="clearDemoData()">
-            🗑️ Clear Demo Data
+            Clear Demo Data
           </button>
         </div>
       </div>
@@ -299,6 +410,12 @@
   </div>
 
 </main>
+
+<footer id="cycle-footer">
+  <span id="cycle-countdown-accrual">Accrual: --:--</span>
+  <span style="margin:0 12px;color:var(--border);">|</span>
+  <span id="cycle-countdown-settlement">Settlement: --:--</span>
+</footer>
 
 <script src="/static/app.js"></script>
 </body>

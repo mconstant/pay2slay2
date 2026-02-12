@@ -1,6 +1,9 @@
+import json
 import os
+import time as _time
 from collections.abc import Generator
 from datetime import UTC, datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -23,6 +26,7 @@ from src.models.models import (
     VerificationRecord,
 )
 from src.services.banano_client import BananoClient, seed_to_address
+from src.services.fortnite_service import FortniteService, seed_kill_baseline
 from src.services.yunite_service import YuniteService
 
 router = APIRouter(prefix="/admin")
@@ -147,8 +151,18 @@ def admin_reverify(
         base_url=integrations.yunite_base_url,
         dry_run=integrations.dry_run,
     )
+    old_epic_id = user.epic_account_id
     epic_id = yunite.get_epic_id_for_discord(discord_id)
     user.epic_account_id = epic_id
+    # Seed kill baseline so only kills after linking earn payouts
+    if epic_id and epic_id != old_epic_id:
+        fortnite = FortniteService(
+            api_key=integrations.fortnite_api_key,
+            base_url=integrations.fortnite_base_url,
+            per_minute_limit=int(integrations.rate_limits.get("fortnite_per_min", 60)),
+            dry_run=integrations.dry_run,
+        )
+        user.last_settled_kill_count = seed_kill_baseline(fortnite, epic_id)
     # Do not change guild membership here; separate Discord check would be needed
     vr = VerificationRecord(
         user_id=user.id,
@@ -486,3 +500,153 @@ def admin_get_operator_seed_status(
             }
         )
     return JSONResponse({"configured": False, "address": None, "set_by": None, "updated_at": None})
+
+
+@router.get("/scheduler/status")
+def admin_scheduler_status(
+    _: None = Depends(_require_admin),
+) -> JSONResponse:
+    """Read the scheduler heartbeat file to report if the background process is alive."""
+    hb_path = Path(os.getenv("P2S_HEARTBEAT_FILE", "/tmp/scheduler_heartbeat.json"))
+    if not hb_path.exists():
+        return JSONResponse({"alive": False, "detail": "no heartbeat file"})
+    try:
+        data = json.loads(hb_path.read_text())
+        age = _time.time() - data.get("ts", 0)
+        interval = int(os.getenv("P2S_INTERVAL_SECONDS", "1200"))
+        alive = age < interval * 2  # allow up to 2x the interval before declaring dead
+        return JSONResponse(
+            {
+                "alive": alive,
+                "last_heartbeat_ago_sec": round(age, 1),
+                "status": data.get("status"),
+                "pid": data.get("pid"),
+                "error": data.get("error"),
+            }
+        )
+    except Exception as exc:
+        return JSONResponse({"alive": False, "detail": str(exc)})
+
+
+@router.post("/scheduler/trigger")
+def admin_trigger_scheduler(
+    request: Request,
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Run one accrual+settlement cycle synchronously (admin only, works in production)."""
+    from src.jobs.__main__ import _build_scheduler_components, _run_once
+
+    try:
+        cfg, fortnite, accrual_cfg = _build_scheduler_components()
+        _run_once(db, cfg, fortnite, accrual_cfg)
+        db.commit()
+        return JSONResponse({"status": "ok", "detail": "Scheduler cycle completed"})
+    except Exception as exc:
+        log.error("admin_scheduler_trigger_error", error=str(exc))
+        return JSONResponse({"status": "error", "detail": str(exc)}, status_code=500)
+
+
+@router.post("/scheduler/settle")
+def admin_trigger_settlement(
+    request: Request,
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Run settlement only — pay out unsettled accruals (admin only)."""
+    from src.jobs.__main__ import _build_scheduler_components
+    from src.jobs.settlement import run_settlement
+
+    try:
+        cfg, _fortnite, _accrual_cfg = _build_scheduler_components()
+        counters = run_settlement(db, cfg)
+        db.commit()
+        return JSONResponse(
+            {
+                "status": "ok",
+                "candidates": counters["candidates"],
+                "payouts": counters["payouts"],
+                "accruals_settled": counters["accruals_settled"],
+            }
+        )
+    except Exception as exc:
+        log.error("admin_settlement_trigger_error", error=str(exc))
+        return JSONResponse({"status": "error", "detail": str(exc)}, status_code=500)
+
+
+@router.get("/scheduler/config")
+def admin_get_scheduler_config(
+    _: None = Depends(_require_admin),
+) -> JSONResponse:
+    """Return current scheduler interval overrides."""
+    from src.jobs.__main__ import SCHEDULER_CONFIG_PATH
+
+    default_interval = int(os.getenv("P2S_INTERVAL_SECONDS", "1200"))
+    result = {
+        "accrual_interval_seconds": default_interval,
+        "settlement_interval_seconds": default_interval,
+    }
+    if SCHEDULER_CONFIG_PATH.exists():
+        try:
+            data = json.loads(SCHEDULER_CONFIG_PATH.read_text())
+            if "accrual_interval_seconds" in data:
+                result["accrual_interval_seconds"] = int(data["accrual_interval_seconds"])
+            if "settlement_interval_seconds" in data:
+                result["settlement_interval_seconds"] = int(data["settlement_interval_seconds"])
+        except Exception:
+            pass
+    return JSONResponse(result)
+
+
+@router.post("/scheduler/config")
+def admin_set_scheduler_config(
+    request: Request,
+    accrual_interval_seconds: int | None = Body(None),
+    settlement_interval_seconds: int | None = Body(None),
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Update scheduler intervals on the fly. Min 30 seconds."""
+    from src.jobs.__main__ import SCHEDULER_CONFIG_PATH
+
+    # Read existing overrides
+    current: dict[str, int] = {}
+    if SCHEDULER_CONFIG_PATH.exists():
+        try:
+            current = json.loads(SCHEDULER_CONFIG_PATH.read_text())
+        except Exception:
+            pass
+
+    default_interval = int(os.getenv("P2S_INTERVAL_SECONDS", "1200"))
+    if accrual_interval_seconds is not None:
+        current["accrual_interval_seconds"] = max(30, accrual_interval_seconds)
+    if settlement_interval_seconds is not None:
+        current["settlement_interval_seconds"] = max(30, settlement_interval_seconds)
+
+    SCHEDULER_CONFIG_PATH.write_text(json.dumps(current))
+
+    token = request.cookies.get("p2s_admin")
+    admin_email = verify_admin_session(token, session_secret()) if token else "unknown"
+    record_admin_audit(
+        db,
+        AdminAuditPayload(
+            action="update_scheduler_config",
+            actor_email=admin_email,
+            target_type="scheduler",
+            target_id="intervals",
+            summary=f"accrual={current.get('accrual_interval_seconds', default_interval)}s, "
+            f"settlement={current.get('settlement_interval_seconds', default_interval)}s",
+        ),
+    )
+    db.commit()
+    log.info("scheduler_config_updated", **current)
+
+    return JSONResponse(
+        {
+            "status": "ok",
+            "accrual_interval_seconds": current.get("accrual_interval_seconds", default_interval),
+            "settlement_interval_seconds": current.get(
+                "settlement_interval_seconds", default_interval
+            ),
+        }
+    )

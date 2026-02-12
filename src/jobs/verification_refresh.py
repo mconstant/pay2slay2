@@ -21,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from src.lib.config import get_config
 from src.models.models import User, VerificationRecord
+from src.services.fortnite_service import FortniteService, seed_kill_baseline
 from src.services.yunite_service import YuniteService
 
 
@@ -46,6 +47,12 @@ def run_verification_refresh(session: Session, cfg: VerificationRefreshConfig) -
         base_url=integrations.yunite_base_url,
         dry_run=integrations.dry_run,
     )
+    fortnite = FortniteService(
+        api_key=integrations.fortnite_api_key,
+        base_url=integrations.fortnite_base_url,
+        per_minute_limit=int(integrations.rate_limits.get("fortnite_per_min", 60)),
+        dry_run=integrations.dry_run,
+    )
     counters = {"candidates": 0, "updated": 0}
     for user in _candidate_users(session, cfg):
         counters["candidates"] += 1
@@ -53,6 +60,7 @@ def run_verification_refresh(session: Session, cfg: VerificationRefreshConfig) -
         if not epic_id:
             continue
         user.epic_account_id = epic_id
+        user.last_settled_kill_count = seed_kill_baseline(fortnite, epic_id)
         vr = VerificationRecord(
             user_id=user.id,
             discord_user_id=user.discord_user_id,
