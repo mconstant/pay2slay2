@@ -211,6 +211,14 @@
     return div.innerHTML;
   }
 
+  /** Parse an ISO timestamp from the API (UTC but missing Z suffix) into local time string. */
+  function fmtDate(iso) {
+    if (!iso) return "-";
+    // API returns naive UTC — append Z so JS interprets as UTC, then toLocaleString shows local
+    var d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
+    return isNaN(d) ? iso : d.toLocaleString();
+  }
+
   // ── Activity Feed ──────────────────────────────────
   async function loadActivityFeed() {
     try {
@@ -236,7 +244,7 @@
         '<td>' + a.kills + '</td>' +
         '<td>' + parseFloat(a.amount_ban).toFixed(2) + ' BAN</td>' +
         '<td><span class="badge ' + (a.settled ? "badge-sent" : "badge-pending") + '">' + (a.settled ? "settled" : "pending") + '</span></td>' +
-        '<td>' + (a.created_at ? new Date(a.created_at).toLocaleString() : "-") + '</td>' +
+        '<td>' + (a.created_at ? fmtDate(a.created_at) : "-") + '</td>' +
         '</tr>';
     }).join("");
   }
@@ -254,7 +262,7 @@
         '<td>' + parseFloat(p.amount_ban).toFixed(2) + ' BAN</td>' +
         '<td><span class="badge badge-' + p.status + '">' + p.status + '</span></td>' +
         '<td class="tx-hash" title="' + (p.tx_hash || "") + '">' + (p.tx_hash ? p.tx_hash.substring(0, 12) + "..." : "-") + '</td>' +
-        '<td>' + (p.created_at ? new Date(p.created_at).toLocaleString() : "-") + '</td>' +
+        '<td>' + (p.created_at ? fmtDate(p.created_at) : "-") + '</td>' +
         '</tr>';
     }).join("");
   }
@@ -275,7 +283,7 @@
         linkedEl.style.color = s.linked ? "var(--success)" : "var(--text-muted)";
         $("#stat-verified").textContent = s.last_verified_status || "none";
         $("#stat-verified-at").textContent = s.last_verified_at
-          ? new Date(s.last_verified_at).toLocaleString()
+          ? fmtDate(s.last_verified_at)
           : "never";
         // Update username if we get it from the status response
         if (s.discord_username && user) {
@@ -322,7 +330,7 @@
         '<td>' + a.kills + '</td>' +
         '<td>' + parseFloat(a.amount_ban).toFixed(2) + ' BAN</td>' +
         '<td><span class="badge ' + (a.settled ? "badge-sent" : "badge-pending") + '">' + (a.settled ? "settled" : "pending") + '</span></td>' +
-        '<td>' + (a.created_at ? new Date(a.created_at).toLocaleString() : "-") + '</td>' +
+        '<td>' + (a.created_at ? fmtDate(a.created_at) : "-") + '</td>' +
         '</tr>';
     }).join("");
   }
@@ -341,7 +349,7 @@
         '<td>' + parseFloat(p.amount_ban).toFixed(2) + ' BAN</td>' +
         '<td><span class="badge badge-' + p.status + '">' + p.status + '</span></td>' +
         '<td class="tx-hash" title="' + (p.tx_hash || "") + '">' + (p.tx_hash ? p.tx_hash.substring(0, 12) + "..." : "-") + '</td>' +
-        '<td>' + (p.created_at ? new Date(p.created_at).toLocaleString() : "-") + '</td>' +
+        '<td>' + (p.created_at ? fmtDate(p.created_at) : "-") + '</td>' +
         '</tr>';
     }).join("");
   }
@@ -529,7 +537,7 @@
       if (r.ok) {
         const data = await r.json();
         if (data.configured) {
-          const date = data.updated_at ? new Date(data.updated_at).toLocaleDateString() : "unknown";
+          const date = data.updated_at ? fmtDate(data.updated_at) : "unknown";
           statusEl.innerHTML = '<span class="badge badge-sent">Configured</span> Last updated: ' + date + ' by ' + escapeHtml(data.set_by || "unknown");
           if (addressEl && data.address) {
             addressEl.innerHTML = '<strong>Derived Address:</strong><br><code style="font-size:11px;word-break:break-all;">' + escapeHtml(data.address) + '</code>';
@@ -602,7 +610,7 @@
         }
         tbody.innerHTML = events.map(function (e) {
           return '<tr>' +
-            '<td>' + (e.created_at ? new Date(e.created_at).toLocaleString() : "-") + '</td>' +
+            '<td>' + (e.created_at ? fmtDate(e.created_at) : "-") + '</td>' +
             '<td><span class="badge badge-ok">' + escapeHtml(e.action) + '</span></td>' +
             '<td>' + escapeHtml(e.actor_email || "-") + '</td>' +
             '<td>' + escapeHtml(e.target_type || "-") + '</td>' +

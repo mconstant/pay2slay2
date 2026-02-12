@@ -145,9 +145,14 @@ class PayoutService:
             time.sleep(sleep_for)
             success = _attempt_send()
         _attempts_counter.labels(result="success" if success else "failed").inc()
-        # Cursor is now advanced during accrual (not here) to prevent duplicate counting.
         if payout.status == "sent":
             user.last_settlement_at = datetime.now(UTC)
+        else:
+            # Un-settle accruals so they're picked up by the next settlement cycle
+            for a in accruals:
+                a.settled = False
+                a.settled_at = None
+                a.payout = None
         return PayoutResult(
             user_id=user.id,
             payout_id=0,
