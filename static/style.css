@@ -112,6 +112,48 @@ header .user-info .username {
   cursor: not-allowed;
 }
 
+/* ── Donate Bar ─────────────────────────────────────── */
+.donate-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 24px;
+}
+.donate-content {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+.donate-qr {
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: 6px;
+  padding: 4px;
+  line-height: 0;
+}
+.donate-qr svg { display: block; width: 56px; height: 56px; }
+.donate-info { flex: 1; }
+.donate-balance {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.donate-cta {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.donate-address {
+  font-size: 10px;
+  word-break: break-all;
+  display: block;
+  margin-top: 4px;
+  background: transparent;
+  padding: 0;
+  color: var(--text-muted);
+}
+
 /* ── Dry-run banner ──────────────────────────────────── */
 .dry-run-banner {
   background: rgba(251,219,30,.12);

@@ -149,6 +149,48 @@ def activity_feed(
     )
 
 
+@router.get("/api/donate-info")
+def donate_info(
+    request: Request,
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Public endpoint returning operator wallet address and balance for donations."""
+    operator_account = os.getenv("P2S_OPERATOR_ACCOUNT", "")
+
+    # If no env var, try to derive from stored seed
+    if not operator_account:
+        from src.lib.crypto import decrypt_value
+        from src.models.models import SecureConfig
+        from src.services.banano_client import seed_to_address
+
+        seed_config = (
+            db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+        )
+        if seed_config:
+            decrypted = decrypt_value(seed_config.encrypted_value)
+            if decrypted:
+                operator_account = seed_to_address(decrypted) or ""
+
+    if not operator_account:
+        return JSONResponse({"address": None, "balance": None, "pending": None})
+
+    balance: float | None = None
+    pending: float | None = None
+    app_state = getattr(request.app, "state", None)
+    cfg_obj = getattr(app_state, "config", None)
+    integrations = getattr(cfg_obj, "integrations", None)
+    if integrations:
+        try:
+            from src.services.banano_client import BananoClient
+
+            banano = BananoClient(node_url=integrations.node_rpc, dry_run=integrations.dry_run)
+            balance, pending = banano.account_balance(operator_account)
+        except Exception:
+            pass
+
+    return JSONResponse({"address": operator_account, "balance": balance, "pending": pending})
+
+
 @router.get("/api/scheduler/countdown")
 def scheduler_countdown() -> JSONResponse:
     """Public endpoint returning seconds until next accrual and settlement cycles."""

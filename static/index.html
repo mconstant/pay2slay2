@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pay2Slay Faucet</title>
   <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
 <body>
@@ -24,10 +25,22 @@
   </div>
 </header>
 
+<!-- Donate Bar -->
+<div id="donate-bar" class="donate-bar" style="display:none;">
+  <div class="donate-content">
+    <div id="donate-qr" class="donate-qr"></div>
+    <div class="donate-info">
+      <div class="donate-balance"><span id="donate-balance-value">--</span> BAN</div>
+      <div class="donate-cta">help pay others to slay today! donate here!</div>
+      <code id="donate-address" class="donate-address"></code>
+    </div>
+  </div>
+</div>
+
 <!-- Navigation -->
 <nav>
-  <button data-page="leaderboard" class="active">Leaderboard</button>
-  <button data-page="activity">Activity</button>
+  <button data-page="leaderboard">Leaderboard</button>
+  <button data-page="activity" class="active">Activity</button>
   <button data-page="dashboard" class="auth-only">Dashboard</button>
   <button data-page="wallet" class="auth-only">Wallet</button>
   <button data-page="admin" class="auth-only">Admin</button>
@@ -39,7 +52,7 @@
 <main>
 
   <!-- Leaderboard Page (public, default) -->
-  <div id="page-leaderboard" class="page active">
+  <div id="page-leaderboard" class="page">
     <div class="section-header">
       <h2>Leaderboard</h2>
       <span class="card-subtitle" id="leaderboard-count"></span>
@@ -86,7 +99,7 @@
   </div>
 
   <!-- Activity Feed Page (public) -->
-  <div id="page-activity" class="page">
+  <div id="page-activity" class="page active">
     <div class="section-header">
       <h2>Activity</h2>
       <span class="card-subtitle">Recent kills and payouts across all players</span>
@@ -182,6 +195,10 @@
       <div class="stat-box">
         <div class="value" id="stat-verified-at" style="font-size:14px;">never</div>
         <div class="label">Last Verified</div>
+      </div>
+      <div class="stat-box">
+        <div class="value" id="stat-discord-id" style="font-size:14px;">—</div>
+        <div class="label">Discord</div>
       </div>
     </div>
 

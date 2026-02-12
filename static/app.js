@@ -33,8 +33,8 @@
 
   // ── Hash Routing ────────────────────────────────────
   function handleHashChange() {
-    const hash = window.location.hash.replace("#", "") || "leaderboard";
-    const page = ALL_PAGES.has(hash) ? hash : "leaderboard";
+    const hash = window.location.hash.replace("#", "") || "activity";
+    const page = ALL_PAGES.has(hash) ? hash : "activity";
 
     if (AUTH_PAGES.has(page) && !user) {
       // Need login — show login page but preserve intended destination
@@ -130,8 +130,8 @@
   function startAutoRefresh() {
     if (refreshTimer) clearInterval(refreshTimer);
     refreshTimer = setInterval(function () {
-      const hash = window.location.hash.replace("#", "") || "leaderboard";
-      const page = ALL_PAGES.has(hash) ? hash : "leaderboard";
+      const hash = window.location.hash.replace("#", "") || "activity";
+      const page = ALL_PAGES.has(hash) ? hash : "activity";
       if (page === "login") return;
       loadPageData(page);
     }, REFRESH_INTERVAL);
@@ -282,6 +282,8 @@
           user.discord_username = s.discord_username;
           $(".username").textContent = s.discord_username;
         }
+        var discordEl = $("#stat-discord-id");
+        if (discordEl) discordEl.textContent = s.discord_username || "—";
       }
     } catch (_) {}
   }
@@ -656,9 +658,8 @@
 
   // ── Trigger Scheduler ────────────────────────────────
   window.triggerScheduler = async function () {
-    const btn = $("#scheduler-btn");
-    btn.disabled = true;
-    btn.textContent = "Running...";
+    const btn = $("#scheduler-btn") || document.querySelector('[onclick="triggerScheduler()"]');
+    if (btn) { btn.disabled = true; btn.textContent = "Running..."; }
     try {
       // Try admin endpoint first, fall back to demo endpoint
       let r = await fetch("/admin/scheduler/trigger", { method: "POST" });
@@ -672,8 +673,7 @@
     } catch (e) {
       toast("Scheduler failed: " + e.message, "error");
     } finally {
-      btn.disabled = false;
-      btn.textContent = "Run Scheduler Now";
+      if (btn) { btn.disabled = false; btn.textContent = "Run Scheduler Now"; }
     }
   };
 
@@ -746,11 +746,39 @@
     if (s) s.textContent = "Settlement: " + fmtTime(settlementRemaining);
   }
 
+  // ── Donate Info ─────────────────────────────────────
+  async function fetchDonateInfo() {
+    try {
+      var r = await fetch("/api/donate-info");
+      if (!r.ok) return;
+      var d = await r.json();
+      if (!d.address) return;
+      var bar = $("#donate-bar");
+      if (!bar) return;
+      bar.style.display = "block";
+      var addrEl = $("#donate-address");
+      if (addrEl) addrEl.textContent = d.address;
+      var balEl = $("#donate-balance-value");
+      if (balEl && d.balance !== null) balEl.textContent = parseFloat(d.balance).toFixed(2);
+      // Render QR code
+      var qrEl = $("#donate-qr");
+      if (qrEl && typeof qrcode !== "undefined") {
+        var qr = qrcode(0, "M");
+        qr.addData(d.address);
+        qr.make();
+        qrEl.innerHTML = qr.createSvgTag(3, 0);
+      }
+    } catch (_) {}
+  }
+
   // ── Boot ─────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", function () {
     init();
     fetchCountdown();
+    fetchDonateInfo();
     // Re-sync countdown from server every 60s
     setInterval(fetchCountdown, 60000);
+    // Re-sync donate info every 5 minutes
+    setInterval(fetchDonateInfo, 300000);
   });
 })();
