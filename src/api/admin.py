@@ -257,7 +257,12 @@ def admin_payouts_retry(
     )
     db.commit()
     return JSONResponse(
-        {"status": payout.status, "payout_id": payout_id, "tx_hash": payout.tx_hash}
+        {
+            "status": payout.status,
+            "payout_id": payout_id,
+            "tx_hash": payout.tx_hash,
+            "error_detail": payout.error_detail,
+        }
     )
 
 
