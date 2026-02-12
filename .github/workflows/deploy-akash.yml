@@ -7,9 +7,9 @@ on:
         required: true
         default: 'https://akash-rpc.polkachu.com:443'
       image_tag:
-        description: 'Container image tag to build & deploy'
+        description: 'Container image tag (leave "auto" for git-sha8)'
         required: true
-        default: 'latest'
+        default: 'auto'
       domain_name:
         description: 'Domain name for the API service'
         required: true
@@ -35,10 +35,20 @@ jobs:
     if: github.event.inputs.action != 'close'
     runs-on: ubuntu-latest
     env:
-      IMAGE_TAG: ${{ github.event.inputs.image_tag }}
+      IMAGE_TAG_INPUT: ${{ github.event.inputs.image_tag }}
       IMAGE_REPO: ghcr.io/${{ github.repository }}
     steps:
       - uses: actions/checkout@v4
+      - name: Resolve image tag
+        id: resolve_tag
+        run: |
+          if [ "${IMAGE_TAG_INPUT}" = "auto" ] || [ "${IMAGE_TAG_INPUT}" = "latest" ]; then
+            TAG="${GITHUB_SHA::8}"
+          else
+            TAG="${IMAGE_TAG_INPUT}"
+          fi
+          echo "IMAGE_TAG=${TAG}" >> $GITHUB_ENV
+          echo "Resolved image tag: ${TAG}"
       - name: Log in to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Build and push image
