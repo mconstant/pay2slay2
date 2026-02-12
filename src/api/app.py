@@ -233,4 +233,9 @@ def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup lo
                 headers={"Cache-Control": "no-cache, no-store, must-revalidate"},
             )
 
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon() -> Response:
+        svg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>"
+        return Response(content=svg, media_type="image/svg+xml")
+
     return app

@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ...models.models import Payout, RewardAccrual, User, WalletLink
-from ..banano_client import BananoClient
+from ..banano_client import BananoClient, seed_to_address
 
 # Module-level metrics (registered once to avoid duplication errors)
 _payout_amount_hist = Histogram(
@@ -21,6 +21,10 @@ _payout_amount_hist = Histogram(
 _accrual_lag_gauge = Gauge(
     "payout_accrual_lag_minutes",
     "Minutes between oldest unsettled accrual and payout creation",
+)
+_attempts_counter = Counter("payout_attempts_total", "Total payout send attempts", ["result"])
+_retry_latency_hist = Histogram(
+    "payout_retry_latency_seconds", "Delay between payout retry attempts"
 )
 
 
@@ -111,24 +115,32 @@ class PayoutService:
                 return True
             # T065: Preflight operator balance minimal check (if implemented upstream)
             try:
-                if not self.banano.has_min_balance(float(amount_ban) * 1.1):  # 10% margin
+                if not self.banano.has_min_balance(
+                    float(amount_ban) * 1.1,  # 10% margin
+                    operator_account=self.banano._seed
+                    and seed_to_address(self.banano._seed)
+                    or None,
+                ):
                     payout.status = "failed"
+                    payout.error_detail = "Insufficient operator balance"
                     return False
             except Exception:
                 pass
-            tx = self.banano.send(
-                source_wallet="operator", to_address=address, amount_raw=str(amount_ban)
-            )
+            amount_raw = self.banano.ban_to_raw(amount_ban)
+            try:
+                tx = self.banano.send(
+                    source_wallet="operator", to_address=address, amount_raw=amount_raw
+                )
+            except Exception as send_exc:
+                payout.status = "failed"
+                payout.error_detail = str(send_exc)[:500]
+                return False
             payout.tx_hash = tx
             payout.status = "sent" if tx else "failed"
+            if not tx:
+                payout.error_detail = "send returned no tx hash"
             return payout.status == "sent"
 
-        attempts_counter = Counter(
-            "payout_attempts_total", "Total payout send attempts", ["result"]
-        )
-        retry_latency_hist = Histogram(
-            "payout_retry_latency_seconds", "Delay between payout retry attempts"
-        )
         success = _attempt_send()
         attempt = 1
         while not success and attempt <= max_retries:
@@ -137,10 +149,10 @@ class PayoutService:
             payout.last_attempt_at = datetime.now(UTC)
             # jittered exponential backoff (capped small since scheduler loop handles broader timing)
             sleep_for = min(backoff_base * (2 ** (attempt - 1)) * (0.5 + random.random()), 5.0)
-            retry_latency_hist.observe(sleep_for)
+            _retry_latency_hist.observe(sleep_for)
             time.sleep(sleep_for)
             success = _attempt_send()
-        attempts_counter.labels(result="success" if success else "failed").inc()
+        _attempts_counter.labels(result="success" if success else "failed").inc()
         # Cursor is now advanced during accrual (not here) to prevent duplicate counting.
         if payout.status == "sent":
             user.last_settlement_at = datetime.now(UTC)

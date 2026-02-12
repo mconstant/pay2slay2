@@ -6,9 +6,7 @@ from typing import Any
 
 import httpx
 
-_DRYRUN_BALANCE_BAN = 1_000_000.0  # Large dummy balance for dry-run safety margin
-
-_DRYRUN_BALANCE_BAN = 100.0
+_DRYRUN_BALANCE_BAN = 100.0  # Dry-run dummy balance (BAN)
 
 # Banano address encoding alphabet (same as Nano)
 _B32_ALPHABET = "13456789abcdefghijkmnopqrstuwxyz"
