@@ -113,18 +113,21 @@ class PayoutService:
                 payout.tx_hash = "dryrun"
                 payout.status = "sent"
                 return True
-            # T065: Preflight operator balance minimal check (if implemented upstream)
+            # T065: Preflight operator balance check
             try:
-                if not self.banano.has_min_balance(
-                    float(amount_ban) * 1.1,  # 10% margin
-                    operator_account=(self.banano._seed and seed_to_address(self.banano._seed))
-                    or None,
-                ):
+                op_addr = seed_to_address(self.banano._seed) if self.banano._seed else None
+                min_required = float(amount_ban) * 1.1
+                if not self.banano.has_min_balance(min_required, operator_account=op_addr):
+                    bal, _ = self.banano.account_balance(op_addr) if op_addr else (0.0, 0.0)
                     payout.status = "failed"
-                    payout.error_detail = "Insufficient operator balance"
+                    payout.error_detail = (
+                        f"Insufficient operator balance: need {min_required:.2f} BAN, "
+                        f"have {bal:.2f} BAN (addr={op_addr or 'None'})"
+                    )
                     return False
-            except Exception:
-                pass
+            except Exception as bal_exc:
+                # Log but don't block — let the send itself fail if truly underfunded
+                payout.error_detail = f"balance check error: {bal_exc}"
             amount_raw = self.banano.ban_to_raw(amount_ban)
             try:
                 tx = self.banano.send(
