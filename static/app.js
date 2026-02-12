@@ -7,6 +7,8 @@
   let isAdmin = false;
   let productConfig = null;
   let isDryRun = false;
+  let schedulerIntervalMinutes = 20; // Default from payout.yaml
+  let lastSchedulerRun = null; // Track when the last run happened
 
   // ── DOM refs ─────────────────────────────────────────
   const $ = (sel) => document.querySelector(sel);
@@ -60,6 +62,17 @@
         }
       }
     } catch (_) { /* config not critical */ }
+    
+    // Load payout config for scheduler timing
+    try {
+      const r = await fetch("/config/payout");
+      if (r.ok) {
+        const payoutConfig = await r.json();
+        if (payoutConfig.scheduler_minutes) {
+          schedulerIntervalMinutes = payoutConfig.scheduler_minutes;
+        }
+      }
+    } catch (_) { /* payout config not critical */ }
   }
 
   // ── Navigation ───────────────────────────────────────
@@ -87,6 +100,10 @@
     if (navEl) navEl.style.display = user ? "flex" : "none";
     const userInfo = $(".user-info");
     if (userInfo) userInfo.style.display = user ? "flex" : "none";
+    
+    // Show/hide footer based on user login
+    const footer = $("#app-footer");
+    if (footer) footer.style.display = user ? "block" : "none";
 
     // Load data for page
     if (name === "dashboard" && user) loadDashboard();
@@ -518,6 +535,42 @@
     setTimeout(() => el.classList.remove("visible"), 3000);
   }
 
+  // ── Countdown Timers ─────────────────────────────────
+  function updateCountdowns() {
+    const now = Date.now();
+    const intervalMs = schedulerIntervalMinutes * 60 * 1000;
+    
+    // Estimate next run based on current time and interval
+    // We assume the scheduler runs on regular intervals
+    const msIntoCurrentInterval = now % intervalMs;
+    const msUntilNext = intervalMs - msIntoCurrentInterval;
+    
+    // Format time as HH:MM:SS
+    const formatTime = (ms) => {
+      const totalSec = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSec / 3600);
+      const minutes = Math.floor((totalSec % 3600) / 60);
+      const seconds = totalSec % 60;
+      return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    };
+    
+    const accrualEl = $("#countdown-accrual");
+    const settlementEl = $("#countdown-settlement");
+    
+    if (accrualEl) accrualEl.textContent = formatTime(msUntilNext);
+    if (settlementEl) settlementEl.textContent = formatTime(msUntilNext);
+  }
+  
+  function startCountdownTimers() {
+    // Update immediately
+    updateCountdowns();
+    // Then update every second
+    setInterval(updateCountdowns, 1000);
+  }
+
   // ── Boot ─────────────────────────────────────────────
-  document.addEventListener("DOMContentLoaded", init);
+  document.addEventListener("DOMContentLoaded", () => {
+    init();
+    startCountdownTimers();
+  });
 })();

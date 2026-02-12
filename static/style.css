@@ -377,6 +377,50 @@ td.tx-hash {
   color: var(--text-muted);
 }
 
+/* ── Footer with countdowns ──────────────────────────── */
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 12px 24px;
+  z-index: 100;
+}
+.footer-content {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+}
+.countdown-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.countdown-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  font-weight: 600;
+}
+.countdown-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: "SF Mono", "Fira Code", monospace;
+  letter-spacing: 1px;
+}
+
+/* Add padding to main to account for fixed footer */
+body {
+  padding-bottom: 70px;
+}
+
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 640px) {
   main { padding: 16px; }
@@ -386,4 +430,8 @@ td.tx-hash {
   .login-page h1 { font-size: 36px; }
   .how-it-works { gap: 10px; }
   .step-arrow { font-size: 16px; }
+  footer { padding: 10px 16px; }
+  .footer-content { gap: 20px; }
+  .countdown-label { font-size: 10px; }
+  .countdown-value { font-size: 16px; }
 }

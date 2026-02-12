@@ -30,6 +30,24 @@ def get_product_config() -> JSONResponse:
     )
 
 
+@router.get("/config/payout")
+def get_payout_config() -> JSONResponse:
+    """Return payout configuration including scheduler timing."""
+    cfg = get_config()
+    payout = cfg.payout
+    return JSONResponse(
+        {
+            "payout_amount_ban_per_kill": payout.payout_amount_ban_per_kill,
+            "scheduler_minutes": payout.scheduler_minutes,
+            "daily_payout_cap": payout.daily_payout_cap,
+            "weekly_payout_cap": payout.weekly_payout_cap,
+            "reset_tz": payout.reset_tz,
+            "settlement_order": payout.settlement_order,
+            "batch_size": payout.batch_size,
+        }
+    )
+
+
 @router.get("/debug/yunite")
 def debug_yunite(
     discord_user_id: str = Query(..., description="Discord user ID to lookup"),
