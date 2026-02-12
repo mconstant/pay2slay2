@@ -222,6 +222,7 @@ def admin_payouts_retry(
     banano = BananoClient(node_url=integrations.node_rpc, dry_run=integrations.dry_run, seed=seed)
     amount_ban = payout.amount_ban
     amount_raw = banano.ban_to_raw(amount_ban)
+    payout.error_detail = None  # reset before retry
     try:
         tx = banano.send(
             source_wallet="operator",
@@ -240,8 +241,7 @@ def admin_payouts_retry(
         log.info("admin_payout_retry_sent", payout_id=payout_id, tx_hash=tx)
     else:
         payout.status = "failed"
-        if not payout.error_detail or payout.error_detail == "Insufficient operator balance":
-            payout.error_detail = "retry: send returned no tx hash"
+        payout.error_detail = payout.error_detail or "retry: send returned no tx hash"
         ADMIN_PAYOUT_RETRY_TOTAL.labels(result="failed").inc()
         log.warning("admin_payout_retry_failed", payout_id=payout_id, error=payout.error_detail)
     record_admin_audit(
