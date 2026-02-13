@@ -37,11 +37,12 @@ def _build_scheduler_components() -> tuple[SchedulerConfig, FortniteService, Acc
     operator_account = os.getenv("P2S_OPERATOR_ACCOUNT", "") or None
     cfg_obj = get_config()
     integrations = cfg_obj.integrations
+    payout_cfg = cfg_obj.payout
     cfg = SchedulerConfig(
         min_operator_balance_ban=min_balance,
-        batch_size=None,
-        daily_cap=1,
-        weekly_cap=3,
+        batch_size=payout_cfg.batch_size or None,
+        daily_cap=payout_cfg.daily_payout_cap,
+        weekly_cap=payout_cfg.weekly_payout_cap,
         dry_run=dry_run,
         interval_seconds=interval,
         operator_account=operator_account,
