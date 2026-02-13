@@ -1,16 +1,20 @@
-/* Pay2Slay Faucet – MVP UI */
+/* Pay2Slay Faucet – Banano-Themed UI */
 :root {
-  --bg: #0d1117;
-  --surface: #161b22;
-  --border: #30363d;
+  --bg: #111114;
+  --surface: #1c1c20;
+  --surface-hover: #24242a;
+  --border: #2e2e35;
   --text: #e6edf3;
   --text-muted: #8b949e;
-  --accent: #fbdb1e;     /* Banano yellow */
-  --accent-dim: #9e8b12;
-  --success: #3fb950;
+  --accent: #FBDD11;       /* Banano Yellow (exact brand) */
+  --accent-dim: #c9b00e;
+  --accent-glow: rgba(251,221,17,.12);
+  --green: #4CBF4B;        /* Banano Green (secondary brand) */
+  --success: #4CBF4B;
   --danger: #f85149;
   --info: #58a6ff;
-  --radius: 8px;
+  --radius: 10px;
+  --font-mono: 'Overpass Mono', 'SF Mono', 'Fira Code', monospace;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,8 +33,19 @@ header {
   justify-content: space-between;
   padding: 12px 24px;
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
   gap: 12px;
+  position: relative;
+}
+header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), var(--green), transparent);
+  opacity: .5;
 }
 header .brand {
   display: flex;
@@ -85,7 +100,7 @@ header .user-info .username {
 
 /* ── Donate Strip ────────────────────────────────────── */
 .donate-strip {
-  background: linear-gradient(135deg, rgba(251,219,30,.06) 0%, rgba(251,219,30,.02) 100%);
+  background: linear-gradient(135deg, rgba(251,221,17,.06) 0%, rgba(76,191,75,.03) 100%);
   border-bottom: 1px solid var(--border);
   padding: 8px 24px;
 }
@@ -224,6 +239,7 @@ nav button:hover { color: var(--text); }
 nav button.active {
   color: var(--accent);
   border-bottom-color: var(--accent);
+  text-shadow: 0 0 12px rgba(251,221,17,.3);
 }
 
 /* ── Main ────────────────────────────────────────────── */
@@ -265,6 +281,11 @@ main {
   border-radius: var(--radius);
   padding: 20px;
   margin-bottom: 16px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.card:hover {
+  border-color: rgba(251,221,17,.15);
+  box-shadow: 0 0 20px rgba(251,221,17,.04);
 }
 .card h2 {
   font-size: 16px;
@@ -336,7 +357,7 @@ th {
   letter-spacing: .5px;
 }
 td.tx-hash {
-  font-family: "SF Mono", "Fira Code", monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: var(--text-muted);
   white-space: nowrap;
@@ -365,7 +386,7 @@ td.tx-hash {
   font-size: 11px;
   color: var(--text-muted);
   margin-left: 6px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-family: var(--font-mono);
 }
 .badge {
   display: inline-block;
@@ -491,7 +512,7 @@ td.tx-hash {
   z-index: 100;
 }
 #cycle-footer span[id^="cycle-countdown"] {
-  font-family: "SF Mono", "Fira Code", monospace;
+  font-family: var(--font-mono);
   color: var(--accent);
   font-weight: 600;
 }
@@ -559,7 +580,7 @@ td.tx-hash {
 .thermo-total {
   font-size: 32px; font-weight: 700; color: var(--accent);
 }
-.thermo-unit { font-size: 14px; color: var(--muted); }
+.thermo-unit { font-size: 14px; color: var(--text-muted); }
 .thermo-pct {
   margin-left: auto; font-size: 18px; font-weight: 600;
   color: var(--success, #4ecb71);
@@ -580,14 +601,14 @@ td.tx-hash {
 }
 .thermo-labels {
   display: flex; justify-content: space-between;
-  font-size: 12px; color: var(--muted); margin-top: 4px;
+  font-size: 12px; color: var(--text-muted); margin-top: 4px;
 }
 .thermo-current {
   display: flex; align-items: center; gap: 10px;
   margin-top: 16px; font-size: 15px;
 }
 .thermo-next {
-  margin-top: 8px; font-size: 13px; color: var(--muted);
+  margin-top: 8px; font-size: 13px; color: var(--text-muted);
 }
 
 /* Milestone badge */
@@ -627,12 +648,13 @@ td.tx-hash {
   display: flex; flex-direction: column; gap: 2px;
 }
 .milestone-info strong { font-size: 14px; }
-.milestone-desc { font-size: 12px; color: var(--muted); }
+.milestone-desc { font-size: 12px; color: var(--text-muted); }
 .milestone-right {
   display: flex; align-items: center; gap: 10px; flex-shrink: 0;
 }
 .milestone-threshold {
-  font-size: 13px; color: var(--muted); font-weight: 500;
+  font-size: 13px; color: var(--text-muted); font-weight: 500;
+  font-family: var(--font-mono);
 }
 .milestone-status { font-size: 16px; }
 
@@ -642,4 +664,108 @@ td.tx-hash {
   .milestone-item { padding: 10px 12px; }
   .milestone-emoji { font-size: 20px; }
   .milestone-threshold { font-size: 11px; }
+  .sticker { bottom: 46px; }
+  .sticker-github svg { width: 26px; height: 26px; }
+  .sticker-banano svg { width: 30px; height: 30px; }
+}
+
+/* ── Flapping Stickers ──────────────────────────────── */
+.sticker {
+  position: fixed;
+  z-index: 200;
+  bottom: 52px;
+  text-decoration: none;
+  cursor: pointer;
+  animation: flap 4s ease-in-out infinite;
+  transform-origin: top center;
+  transition: filter .25s;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.4));
+}
+.sticker:hover {
+  animation: flap-excited .4s ease-in-out infinite;
+  filter: drop-shadow(0 4px 16px rgba(251,221,17,.35));
+}
+.sticker-github {
+  left: 16px;
+  color: #c9d1d9;
+  animation-delay: 0s;
+}
+.sticker-github:hover { color: #fff; }
+.sticker-banano {
+  right: 16px;
+  animation-delay: -2s;
+}
+
+/* Gentle idle flap */
+@keyframes flap {
+  0%   { transform: perspective(400px) rotateY(0deg) rotate(-2deg) scale(1); }
+  12%  { transform: perspective(400px) rotateY(10deg) rotate(1deg) scale(1.03); }
+  28%  { transform: perspective(400px) rotateY(-7deg) rotate(-3deg) scale(.97); }
+  45%  { transform: perspective(400px) rotateY(4deg) rotate(0deg) scale(1.01); }
+  62%  { transform: perspective(400px) rotateY(-3deg) rotate(-1deg) scale(.99); }
+  80%  { transform: perspective(400px) rotateY(6deg) rotate(2deg) scale(1.02); }
+  100% { transform: perspective(400px) rotateY(0deg) rotate(-2deg) scale(1); }
+}
+/* Faster excited flap on hover */
+@keyframes flap-excited {
+  0%   { transform: perspective(300px) rotateY(0deg) rotate(-3deg) scale(1.1); }
+  25%  { transform: perspective(300px) rotateY(15deg) rotate(3deg) scale(1.15); }
+  50%  { transform: perspective(300px) rotateY(-12deg) rotate(-4deg) scale(1.08); }
+  75%  { transform: perspective(300px) rotateY(10deg) rotate(2deg) scale(1.14); }
+  100% { transform: perspective(300px) rotateY(0deg) rotate(-3deg) scale(1.1); }
+}
+
+/* ── Banano Sparkle Touches ─────────────────────────── */
+/* Subtle glow on brand name */
+header .brand-name {
+  text-shadow: 0 0 20px rgba(251,221,17,.25);
+}
+
+/* Potassium-powered stat boxes */
+.stat-box .value {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--green) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Login page banana glow */
+.login-page h1 {
+  text-shadow: 0 0 40px rgba(251,221,17,.2), 0 0 80px rgba(76,191,75,.08);
+}
+
+/* Section header accent bar */
+.section-header h2 {
+  position: relative;
+  padding-left: 12px;
+}
+.section-header h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--accent), var(--green));
+}
+
+/* Fun hover lift for milestone items */
+.milestone-item:hover {
+  transform: translateX(4px);
+  background: rgba(251,221,17,.08) !important;
+}
+
+/* Thermometer pulse glow */
+.thermo-fill {
+  animation: thermo-pulse 2s ease-in-out infinite alternate;
+}
+@keyframes thermo-pulse {
+  0%   { box-shadow: 0 0 8px rgba(251,221,17,.3); }
+  100% { box-shadow: 0 0 20px rgba(251,221,17,.5), 0 0 40px rgba(76,191,75,.15); }
+}
+
+/* code/address styling with Banano mono */
+code {
+  font-family: var(--font-mono);
 }
