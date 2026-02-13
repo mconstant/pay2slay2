@@ -546,3 +546,100 @@ td.tx-hash {
   #cycle-footer { flex-wrap: wrap; gap: 4px; }
   #cycle-footer span[style*="margin"] { display: none; }
 }
+
+/* ── Donations Page ─────────────────────────────────── */
+.donation-card { padding: 20px; }
+.donation-card h3 { margin: 0 0 12px; color: var(--accent); }
+
+/* Thermometer */
+.thermo-header {
+  display: flex; align-items: baseline; gap: 8px;
+  margin-bottom: 10px; flex-wrap: wrap;
+}
+.thermo-total {
+  font-size: 32px; font-weight: 700; color: var(--accent);
+}
+.thermo-unit { font-size: 14px; color: var(--muted); }
+.thermo-pct {
+  margin-left: auto; font-size: 18px; font-weight: 600;
+  color: var(--success, #4ecb71);
+}
+.thermo-track {
+  width: 100%; height: 28px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 14px; overflow: hidden;
+  position: relative;
+}
+.thermo-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #fbdd11 0%, #f5a623 50%, #ff6b35 100%);
+  border-radius: 14px;
+  transition: width 0.8s ease;
+  min-width: 4px;
+  box-shadow: 0 0 12px rgba(251,221,17,0.4);
+}
+.thermo-labels {
+  display: flex; justify-content: space-between;
+  font-size: 12px; color: var(--muted); margin-top: 4px;
+}
+.thermo-current {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 16px; font-size: 15px;
+}
+.thermo-next {
+  margin-top: 8px; font-size: 13px; color: var(--muted);
+}
+
+/* Milestone badge */
+.milestone-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  font-weight: 600; font-size: 14px;
+}
+.milestone-badge.unlocked {
+  background: rgba(251,221,17,0.15); color: #fbdd11;
+}
+.milestone-mult {
+  font-size: 13px; color: var(--success, #4ecb71); font-weight: 500;
+}
+
+/* Milestones list */
+.milestones-list { display: flex; flex-direction: column; gap: 8px; }
+.milestone-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px; border-radius: 10px;
+  transition: background 0.2s;
+}
+.milestone-item.unlocked {
+  background: rgba(251,221,17,0.06);
+  border-left: 3px solid #fbdd11;
+}
+.milestone-item.locked {
+  background: rgba(255,255,255,0.02);
+  border-left: 3px solid rgba(255,255,255,0.08);
+  opacity: 0.6;
+}
+.milestone-left {
+  display: flex; align-items: center; gap: 12px;
+}
+.milestone-emoji { font-size: 24px; }
+.milestone-info {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.milestone-info strong { font-size: 14px; }
+.milestone-desc { font-size: 12px; color: var(--muted); }
+.milestone-right {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.milestone-threshold {
+  font-size: 13px; color: var(--muted); font-weight: 500;
+}
+.milestone-status { font-size: 16px; }
+
+@media (max-width: 640px) {
+  .thermo-total { font-size: 24px; }
+  .thermo-pct { font-size: 14px; }
+  .milestone-item { padding: 10px 12px; }
+  .milestone-emoji { font-size: 20px; }
+  .milestone-threshold { font-size: 11px; }
+}

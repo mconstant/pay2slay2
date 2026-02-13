@@ -16,7 +16,7 @@
 
   // Pages that require auth
   const AUTH_PAGES = new Set(["dashboard", "wallet", "admin"]);
-  const ALL_PAGES = new Set(["leaderboard", "activity", "dashboard", "wallet", "admin", "login"]);
+  const ALL_PAGES = new Set(["leaderboard", "activity", "donations", "dashboard", "wallet", "admin", "login"]);
 
   // ── Init ─────────────────────────────────────────────
   async function init() {
@@ -123,6 +123,7 @@
   function loadPageData(name) {
     if (name === "leaderboard") loadLeaderboard();
     if (name === "activity") loadActivityFeed();
+    if (name === "donations") loadDonations();
     if (name === "dashboard" && user) loadDashboard();
     if (name === "wallet" && user) loadWallet();
     if (name === "admin" && user) loadAdmin();
@@ -302,6 +303,74 @@
         txHashCell(p.tx_hash, date) +
         '</tr>';
     }).join("");
+  }
+
+  // ── Donations ────────────────────────────────────────
+  async function loadDonations() {
+    try {
+      var r = await fetch("/api/donations");
+      if (!r.ok) return;
+      var data = await r.json();
+
+      // Thermometer
+      var totalEl = $("#donation-total");
+      var pctEl = $("#donation-pct");
+      var fillEl = $("#donation-fill");
+      if (totalEl) totalEl.textContent = formatBan(data.total_donated);
+      if (pctEl) pctEl.textContent = data.progress_pct + "%";
+      if (fillEl) fillEl.style.width = Math.min(data.progress_pct, 100) + "%";
+
+      // Current milestone
+      var curEl = $("#donation-current-milestone");
+      if (curEl && data.current_milestone) {
+        var cm = data.current_milestone;
+        curEl.innerHTML =
+          '<span class="milestone-badge unlocked">' + cm.emoji + " " + cm.name + '</span>' +
+          '<span class="milestone-mult">' + cm.payout_multiplier + 'x payout boost active</span>';
+      }
+
+      // Next milestone
+      var nxtEl = $("#donation-next-milestone");
+      if (nxtEl) {
+        if (data.next_milestone) {
+          var nm = data.next_milestone;
+          nxtEl.innerHTML =
+            'Next: <strong>' + nm.emoji + " " + nm.name + '</strong> at ' +
+            formatBan(nm.threshold) + ' BAN (' + formatBan(nm.remaining) + ' to go)';
+        } else {
+          nxtEl.innerHTML = '<strong>🎉 All milestones unlocked!</strong>';
+        }
+      }
+
+      // Milestones list
+      var listEl = $("#milestones-list");
+      if (listEl && data.milestones) {
+        listEl.innerHTML = data.milestones.map(function(m) {
+          var cls = m.unlocked ? "milestone-item unlocked" : "milestone-item locked";
+          var icon = m.unlocked ? "✅" : "🔒";
+          return '<div class="' + cls + '">' +
+            '<div class="milestone-left">' +
+              '<span class="milestone-emoji">' + m.emoji + '</span>' +
+              '<div class="milestone-info">' +
+                '<strong>' + m.name + '</strong>' +
+                '<span class="milestone-desc">' + m.description + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="milestone-right">' +
+              '<span class="milestone-threshold">' + formatBan(m.threshold) + ' BAN</span>' +
+              '<span class="milestone-status">' + icon + '</span>' +
+            '</div>' +
+          '</div>';
+        }).join("");
+      }
+    } catch (e) {
+      console.error("loadDonations error", e);
+    }
+  }
+
+  function formatBan(n) {
+    if (n == null) return "0";
+    return Number(n).toLocaleString(undefined, {maximumFractionDigits: 2});
   }
 
   // ── Dashboard ────────────────────────────────────────

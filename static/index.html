@@ -49,6 +49,7 @@
 <nav>
   <button data-page="leaderboard">Leaderboard</button>
   <button data-page="activity" class="active">Activity</button>
+  <button data-page="donations">Donations</button>
   <button data-page="dashboard" class="auth-only">Dashboard</button>
   <button data-page="wallet" class="auth-only">Wallet</button>
   <button data-page="admin" class="auth-only">Admin</button>
@@ -126,6 +127,41 @@
           <tr><td colspan="4" class="empty-state">Loading...</td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Donations Page (public) -->
+  <div id="page-donations" class="page">
+    <div class="section-header">
+      <h2>🍌 Donation Goal</h2>
+      <span class="card-subtitle">Help us reach <strong>1,000,000 BAN</strong> — every donation boosts payouts for everyone!</span>
+    </div>
+
+    <!-- Thermometer -->
+    <div class="card donation-card">
+      <div class="thermo-header">
+        <span class="thermo-total" id="donation-total">0</span>
+        <span class="thermo-unit">BAN donated</span>
+        <span class="thermo-pct" id="donation-pct">0%</span>
+      </div>
+      <div class="thermo-track">
+        <div class="thermo-fill" id="donation-fill" style="width:0%"></div>
+      </div>
+      <div class="thermo-labels">
+        <span>0</span>
+        <span>1,000,000 BAN</span>
+      </div>
+
+      <div class="thermo-current" id="donation-current-milestone"></div>
+      <div class="thermo-next" id="donation-next-milestone"></div>
+    </div>
+
+    <!-- Milestones -->
+    <div class="card donation-card">
+      <h3>Milestones</h3>
+      <div class="milestones-list" id="milestones-list">
+        <div class="empty-state">Loading milestones...</div>
+      </div>
     </div>
   </div>
 

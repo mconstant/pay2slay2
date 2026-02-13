@@ -169,3 +169,18 @@ class SecureConfig(Base, TimestampMixin):
     encrypted_value: Mapped[str] = mapped_column(String(500))  # base64-encoded ciphertext
     set_by: Mapped[str | None] = mapped_column(String(255))  # admin who set it
     description: Mapped[str | None] = mapped_column(String(255))
+
+
+class DonationLedger(Base, TimestampMixin):
+    """Records each batch of received donations (incoming blocks to operator wallet).
+
+    The running total across all rows is the all-time donation counter.
+    """
+
+    __tablename__ = "donation_ledger"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    amount_ban: Mapped[Decimal] = mapped_column(Numeric(18, 8, asdecimal=True))
+    blocks_received: Mapped[int] = mapped_column(default=0)
+    source: Mapped[str] = mapped_column(String(32), default="receive")  # receive / manual / seed
+    note: Mapped[str | None] = mapped_column(String(255))

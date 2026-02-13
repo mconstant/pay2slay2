@@ -209,6 +209,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup lo
     from .auth import router as auth_router
     from .config import router as config_router
     from .demo import router as demo_router
+    from .donations import router as donations_router
     from .leaderboard import router as leaderboard_router
     from .user import router as user_router
 
@@ -218,6 +219,7 @@ def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup lo
     app.include_router(admin_router)
     app.include_router(demo_router)
     app.include_router(leaderboard_router)
+    app.include_router(donations_router)
 
     _register_health(app)
     _register_metrics(app)

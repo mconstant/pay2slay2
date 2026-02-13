@@ -77,6 +77,14 @@ def run_accrual(
     if payout_ovr and "ban_per_kill" in payout_ovr:
         ban_per_kill = float(payout_ovr["ban_per_kill"])
 
+    # Apply donation milestone multiplier
+    from src.services.domain.donation_service import get_current_milestone, get_total_donated
+
+    total_donated = get_total_donated(session)
+    milestone = get_current_milestone(total_donated)
+    if milestone.payout_multiplier != 1.0:
+        ban_per_kill *= milestone.payout_multiplier
+
     svc = AccrualService(
         session,
         fortnite=fortnite,
