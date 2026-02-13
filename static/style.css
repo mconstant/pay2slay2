@@ -59,6 +59,18 @@ header .brand {
 header .brand span.logo {
   font-size: 24px;
 }
+
+/* PAY2SLAY split-color brand treatment (matching logo) */
+.brand-pay2 {
+  color: var(--accent);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.brand-slay {
+  color: var(--green);
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
 .steps-inline {
   display: flex;
   align-items: center;
@@ -255,18 +267,13 @@ main {
 /* ── Login page ──────────────────────────────────────── */
 .login-page {
   text-align: center;
-  padding-top: 60px;
-}
-.login-page h1 {
-  font-size: 48px;
-  color: var(--accent);
-  margin-bottom: 8px;
-  letter-spacing: -1px;
+  padding-top: 40px;
 }
 .login-page .tagline {
-  color: var(--text-muted);
+  color: var(--accent);
   font-size: 18px;
-  margin-bottom: 40px;
+  font-weight: 600;
+  margin-bottom: 4px;
 }
 .login-page .login-hint {
   color: var(--text-muted);
@@ -692,7 +699,7 @@ td.tx-hash {
 }
 .sticker-github:hover { color: #fff; }
 .sticker-banano {
-  right: 16px;
+  right: 56px;
   animation-delay: -2s;
 }
 
@@ -718,7 +725,7 @@ td.tx-hash {
 /* ── Banano Sparkle Touches ─────────────────────────── */
 /* Subtle glow on brand name */
 header .brand-name {
-  text-shadow: 0 0 20px rgba(251,221,17,.25);
+  text-shadow: 0 0 20px rgba(251,221,17,.2), 0 0 40px rgba(76,191,75,.1);
 }
 
 /* Potassium-powered stat boxes */
@@ -731,7 +738,33 @@ header .brand-name {
 
 /* Login page banana glow */
 .login-page h1 {
+  font-size: 48px;
+  margin-bottom: 4px;
+  letter-spacing: -1px;
   text-shadow: 0 0 40px rgba(251,221,17,.2), 0 0 80px rgba(76,191,75,.08);
+}
+
+/* Login hero logo */
+.login-hero {
+  margin-bottom: 20px;
+}
+.login-logo {
+  max-width: 280px;
+  height: auto;
+  filter: drop-shadow(0 4px 24px rgba(251,221,17,.25));
+  animation: logo-float 4s ease-in-out infinite;
+}
+@keyframes logo-float {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50%      { transform: translateY(-8px) rotate(1deg); }
+}
+
+/* Tagline sub */
+.tagline-sub {
+  color: var(--text-muted);
+  font-size: 14px;
+  margin-bottom: 32px;
+  opacity: .7;
 }
 
 /* Section header accent bar */
@@ -768,4 +801,113 @@ header .brand-name {
 /* code/address styling with Banano mono */
 code {
   font-family: var(--font-mono);
+}
+
+/* ── Kalium Sticker ─────────────────────────────────── */
+.sticker-kalium {
+  right: 16px;
+  bottom: 96px;
+  animation-delay: -1s;
+}
+
+/* ── Gaming-Inspired Touches (from logo) ────────────── */
+
+/* Crosshair cursor on interactive stat values */
+.stat-box:hover {
+  cursor: crosshair;
+  border-color: var(--accent);
+  box-shadow: 0 0 16px rgba(251,221,17,.1);
+}
+
+/* Kill count ammo-counter style */
+.stat-box .value {
+  font-family: var(--font-mono);
+  letter-spacing: 1px;
+}
+
+/* Headset-green accent on step arrows */
+.step-sep {
+  color: var(--green);
+  text-shadow: 0 0 6px rgba(76,191,75,.4);
+}
+
+/* Tactical card corner marks (like a scope reticle) */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 12px;
+  height: 12px;
+  border-top: 2px solid rgba(251,221,17,.2);
+  border-left: 2px solid rgba(251,221,17,.2);
+  border-radius: 2px 0 0 0;
+  pointer-events: none;
+}
+.card::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  width: 12px;
+  height: 12px;
+  border-bottom: 2px solid rgba(76,191,75,.15);
+  border-right: 2px solid rgba(76,191,75,.15);
+  border-radius: 0 0 2px 0;
+  pointer-events: none;
+}
+.card {
+  position: relative;
+}
+
+/* Banana peel background texture (very subtle) */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background:
+    radial-gradient(ellipse 600px 400px at 10% 20%, rgba(251,221,17,.02) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 500px at 85% 70%, rgba(76,191,75,.015) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* Earn badge glow for .badge-sent */
+.badge-sent {
+  text-shadow: 0 0 8px rgba(76,191,75,.4);
+}
+
+/* Table row hover: tactical highlight */
+tbody tr:hover {
+  background: rgba(251,221,17,.03);
+}
+
+/* Nav Donations tab special pulsing dot */
+nav button[data-page="donations"]::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  margin-left: 6px;
+  vertical-align: middle;
+  animation: dot-pulse 2s ease-in-out infinite;
+}
+@keyframes dot-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .4; transform: scale(.7); }
+}
+
+/* Responsive stickers */
+@media (max-width: 640px) {
+  .sticker-kalium { bottom: 88px; }
+  .sticker-kalium svg { width: 28px; height: 28px; }
+  .login-logo { max-width: 200px; }
+  .login-page h1 { font-size: 36px; }
+  .tagline-sub { font-size: 12px; }
+}
+@media (max-width: 400px) {
+  .login-logo { max-width: 160px; }
+  .login-page h1 { font-size: 28px; }
 }
