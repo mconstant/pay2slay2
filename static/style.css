@@ -469,19 +469,22 @@ td.tx-hash {
   nav { padding: 0 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   nav button { padding: 10px 12px; font-size: 13px; white-space: nowrap; }
   .login-page h1 { font-size: 36px; }
-  .how-it-works { gap: 8px; flex-wrap: wrap; }
-  .step-arrow { font-size: 16px; }
   .login-cta { flex-direction: column; align-items: center; }
   .card { padding: 14px; overflow-x: auto; }
   table { min-width: 480px; }
   .section-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .donate-bar { padding: 10px 16px; }
-  .donate-row { flex-direction: column; gap: 12px; }
-  .donate-content { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .how-it-works { justify-content: center; }
-  .donate-qr { align-self: center; }
+  /* Donate bar – keep QR + info side-by-side, stack steps below */
+  .donate-bar { padding: 8px 16px; }
+  .donate-row { flex-direction: column; gap: 8px; }
+  .donate-content { gap: 12px; }
+  .donate-qr svg { width: 48px; height: 48px; }
   .donate-balance { font-size: 16px; }
   .donate-address { font-size: 9px; }
+  /* How-it-works: compact horizontal strip */
+  .how-it-works { gap: 10px; justify-content: center; }
+  .step-num { width: 30px; height: 30px; font-size: 13px; }
+  .step-text { font-size: 11px; }
+  .step-arrow { font-size: 14px; margin-bottom: 16px; }
   .stat-box .value { font-size: 22px; }
   .stat-box .label { font-size: 10px; }
   .btn-lg { font-size: 15px; padding: 10px 24px; }
@@ -497,10 +500,16 @@ td.tx-hash {
   .login-page { padding-top: 32px; }
   .login-page h1 { font-size: 28px; }
   .login-page .tagline { font-size: 15px; margin-bottom: 24px; }
+  .donate-bar { padding: 6px 12px; }
+  .donate-row { gap: 6px; }
+  .donate-content { gap: 10px; }
+  .donate-qr svg { width: 40px; height: 40px; }
+  .donate-balance { font-size: 15px; }
+  .donate-cta { font-size: 12px; }
   .how-it-works { gap: 6px; }
-  .step-num { width: 32px; height: 32px; font-size: 13px; }
-  .step-text { font-size: 11px; }
-  .step-arrow { font-size: 14px; margin-bottom: 14px; }
+  .step-num { width: 26px; height: 26px; font-size: 11px; border-width: 1.5px; }
+  .step-text { font-size: 10px; }
+  .step-arrow { font-size: 12px; margin-bottom: 12px; }
   nav button { padding: 8px 10px; font-size: 12px; }
   #cycle-footer { flex-wrap: wrap; gap: 4px; }
   #cycle-footer span[style*="margin"] { display: none; }
