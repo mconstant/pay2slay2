@@ -951,14 +951,11 @@ code {
   position: relative;
 }
 
-/* Banana peel background texture (very subtle) */
-body::before {
-  content: '';
+/* Banana rain canvas background */
+#banana-rain {
   position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background:
-    radial-gradient(ellipse 600px 400px at 10% 20%, rgba(251,221,17,.02) 0%, transparent 70%),
-    radial-gradient(ellipse 500px 500px at 85% 70%, rgba(76,191,75,.015) 0%, transparent 70%);
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
   pointer-events: none;
   z-index: -1;
 }
