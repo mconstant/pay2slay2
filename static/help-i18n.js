@@ -77,7 +77,7 @@
         howTitle: "How It Works",
         howSteps: [
           { title: "Get $JPMT", desc: 'Buy $JPMT on <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> using any Solana wallet (Phantom, Solflare, etc.).' },
-          { title: "Connect Your Wallet", desc: "On the Dashboard, click <strong>Connect Solana Wallet</strong> to link your Phantom or Solflare wallet. You'll sign a message to prove ownership — then click <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Connect Your Wallet", desc: "On the Dashboard, click <strong>Connect Solana Wallet</strong> to link your Phantom, Solflare, or Jupiter Mobile wallet. On desktop, your browser extension connects automatically. On mobile, you'll be prompted to open the page in your wallet's built-in browser. Sign the message to prove ownership, then click <strong>Verify $JPMT Holdings</strong>." },
           { title: "Get Boosted", desc: "Your tier and multiplier are applied automatically to all future kill payouts. The system also scans your balance periodically so your tier stays up to date — no need to re-verify manually." }
         ],
         tiersTitle: "Boost Tiers",
@@ -163,7 +163,7 @@
         howTitle: "Як це працює",
         howSteps: [
           { title: "Отримайте $JPMT", desc: 'Купіть $JPMT на <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> використовуючи будь-який Solana гаманець.' },
-          { title: "Підключіть гаманець", desc: "На Dashboard натисніть <strong>Connect Solana Wallet</strong>, щоб підключити Phantom або Solflare. Підпишіть повідомлення для підтвердження, потім натисніть <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Підключіть гаманець", desc: "На Dashboard натисніть <strong>Connect Solana Wallet</strong>, щоб підключити Phantom, Solflare або Jupiter Mobile. На мобільному відкрийте сторінку у браузері вашого гаманця. Підпишіть повідомлення, потім натисніть <strong>Verify $JPMT Holdings</strong>." },
           { title: "Отримайте буст", desc: "Ваш рівень і множник застосовуються автоматично. Система періодично сканує ваш баланс, тому рівень оновлюється автоматично." }
         ],
         tiersTitle: "Рівні бусту",
@@ -245,7 +245,7 @@
         howTitle: "Cómo funciona",
         howSteps: [
           { title: "Obtén $JPMT", desc: 'Compra $JPMT en <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> usando cualquier billetera Solana.' },
-          { title: "Conecta tu billetera", desc: "En el Dashboard, haz clic en <strong>Connect Solana Wallet</strong> para vincular tu Phantom o Solflare. Firmarás un mensaje para verificar la propiedad, luego haz clic en <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Conecta tu billetera", desc: "En el Dashboard, haz clic en <strong>Connect Solana Wallet</strong> para vincular Phantom, Solflare o Jupiter Mobile. En móvil, abre la página en el navegador de tu billetera. Firma el mensaje para verificar la propiedad, luego haz clic en <strong>Verify $JPMT Holdings</strong>." },
           { title: "Recibe el boost", desc: "Tu nivel y multiplicador se aplican automáticamente. El sistema también escanea tu saldo periódicamente para mantener tu nivel actualizado." }
         ],
         tiersTitle: "Niveles de Boost",
@@ -327,7 +327,7 @@
         howTitle: "Como funciona",
         howSteps: [
           { title: "Obtenha $JPMT", desc: 'Compre $JPMT no <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> usando qualquer carteira Solana.' },
-          { title: "Conecte sua carteira", desc: "No Dashboard, clique em <strong>Connect Solana Wallet</strong> para vincular seu Phantom ou Solflare. Você assinará uma mensagem para comprovar a propriedade, depois clique em <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Conecte sua carteira", desc: "No Dashboard, clique em <strong>Connect Solana Wallet</strong> para vincular Phantom, Solflare ou Jupiter Mobile. No celular, abra a página no navegador da sua carteira. Assine a mensagem para comprovar a propriedade, depois clique em <strong>Verify $JPMT Holdings</strong>." },
           { title: "Receba o boost", desc: "Seu nível e multiplicador são aplicados automaticamente. O sistema também escaneia seu saldo periodicamente para manter seu nível atualizado." }
         ],
         tiersTitle: "Níveis de Boost",
@@ -409,7 +409,7 @@
         howTitle: "仕組み",
         howSteps: [
           { title: "$JPMTを取得", desc: '<a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a>で任意のSolanaウォレットを使って$JPMTを購入してください。' },
-          { title: "ウォレットを接続", desc: "Dashboardで<strong>Connect Solana Wallet</strong>をクリックしてPhantomまたはSolflareを接続してください。所有権を証明するメッセージに署名し、<strong>Verify $JPMT Holdings</strong>をクリックしてください。" },
+          { title: "ウォレットを接続", desc: "Dashboardで<strong>Connect Solana Wallet</strong>をクリックしてPhantom、Solflare、またはJupiter Mobileを接続。モバイルではウォレットのブラウザでページを開いてください。所有権を証明するメッセージに署名し、<strong>Verify $JPMT Holdings</strong>をクリックしてください。" },
           { title: "ブーストを受け取る", desc: "ティアと倍率は自動的に適用されます。システムは定期的に残高をスキャンし、ティアを自動更新します。" }
         ],
         tiersTitle: "ブーストティア",
@@ -491,7 +491,7 @@
         howTitle: "Comment ça marche",
         howSteps: [
           { title: "Obtenez des $JPMT", desc: 'Achetez des $JPMT sur <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> avec n\'importe quel portefeuille Solana.' },
-          { title: "Connectez votre portefeuille", desc: "Sur le Dashboard, cliquez sur <strong>Connect Solana Wallet</strong> pour lier votre Phantom ou Solflare. Vous signerez un message pour prouver la propriété, puis cliquez sur <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Connectez votre portefeuille", desc: "Sur le Dashboard, cliquez sur <strong>Connect Solana Wallet</strong> pour lier Phantom, Solflare ou Jupiter Mobile. Sur mobile, ouvrez la page dans le navigateur de votre portefeuille. Signez le message pour prouver la propriété, puis cliquez sur <strong>Verify $JPMT Holdings</strong>." },
           { title: "Obtenez le boost", desc: "Votre niveau et multiplicateur s'appliquent automatiquement. Le système scanne aussi votre solde périodiquement pour garder votre niveau à jour." }
         ],
         tiersTitle: "Niveaux de Boost",
@@ -573,7 +573,7 @@
         howTitle: "So funktioniert's",
         howSteps: [
           { title: "$JPMT kaufen", desc: 'Kaufe $JPMT auf <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> mit jeder Solana-Wallet.' },
-          { title: "Wallet verbinden", desc: "Im Dashboard klicke auf <strong>Connect Solana Wallet</strong>, um dein Phantom oder Solflare zu verbinden. Du signierst eine Nachricht zum Eigentumsnachweis, dann klicke auf <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Wallet verbinden", desc: "Im Dashboard klicke auf <strong>Connect Solana Wallet</strong>, um Phantom, Solflare oder Jupiter Mobile zu verbinden. Auf dem Handy öffne die Seite im Browser deiner Wallet. Signiere die Nachricht zum Eigentumsnachweis, dann klicke auf <strong>Verify $JPMT Holdings</strong>." },
           { title: "Boost erhalten", desc: "Dein Tier und Multiplikator werden automatisch angewendet. Das System scannt dein Guthaben regelmäßig, um deinen Tier aktuell zu halten." }
         ],
         tiersTitle: "Boost-Stufen",
@@ -655,7 +655,7 @@
         howTitle: "如何运作",
         howSteps: [
           { title: "获取$JPMT", desc: '使用任何Solana钱包在<a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a>上购买$JPMT。' },
-          { title: "连接钱包", desc: "在Dashboard中点击<strong>Connect Solana Wallet</strong>连接您的Phantom或Solflare。您需要签名一条消息来证明所有权，然后点击<strong>Verify $JPMT Holdings</strong>。" },
+          { title: "连接钱包", desc: "在Dashboard中点击<strong>Connect Solana Wallet</strong>连接Phantom、Solflare或Jupiter Mobile。在手机上，请在钱包的内置浏览器中打开此页面。签名消息证明所有权，然后点击<strong>Verify $JPMT Holdings</strong>。" },
           { title: "获得加速", desc: "您的等级和倍率会自动应用。系统还会定期扫描您的余额以保持等级更新。" }
         ],
         tiersTitle: "加速等级",

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pay2Slay Faucet</title>
-  <link rel="stylesheet" href="/static/style.css?v=17">
+  <link rel="stylesheet" href="/static/style.css?v=18">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍌</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -344,7 +344,13 @@
         </div>
         <button id="sol-connect-btn" class="btn btn-primary btn-sol" onclick="connectSolanaWallet()">🔗 Connect Solana Wallet</button>
         <button id="sol-verify-btn" class="btn btn-primary btn-sol" style="display:none;" onclick="verifySolanaWallet()">✅ Verify $JPMT Holdings</button>
-        <p class="sol-wallet-hint">Requires <a href="https://phantom.app/" target="_blank">Phantom</a> or <a href="https://solflare.com/" target="_blank">Solflare</a> wallet extension</p>
+        <p class="sol-wallet-hint">Requires <a href="https://phantom.app/" target="_blank">Phantom</a>, <a href="https://solflare.com/" target="_blank">Solflare</a>, or <a href="https://jup.ag/" target="_blank">Jupiter Mobile</a></p>
+        <div id="sol-mobile-picker" class="sol-mobile-picker" style="display:none;">
+          <p class="sol-mobile-picker-title">Open this page in your wallet's browser:</p>
+          <button class="btn btn-sol btn-mobile-wallet" onclick="openInPhantom()"><img src="/static/phantom-icon.svg" width="20" height="20" alt=""> Open in Phantom</button>
+          <button class="btn btn-mobile-wallet" onclick="copyPageUrl()">📋 Copy URL for Jupiter / Other Wallet</button>
+          <p class="sol-mobile-hint">Your wallet's built-in browser will connect automatically.</p>
+        </div>
       </div>
 
       <div class="hodl-tier-table" id="hodl-tier-table">
@@ -646,9 +652,15 @@
 <a href="https://kalium.banano.cc/" target="_blank" rel="noopener" class="sticker sticker-kalium" title="Get Kalium Wallet">
   <svg viewBox="0 0 24 24" width="34" height="34" fill="#FBDD11"><path d="M21 7H20V5A3 3 0 0 0 17 2H5A3 3 0 0 0 2 5V19A3 3 0 0 0 5 22H19A3 3 0 0 0 22 19V10A3 3 0 0 0 21 7ZM5 4H17A1 1 0 0 1 18 5V7H5A1 1 0 0 1 5 5ZM20 16H19A1 1 0 0 1 19 14H20Z"/></svg>
 </a>
+<a href="https://phantom.com/" target="_blank" rel="noopener" class="sticker sticker-phantom sticker-desktop" title="Get Phantom Wallet">
+  <img src="/static/phantom-icon.svg" width="38" height="38" alt="Phantom">
+</a>
+<a href="https://jup.ag/" target="_blank" rel="noopener" class="sticker sticker-jupiter sticker-mobile" title="Jupiter Mobile Wallet">
+  <img src="/static/jupiter-icon.svg" width="38" height="38" alt="Jupiter">
+</a>
 
-<script src="/static/help-i18n.js?v=17"></script>
-<script src="/static/app.js?v=17"></script>
-<script src="/static/banana-rain.js?v=17"></script>
+<script src="/static/help-i18n.js?v=18"></script>
+<script src="/static/app.js?v=18"></script>
+<script src="/static/banana-rain.js?v=18"></script>
 </body>
 </html>

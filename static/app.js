@@ -640,6 +640,10 @@
   var _solanaProvider = null;
   var _solanaPublicKey = null;
 
+  function _isMobile() {
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  }
+
   function _getSolanaProvider() {
     if (window.phantom && window.phantom.solana && window.phantom.solana.isPhantom) {
       return window.phantom.solana;
@@ -656,6 +660,14 @@
   window.connectSolanaWallet = async function () {
     var provider = _getSolanaProvider();
     if (!provider) {
+      if (_isMobile()) {
+        // On mobile without injected provider, show wallet picker
+        var picker = $("#sol-mobile-picker");
+        if (picker) {
+          picker.style.display = picker.style.display === "flex" ? "none" : "flex";
+        }
+        return;
+      }
       toast("No Solana wallet found. Install Phantom or Solflare.", "error");
       window.open("https://phantom.app/", "_blank");
       return;
@@ -721,6 +733,26 @@
     } catch (e) {
       toast(e.message || "Signature rejected", "error");
     }
+  };
+
+  window.openInPhantom = function () {
+    var url = encodeURIComponent(window.location.href);
+    window.location.href = "https://phantom.app/ul/browse/" + url;
+  };
+
+  window.copyPageUrl = function () {
+    navigator.clipboard.writeText(window.location.href).then(function () {
+      toast("URL copied! Open your wallet app and paste in its browser.", "success");
+    }).catch(function () {
+      // Fallback for older browsers
+      var ta = document.createElement("textarea");
+      ta.value = window.location.href;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      toast("URL copied! Open your wallet app and paste in its browser.", "success");
+    });
   };
 
   // ── Admin ────────────────────────────────────────────
