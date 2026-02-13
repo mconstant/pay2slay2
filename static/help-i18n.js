@@ -11,7 +11,7 @@
           icon: "🏠",
           title: "Step 1 — Join the Discord Server",
           steps: [
-            { title: "Open the Invite Link", desc: "Click the <strong>Join Discord Server</strong> button on the login page, or visit our server invite link directly." },
+            { title: "Open the Invite Link", desc: 'Click the <strong>Join Discord Server</strong> button on the login page, or <a data-discord-invite href="#" target="_blank" class="btn btn-discord btn-sm">Join Our Discord Server</a> directly.' },
             { title: "Accept the Invite", desc: "If you don't have a Discord account yet, you'll need to create one first. Use a real email you can verify." },
             { title: "Verify Your Email", desc: "Discord may ask you to verify your email before you can interact with the server. Check your inbox (and spam folder)." }
           ],
@@ -97,7 +97,7 @@
           icon: "🏠",
           title: "Крок 1 — Приєднайтесь до Discord сервера",
           steps: [
-            { title: "Відкрийте посилання-запрошення", desc: "Натисніть кнопку <strong>Приєднатися до Discord</strong> на сторінці входу або перейдіть за посиланням на наш сервер." },
+            { title: "Відкрийте посилання-запрошення", desc: 'Натисніть кнопку <strong>Приєднатися до Discord</strong> на сторінці входу або <a data-discord-invite href="#" target="_blank" class="btn btn-discord btn-sm">приєднайтесь до нашого Discord</a> напряму.' },
             { title: "Прийміть запрошення", desc: "Якщо у вас ще немає акаунта Discord, спочатку створіть його. Використовуйте справжню електронну пошту." },
             { title: "Підтвердіть електронну пошту", desc: "Discord може попросити підтвердити вашу пошту. Перевірте вхідні (та папку спам)." }
           ],
@@ -179,7 +179,7 @@
           icon: "🏠",
           title: "Paso 1 — Únete al servidor de Discord",
           steps: [
-            { title: "Abre el enlace de invitación", desc: "Haz clic en el botón <strong>Unirse a Discord</strong> en la página de inicio de sesión." },
+            { title: "Abre el enlace de invitación", desc: 'Haz clic en el botón <strong>Unirse a Discord</strong> en la página de inicio de sesión, o <a data-discord-invite href="#" target="_blank" class="btn btn-discord btn-sm">únete a nuestro Discord</a> directamente.' },
             { title: "Acepta la invitación", desc: "Si no tienes una cuenta de Discord, crea una primero. Usa un correo real que puedas verificar." },
             { title: "Verifica tu correo", desc: "Discord puede pedirte que verifiques tu correo. Revisa tu bandeja de entrada (y la carpeta de spam)." }
           ],
@@ -261,7 +261,7 @@
           icon: "🏠",
           title: "Passo 1 — Entre no servidor do Discord",
           steps: [
-            { title: "Abra o link do convite", desc: "Clique no botão <strong>Entrar no Discord</strong> na página de login." },
+            { title: "Abra o link do convite", desc: 'Clique no botão <strong>Entrar no Discord</strong> na página de login, ou <a data-discord-invite href="#" target="_blank" class="btn btn-discord btn-sm">entre no nosso Discord</a> diretamente.' },
             { title: "Aceite o convite", desc: "Se você não tem uma conta no Discord, crie uma primeiro. Use um e-mail real." },
             { title: "Verifique seu e-mail", desc: "O Discord pode pedir para verificar seu e-mail. Verifique sua caixa de entrada (e spam)." }
           ],
@@ -343,7 +343,7 @@
           icon: "🏠",
           title: "ステップ1 — Discordサーバーに参加",
           steps: [
-            { title: "招待リンクを開く", desc: "ログインページの<strong>Discordに参加</strong>ボタンをクリックしてください。" },
+            { title: "招待リンクを開く", desc: 'ログインページの<strong>Discordに参加</strong>ボタンをクリックするか、<a data-discord-invite href="#" target="_blank" class="btn btn-discord btn-sm">Discordサーバーに参加</a>してください。' },
             { title: "招待を承認", desc: "Discordアカウントがまだない場合は、まず作成してください。認証可能な本物のメールアドレスを使用してください。" },
             { title: "メールを確認", desc: "Discordがメール確認を求める場合があります。受信トレイ（とスパムフォルダ）を確認してください。" }
           ],
@@ -425,7 +425,7 @@
           icon: "🏠",
           title: "Étape 1 — Rejoindre le serveur Discord",
           steps: [
-            { title: "Ouvrir le lien d'invitation", desc: "Cliquez sur le bouton <strong>Rejoindre Discord</strong> sur la page de connexion." },
+            { title: "Ouvrir le lien d'invitation", desc: 'Cliquez sur le bouton <strong>Rejoindre Discord</strong> sur la page de connexion, ou <a data-discord-invite href="#" target="_blank" class="btn btn-discord btn-sm">rejoignez notre Discord</a> directement.' },
             { title: "Accepter l'invitation", desc: "Si vous n'avez pas de compte Discord, créez-en un d'abord. Utilisez un vrai e-mail que vous pouvez vérifier." },
             { title: "Vérifier votre e-mail", desc: "Discord peut vous demander de vérifier votre e-mail. Vérifiez votre boîte de réception (et le dossier spam)." }
           ],
@@ -507,7 +507,7 @@
           icon: "🏠",
           title: "Schritt 1 — Dem Discord-Server beitreten",
           steps: [
-            { title: "Einladungslink öffnen", desc: "Klicke auf der Login-Seite auf <strong>Discord beitreten</strong>." },
+            { title: "Einladungslink öffnen", desc: 'Klicke auf der Login-Seite auf <strong>Discord beitreten</strong>, oder <a data-discord-invite href="#" target="_blank" class="btn btn-discord btn-sm">tritt unserem Discord bei</a>.' },
             { title: "Einladung annehmen", desc: "Falls du noch keinen Discord-Account hast, erstelle zuerst einen. Verwende eine echte E-Mail-Adresse." },
             { title: "E-Mail bestätigen", desc: "Discord kann dich auffordern, deine E-Mail zu bestätigen. Überprüfe deinen Posteingang (und Spam-Ordner)." }
           ],
@@ -589,7 +589,7 @@
           icon: "🏠",
           title: "第1步 — 加入Discord服务器",
           steps: [
-            { title: "打开邀请链接", desc: "在登录页面点击<strong>加入Discord</strong>按钮。" },
+            { title: "打开邀请链接", desc: '在登录页面点击<strong>加入Discord</strong>按钮，或直接<a data-discord-invite href="#" target="_blank" class="btn btn-discord btn-sm">加入我们的Discord</a>。' },
             { title: "接受邀请", desc: "如果您还没有Discord账户，请先创建一个。使用可以验证的真实电子邮件。" },
             { title: "验证电子邮件", desc: "Discord可能会要求您验证电子邮件。检查您的收件箱（和垃圾邮件文件夹）。" }
           ],
@@ -748,6 +748,34 @@
 
     var container = document.getElementById('help-content');
     if (container) container.innerHTML = html;
+
+    // Inject Discord invite URL from server config
+    _injectDiscordInviteUrl();
+  }
+
+  // ── Discord Invite URL Injection ──────────────────────
+  var _cachedDiscordInviteUrl = null;
+
+  function _injectDiscordInviteUrl() {
+    if (_cachedDiscordInviteUrl) {
+      _applyDiscordLinks(_cachedDiscordInviteUrl);
+      return;
+    }
+    fetch('/config/product')
+      .then(function (r) { return r.json(); })
+      .then(function (cfg) {
+        if (cfg.discord_invite_url) {
+          _cachedDiscordInviteUrl = cfg.discord_invite_url;
+          _applyDiscordLinks(cfg.discord_invite_url);
+        }
+      })
+      .catch(function () {});
+  }
+
+  function _applyDiscordLinks(url) {
+    document.querySelectorAll('a[data-discord-invite]').forEach(function (link) {
+      link.href = url;
+    });
   }
 
   // ── Language Switcher ─────────────────────────────────
