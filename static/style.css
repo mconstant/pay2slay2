@@ -901,22 +901,6 @@ code {
   animation-delay: -1s;
 }
 
-/* ── Rain Toggle Sticker ────────────────────────────── */
-.sticker-rain {
-  left: 16px;
-  bottom: 96px;
-  animation-delay: -0.5s;
-  background: none;
-  border: none;
-  font-size: 28px;
-  padding: 0;
-  line-height: 1;
-  opacity: 0.5;
-  transition: opacity .2s;
-}
-.sticker-rain:hover { opacity: 1; }
-.sticker-rain.active { opacity: 1; }
-
 /* ── Gaming-Inspired Touches (from logo) ────────────── */
 
 /* Crosshair cursor on interactive stat values */
