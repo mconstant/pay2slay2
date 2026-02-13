@@ -1,155 +1,135 @@
-# Pay2Slay Faucet
+# Pay2Slay
 
-![Immutable SHA Images](https://img.shields.io/badge/image%20tagging-immutable--sha-success?style=flat)
-![Digest Guards](https://img.shields.io/badge/digest-pre%2Fpost%20verified-blue?style=flat)
-![Rollback No-Build](https://img.shields.io/badge/rollback-no--build-important?style=flat)
+<p align="center">
+  <img src="static/logo.png" alt="Pay2Slay logo" width="180" />
+</p>
 
-Banano payouts for Fortnite kills. FastAPI backend, SQLAlchemy ORM, Alembic migrations, and a simple scheduler that settles rewards and (optionally) pays out via a Banano node.
+<p align="center">
+  <strong>Earn Banano for Fortnite kills.</strong><br/>
+  A cryptocurrency faucet that pays players in BAN for every elimination.
+</p>
 
-## QuickStart
+<p align="center">
+  <img src="https://img.shields.io/badge/python-3.13-blue?style=flat" alt="Python 3.13" />
+  <img src="https://img.shields.io/badge/framework-FastAPI-009688?style=flat" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/chain-Banano-FBDD11?style=flat" alt="Banano" />
+  <img src="https://img.shields.io/badge/deploy-Akash-red?style=flat" alt="Akash" />
+</p>
 
-Get up and running in minutes:
+---
+
+## Screenshots
+
+| Leaderboard | Donations |
+|:-----------:|:---------:|
+| ![Leaderboard](docs/screenshots/leaderboard.png) | ![Donations](docs/screenshots/donations.png) |
+
+## How It Works
+
+1. **Login with Discord** — OAuth authenticates you, Yunite maps your Discord to your Epic Games account.
+2. **Link your Banano wallet** — Paste your `ban_` address (Kalium, Banano Vault, etc.).
+3. **Play Fortnite** — The scheduler tracks your kills and pays you **2.1 BAN per kill**, auto-settled to your wallet.
+
+Payouts are capped at **100 BAN/day** and **300 BAN/week**. Community donations unlock milestone multipliers up to **3x**.
+
+## Features
+
+- **Live leaderboard** with kill counts, earnings, and activity feed
+- **Donation milestones** — 10 tiers from Fresh Spawn (1x) to Potassium Singularity (3x) with a 1M BAN goal
+- **Daily/weekly payout caps** with abuse detection heuristics
+- **Admin panel** — scheduler control, payout config, operator seed management, audit log
+- **Demo mode** — full dry-run with seeded data for local testing
+- **Supply chain security** — Cosign-signed images, SBOM attestation, digest verification
+
+## Quick Start
 
 ```bash
-# Clone the repository
-git clone https://github.com/mconstant/pay2slay2.git
-cd pay2slay2
-
-# Create a virtual environment and install dependencies
-python3 -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+git clone https://github.com/mconstant/pay2slay2.git && cd pay2slay2
+python3 -m venv .venv && source .venv/bin/activate
 pip install -e '.[dev]'
 
-# Run the API server (in one terminal)
-make api
+# Terminal 1: API server
+make api        # http://localhost:8000
 
-# Run the scheduler (in another terminal)
-make scheduler
+# Terminal 2: Scheduler
+make scheduler  # metrics on :8001
 ```
 
-The API will be available at http://localhost:8000 and the scheduler will run with a Prometheus metrics server on port 8001.
-
-For more detailed setup instructions, see `docs/quickstart.md`.
-
-## Features (current)
-- Discord OAuth + Yunite EpicID mapping (dry-run friendly)
-- User endpoints: link wallet, status (with last verification details)
-- Admin endpoints (cookie-based session): login, reverify (stub), payout retry (stub)
-- Domain services for accrual, settlement, payout; Banano RPC client (dry-run supported)
-- Scheduler loop with UTC daily/weekly caps, operator balance probe, Prometheus counters
-
-## Requirements
-- Python 3.11+
-- SQLite (local dev default)
-
-## Quickstart (dev)
-See `docs/quickstart.md` for step-by-step setup.
-
-1) Create a virtual environment and install the project (editable):
-   - Use your preferred venv manager; packages are defined in `pyproject.toml`.
-2) Set environment variables as needed (optional; sensible dev defaults):
-   - `DATABASE_URL` (default: `sqlite:///pay2slay.db`)
-   - `SESSION_SECRET` (default: `dev-secret`)
-   - `P2S_DRY_RUN` (default: `true`)
-   - `P2S_MIN_OPERATOR_BALANCE_BAN` (default: `50`)
-   - `P2S_INTERVAL_SECONDS` (default: `1200`) – scheduler interval
-   - `P2S_OPERATOR_ACCOUNT` (only needed when not dry-run)
-   - `P2S_METRICS_PORT` (default: `8001`)
-
-## Run the API (dev)
-- App factory is `src/api/app.py:create_app()`; run with your ASGI server of choice.
-- Example (uvicorn): `uvicorn src.api.app:create_app --reload`
-
-## Run the Scheduler (dev)
-- Metrics: the scheduler starts a Prometheus HTTP server (default port `8001`).
-- Start the loop (blocking): `python -m src.jobs`
-- Graceful shutdown: Ctrl-C (SIGINT) or SIGTERM.
-
-Makefile shortcuts are available:
-- `make api` to run the API
-- `make scheduler` to run the scheduler
-- `make all` to lint, type-check, and test
+Runs in **dry-run mode** by default — no real API keys or BAN needed for local dev. See [docs/quickstart.md](docs/quickstart.md) for full setup.
 
 ## Configuration
-- YAML configs under `configs/`: `payout.yaml`, `integrations.yaml`, `product.yaml`
-- Environment variables are supported in these configs (see `src/lib/config.py`).
 
-## Testing
-- Contract tests live under `tests/contract/`. Run the full suite with `pytest`.
+YAML configs in `configs/`:
 
-## Documentation
-- Quickstart: `docs/quickstart.md`
-- API: `docs/api.md`
+| File | Controls |
+|------|----------|
+| `payout.yaml` | `ban_per_kill`, `daily_payout_cap`, `weekly_payout_cap`, scheduler interval, batch size |
+| `integrations.yaml` | Banano RPC, Discord OAuth, Yunite, Fortnite API, abuse heuristics |
+| `product.yaml` | App name, feature flags, Discord invite URL |
 
-## Runtime notes
-- Scheduler and metrics can be started via the CLI entrypoint (`python -m src.jobs`).
-- Metrics default to port 8001; set `P2S_METRICS_PORT` to change.
+Key environment variables:
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `DATABASE_URL` | `sqlite:///pay2slay.db` | PostgreSQL supported for prod |
+| `P2S_DRY_RUN` | `true` | Set `false` for real payouts |
+| `SESSION_SECRET` | `dev-secret` | **Change in production** |
+| `P2S_INTERVAL_SECONDS` | `1200` | Scheduler loop interval |
+| `P2S_METRICS_PORT` | `8001` | Prometheus metrics |
+
+## Make Targets
+
+| Target | Action |
+|--------|--------|
+| `make api` | Start API with uvicorn --reload |
+| `make scheduler` | Start scheduler loop |
+| `make test` | Run pytest |
+| `make lint` | Run ruff |
+| `make type` | Run mypy |
+| `make all` | lint + type + test |
+| `make ci` | Full CI pipeline |
 
 ## Deploy (Akash Network)
 
-The project deploys as a single container on Akash Network. The container runs both the API server and the scheduler. Banano transactions use the public Kalium RPC (no self-hosted node required).
+Single container on [Akash](https://akash.network) running both API + scheduler. Banano transactions use the public Kalium RPC — no self-hosted node required.
 
 ### Prerequisites
 
-1. An Akash wallet with AKT funds (see [Wallet Setup](#akash-wallet-setup-keplr) below)
-2. GitHub CLI installed (`gh auth login`)
-3. A domain name with DNS you control (e.g. `pay2slay.cc`)
+1. Akash wallet with AKT ([Keplr setup](#akash-wallet-setup))
+2. GitHub CLI (`gh auth login`)
+3. Domain with DNS you control
 
-### GitHub Secrets (required)
-
-Set these in your repo: Settings > Secrets and variables > Actions > Secrets.
+### GitHub Secrets
 
 | Secret | Description |
 |--------|-------------|
-| `AKASH_MNEMONIC` | 24-word Akash wallet mnemonic |
-| `AKASH_CERT` | Akash TLS client cert (PEM). Generate via `rotate-akash-cert` workflow |
-| `GH_PAT` | GitHub PAT (classic) with `repo` scope — for TF state artifact and cert rotation |
-| `SESSION_SECRET` | Long random string for session signing (e.g. `openssl rand -hex 32`) |
-| `DISCORD_CLIENT_ID` | Discord OAuth application client ID |
-| `DISCORD_CLIENT_SECRET` | Discord OAuth application client secret |
-| `DISCORD_REDIRECT_URI` | Full callback URL, e.g. `https://pay2slay.cc/auth/discord/callback` |
-| `YUNITE_API_KEY` | Yunite API key for Epic account resolution |
-| `FORTNITE_API_KEY` | fortnite-api.com API key |
+| `AKASH_MNEMONIC` | 24-word wallet mnemonic |
+| `AKASH_CERT` | TLS client cert (via `rotate-akash-cert` workflow) |
+| `GH_PAT` | GitHub PAT with `repo` scope |
+| `SESSION_SECRET` | `openssl rand -hex 32` |
+| `DISCORD_CLIENT_ID` | Discord OAuth app |
+| `DISCORD_CLIENT_SECRET` | Discord OAuth app |
+| `DISCORD_REDIRECT_URI` | `https://yourdomain.com/auth/discord/callback` |
+| `YUNITE_API_KEY` | Epic account resolution |
+| `FORTNITE_API_KEY` | fortnite-api.com key |
 
-### GitHub Variables (required)
+### GitHub Variables
 
-Set these in: Settings > Secrets and variables > Actions > Variables.
+| Variable | Description |
+|----------|-------------|
+| `AKASH_ACCOUNT_ADDRESS` | Your `akash1...` address |
+| `AKASH_CERT_ID` | Set by rotate-cert workflow |
+| `YUNITE_GUILD_ID` | Discord server ID |
+| `P2S_OPERATOR_ACCOUNT` | Operator `ban_` address |
+| `ADMIN_DISCORD_USERNAMES` | Comma-separated admin usernames |
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `AKASH_ACCOUNT_ADDRESS` | Your `akash1...` wallet address | `akash1abc...xyz` |
-| `AKASH_CERT_ID` | Cert identifier (set by rotate-cert workflow) | `cert-20250101-120000` |
-| `YUNITE_GUILD_ID` | Discord server ID for Yunite lookups | `123456789` |
-| `BANANO_NODE_RPC` | Banano RPC endpoint (default: Kalium) | `https://kaliumapi.appditto.com/api` |
-| `P2S_OPERATOR_ACCOUNT` | Operator Banano address for balance checks | `ban_3geytkg...` |
-| `MIN_OPERATOR_BALANCE_BAN` | Min BAN balance to continue payouts (default: `50`) | `50` |
-| `ADMIN_DISCORD_USERNAMES` | Comma-separated Discord usernames for admin access | `mconstant` |
+### Deploy
 
-### Discord App Configuration
-
-In the Discord Developer Portal, set the OAuth2 redirect URI to match your domain:
-```
-https://yourdomain.com/auth/discord/callback
-```
-
-### Trigger Deployment
-
-Via GitHub CLI:
 ```bash
-gh workflow run deploy-akash.yml \
-  -f domain_name=pay2slay.cc \
-  -f image_tag=latest
+gh workflow run deploy-akash.yml -f domain_name=pay2slay.cc -f image_tag=latest
 ```
 
-Or via GitHub UI: Actions > `deploy-akash` > Run workflow.
-
-### After Deployment — DNS Setup
-
-The workflow summary will show the Akash provider hostname. Point your domain to it:
-```
-pay2slay.cc  CNAME  <provider-hostname-from-workflow-output>
-```
-The Akash provider handles TLS via Let's Encrypt automatically.
+Point your domain CNAME to the Akash provider hostname from the workflow output. TLS is handled automatically via Let's Encrypt.
 
 ### Docker (local)
 
@@ -158,38 +138,49 @@ docker build -t pay2slay:dev .
 docker run -p 8000:8000 --env-file .env pay2slay:dev
 ```
 
-The container runs both the API (port 8000) and scheduler as background process. Set `PAY2SLAY_AUTO_MIGRATE=1` to run Alembic migrations on startup.
+Set `PAY2SLAY_AUTO_MIGRATE=1` to run Alembic migrations on startup.
 
-### Akash Wallet Setup (Keplr)
+### Akash Wallet Setup
 
-1. Install [Keplr](https://www.keplr.app/) browser extension and create a wallet (save the 24-word mnemonic securely).
-2. Enable Akash Network in Keplr (Add chains > search "Akash").
-3. Fund your wallet with AKT:
-   - Buy ATOM on an exchange > withdraw to Keplr > IBC transfer to Akash > swap to AKT on [Osmosis](https://app.osmosis.zone), or
-   - Buy AKT directly on an exchange that lists it > withdraw to your `akash1...` address.
-4. Set the `AKASH_MNEMONIC` secret and `AKASH_ACCOUNT_ADDRESS` variable in GitHub (see tables above).
+1. Install [Keplr](https://www.keplr.app/) and save your 24-word mnemonic.
+2. Enable Akash Network in Keplr.
+3. Fund with AKT via exchange or [Osmosis](https://app.osmosis.zone) IBC swap.
 
 ### Certificate Rotation
 
-Akash client certs need periodic rotation:
 ```bash
 make rotate-akash-cert
 ```
-This dispatches the `rotate-akash-cert` workflow which updates `AKASH_CERT` (secret) and `AKASH_CERT_ID` (variable). Requires `AKASH_MNEMONIC` and `GH_PAT`.
-
-### Creating a `GH_PAT`
-
-1. GitHub > Settings (user) > Developer settings > Personal access tokens > Tokens (classic).
-2. Generate new token with `repo` scope (or `public_repo` if repo is public).
-3. Store as repository secret named `GH_PAT`.
 
 ### Supply Chain Security
 
-- Images are signed with Cosign (keyless/Sigstore) and attested with SBOM (Syft/SPDX).
-- Build-time digest verification ensures pushed image matches local build.
-- Rollback workflow (`api-rollback.yml`) reuses existing images without rebuild.
+Images are signed with Cosign (keyless/Sigstore) and attested with SBOM (Syft/SPDX). Rollback workflow reuses existing images without rebuild.
 
+## Tech Stack
 
-## Notes
-- Dry-run mode short-circuits external calls and assumes a healthy operator balance; use for local testing.
-- Alembic migrations are initialized; SQLite dev DB is created automatically on app startup.
+| Layer | Technology |
+|-------|-----------|
+| Backend | Python 3.13, FastAPI, SQLAlchemy, Alembic |
+| Database | SQLite (dev), PostgreSQL (prod) |
+| Blockchain | Banano via bananopie / Kalium RPC |
+| Auth | Discord OAuth + Yunite Epic mapping |
+| Stats | Fortnite API (fortnite-api.com) |
+| Observability | Prometheus, OpenTelemetry |
+| Deploy | Docker, Akash Network, Terraform |
+| Security | Cosign, Syft SBOM, digest guards |
+
+## Docs
+
+| Doc | Description |
+|-----|-------------|
+| [Quickstart](docs/quickstart.md) | Full local setup guide |
+| [API Reference](docs/api.md) | All endpoints |
+| [Data Model](docs/data-model.md) | Database schema |
+| [Runbook](docs/runbook.md) | Production operations |
+| [Privacy Policy](docs/PRIVACY.md) | Data handling |
+| [Security](SECURITY.md) | Vulnerability reporting, hardening |
+| [Contributing](CONTRIBUTING.md) | Dev workflow, code style |
+
+## License
+
+[MIT](LICENSE)

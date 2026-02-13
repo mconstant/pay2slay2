@@ -1,51 +1,96 @@
-# API Overview
+# API Reference
 
-This project exposes a small FastAPI backend with user and admin endpoints. Cookies are used for sessions.
+FastAPI backend. All sessions use HttpOnly, SameSite=Lax cookies.
 
-## Cookies
-- `p2s_session` (HttpOnly, SameSite=Lax): user session issued by `/auth/discord/callback`.
-- `p2s_admin` (HttpOnly, SameSite=Lax): admin session issued by `/admin/login`.
+## Authentication
+
+| Cookie | Set by | Purpose |
+|--------|--------|---------|
+| `p2s_session` | `/auth/discord/callback` | User session |
+| `p2s_admin` | `/admin/login` | Admin session |
+
+## Health & Infrastructure
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/healthz` | Health check → `{ status: "ok" }` |
+| GET | `/livez` | Liveness probe |
+| GET | `/readyz` | Readiness probe |
+| GET | `/metrics` | Prometheus metrics |
+
+## Auth
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/auth/discord/login` | Redirects to Discord OAuth |
+| GET | `/auth/discord/callback` | OAuth callback — sets `p2s_session` cookie |
 
 ## User Endpoints
-- POST `/auth/discord/callback?state=...&code=...`
-  - Side effects: sets `p2s_session` cookie.
-  - Response 200: `{ discord_user_id, discord_username, epic_account_id }`
-  - Errors: 400 (missing params), 403 (not in guild / missing Yunite mapping).
 
-- POST `/link/wallet`
-  - Auth: requires `p2s_session` cookie.
-  - Body: `{ "banano_address": "ban_..." }`
-  - Response 200/202: `{ linked: true, address: "..." }`
-  - Errors: 400 (invalid address), 401 (unauthorized).
+Require `p2s_session` cookie.
 
-- GET `/me/status`
-  - Auth: requires `p2s_session` cookie.
-  - Response 200: `{ linked, last_verified_at, last_verified_status, last_verified_source, accrued_rewards_ban }`
-  - Errors: 401 (unauthorized).
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/link/wallet` | Link a `ban_` address. Body: `{ "banano_address": "ban_..." }` |
+| POST | `/me/reverify` | Re-trigger Yunite verification |
+| GET | `/me/status` | Current user status, wallet, accrued rewards |
+| GET | `/me/payouts` | User's payout history |
+| GET | `/me/accruals` | User's accrual history |
+
+## Public API
+
+No authentication required.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/leaderboard` | Top players by kills and earnings |
+| GET | `/api/feed` | Recent activity feed (payouts, accruals) |
+| GET | `/api/donate-info` | Operator wallet address + balance for donations |
+| GET | `/api/scheduler/countdown` | Seconds until next accrual/settlement cycle |
+| GET | `/api/donations` | Donation progress, milestones, current multiplier |
+| GET | `/config/product` | Public product config (app name, feature flags) |
 
 ## Admin Endpoints
-- POST `/admin/login`
-  - Body: `{ "email": "admin@example.com" }`
-  - Requires an active AdminUser; side effects: sets `p2s_admin` cookie.
-  - Response 200: `{ email }`
-  - Errors: 400 (missing), 401 (unauthorized).
 
-- POST `/admin/reverify`
-  - Auth: requires `p2s_admin` cookie.
-  - Body: `{ "discord_id": "..." }`
-  - Response 202-like: `{ status: "accepted", discord_id }` (stubbed behavior).
-  - Errors: 401 (unauthorized), 404 (user not found).
+Require `p2s_admin` cookie.
 
-- POST `/admin/payouts/retry`
-  - Auth: requires `p2s_admin` cookie.
-  - Body: `{ "payout_id": 123 }`
-  - Response 202-like: `{ status: "accepted", payout_id }` (stubbed behavior).
-  - Errors: 401 (unauthorized), 404 (payout not found).
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/admin/login` | Admin login. Body: `{ "email": "..." }` |
+| POST | `/admin/reverify` | Force reverify a user. Body: `{ "discord_id": "..." }` |
+| POST | `/admin/payouts/retry` | Retry a failed payout. Body: `{ "payout_id": 123 }` |
+| GET | `/admin/audit` | Admin audit log |
+| GET | `/admin/stats` | System statistics |
+| GET | `/admin/health/extended` | Extended health check |
+| POST | `/admin/config/operator-seed` | Set encrypted operator seed |
+| GET | `/admin/config/operator-seed/status` | Check if operator seed is configured |
+| GET | `/admin/scheduler/status` | Current scheduler state |
+| POST | `/admin/scheduler/trigger` | Trigger scheduler run |
+| POST | `/admin/scheduler/settle` | Trigger settlement only |
+| GET | `/admin/scheduler/config` | Get scheduler config |
+| POST | `/admin/scheduler/config` | Update scheduler config |
+| GET | `/admin/payout/config` | Get payout config (ban_per_kill, caps) |
+| POST | `/admin/payout/config` | Update payout config |
 
-## Health
-- GET `/healthz` → `{ status: "ok" }`
+## Demo Endpoints
+
+Available in development/demo mode.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/auth/demo-login` | Login without Discord OAuth |
+| POST | `/demo/seed` | Seed database with test data |
+| POST | `/demo/run-scheduler` | Run scheduler cycle immediately |
+| POST | `/demo/clear` | Clear all demo data |
+
+## Debug
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/debug/yunite` | Test Yunite API connectivity |
 
 ## Notes
-- Dry-run mode avoids external network calls and blockchain transfers; see `P2S_DRY_RUN`.
+
+- **Dry-run mode** (`P2S_DRY_RUN=true`): skips external API calls and blockchain transfers.
 - Sessions are HMAC-signed with `SESSION_SECRET` and include expiry.
-- Error responses follow standard HTTP codes as noted above.
+- Error responses use standard HTTP status codes (400, 401, 403, 404).

@@ -90,23 +90,15 @@ See the **Deploy** section in `README.md` for full instructions. Quick summary:
   - `make type` — type-check
   - `make all` — lint + type + tests
 
-## 10) Next steps
- - Review `SECURITY.md` for supply chain & provenance guidelines.
- - Fill out `research.md`, `data-model.md`, and `contracts/` docs (tasks T046–T048).
- - Switch monetary fields to Decimal before production payouts (T052).
-
-## 12) Immutable Tagging & Rollback (CI Workflows)
-Build workflow (push trigger) produces an image tagged with the full 40‑char git SHA and short 12‑char tag. Deployment & rollback workflows only accept full SHA tags (immutable) and enforce:
- - Pre/post push digest verification (build-time) to catch tampering (FR-009).
- - Deployment-time repository mapping + digest guard (placeholder registry lookup) (FR-004, FR-016).
- - Dedicated rollback workflow reuses existing image without rebuild (FR-013).
-
-Reference: `docs/distribution.md` for digest integrity guards, metrics, SBOM linkage placeholder, short tag parity, and single-arch constraint.
-
-Metrics counters exposed: `image_build_total{repository_type}`, `rollback_total{repository_type}`.
-
-
-## 11) Architecture Notes
+## 10) Architecture Notes
 - The container runs both the API server (uvicorn) and the scheduler as a background process via `docker-entrypoint.sh`.
 - Banano transactions use the public Kalium RPC (`https://kaliumapi.appditto.com/api`) — no self-hosted node needed.
 - The operator seed for signing Banano transactions is stored encrypted in the `SecureConfig` DB table (use the admin panel to set it).
+
+## 11) Immutable Tagging & Rollback (CI Workflows)
+Build workflow (push trigger) produces an image tagged with the full 40-char git SHA and short 12-char tag. Deployment & rollback workflows only accept full SHA tags (immutable) and enforce:
+ - Pre/post push digest verification (build-time) to catch tampering.
+ - Deployment-time repository mapping + digest guard.
+ - Dedicated rollback workflow reuses existing image without rebuild.
+
+Reference: `docs/distribution.md` for digest integrity guards, metrics, SBOM linkage, short tag parity, and single-arch constraint.

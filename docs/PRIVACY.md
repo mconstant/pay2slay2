@@ -21,6 +21,7 @@ This Privacy Policy describes how the self-hostable Pay2Slay Faucet (the "Softwa
 | Payout Records | amount, tx_hash, status, attempt metadata | Financial accountability / retry / dispute resolution | Indefinite or operator-defined ledger retention | tx_hash may be public on-chain anyway. |
 | Verification Events | VerificationRecord (source, status, timestamps) | Trace verification history / dispute resolution | Rolling window or indefinite per operator | Can be aggressively trimmed (keep last successful). |
 | Abuse Flags | flag_type, severity, detail | Protect fair usage / integrity | Until cleared or user deletion | Only heuristic summaries; no raw IP storage. |
+| Donation Records | DonationLedger (amount_ban, blocks_received, source) | Track community donations, milestone progress | Indefinite or operator-defined | No donor identity stored; amounts only. |
 | Region Code (coarse) | e.g., "eu", "na" | Abuse analytics, payout distribution stats | Optional; can be disabled | Derived from header or coarse IP mapping; never precise geo. |
 | Logs (Structured) | event names, trace/span IDs (if enabled) | Debug & audit | Short retention recommended (e.g., 7–30 days) | Exclude secrets via masking helper. |
 | Sessions | HMAC session token (cookie) | Authenticate subsequent requests | In-memory / cookie TTL only | Tokens are opaque & revocable by clearing cookie. |
