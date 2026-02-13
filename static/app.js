@@ -216,10 +216,42 @@
   /** Parse an ISO timestamp from the API (UTC but missing Z suffix) into local time string. */
   function fmtDate(iso) {
     if (!iso) return "-";
-    // API returns naive UTC — append Z so JS interprets as UTC, then toLocaleString shows local
     var d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
     return isNaN(d) ? iso : d.toLocaleString();
   }
+
+  /** Compact date: "Jan 5" or "Jan 5 '24" if different year. */
+  function shortDate(iso) {
+    if (!iso) return "";
+    var d = new Date(iso.endsWith("Z") ? iso : iso + "Z");
+    if (isNaN(d)) return "";
+    var mon = d.toLocaleString(undefined, { month: "short" });
+    var day = d.getDate();
+    var yr = d.getFullYear();
+    var now = new Date().getFullYear();
+    return yr === now ? mon + " " + day : mon + " " + day + " '" + String(yr).slice(2);
+  }
+
+  /** Build tx hash cell: clickable link to creeper + copy icon + optional date. */
+  function txHashCell(hash, date) {
+    if (!hash) return '<td class="tx-hash">' + (date ? '<span class="cell-date">' + date + '</span>' : '-') + '</td>';
+    var short = hash.substring(0, 10) + "\u2026";
+    var url = "https://creeper.banano.cc/hash/" + encodeURIComponent(hash);
+    return '<td class="tx-hash">' +
+      '<a href="' + url + '" target="_blank" rel="noopener" class="tx-link" title="View on Creeper">' + short + '</a>' +
+      '<button class="tx-copy" onclick="copyHash(\'' + hash + '\')" title="Copy hash">&#128203;</button>' +
+      (date ? ' <span class="cell-date">' + date + '</span>' : '') +
+      '</td>';
+  }
+
+  /** Copy a tx hash to clipboard and show toast. */
+  window.copyHash = function (hash) {
+    navigator.clipboard.writeText(hash).then(function () {
+      toast("Hash copied!", "success");
+    }).catch(function () {
+      toast("Copy failed", "error");
+    });
+  };
 
   // ── Activity Feed ──────────────────────────────────
   async function loadActivityFeed() {
@@ -237,16 +269,18 @@
     const tbody = $("#feed-accruals-tbody");
     if (!tbody) return;
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No accruals yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No accruals yet.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (a) {
+      var statusLabel = a.settled ? "settled" : "pending";
+      var statusClass = a.settled ? "badge-sent" : "badge-pending";
+      var date = shortDate(a.created_at);
       return '<tr>' +
         '<td class="player-name">' + escapeHtml(a.discord_username) + '</td>' +
         '<td>' + a.kills + '</td>' +
         '<td>' + parseFloat(a.amount_ban).toFixed(2) + ' BAN</td>' +
-        '<td><span class="badge ' + (a.settled ? "badge-sent" : "badge-pending") + '">' + (a.settled ? "settled" : "pending") + '</span></td>' +
-        '<td>' + (a.created_at ? fmtDate(a.created_at) : "-") + '</td>' +
+        '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span>' + (date ? ' <span class="cell-date">' + date + '</span>' : '') + '</td>' +
         '</tr>';
     }).join("");
   }
@@ -255,16 +289,16 @@
     const tbody = $("#feed-payouts-tbody");
     if (!tbody) return;
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No payouts yet.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No payouts yet.</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (p) {
+      var date = shortDate(p.created_at);
       return '<tr>' +
         '<td class="player-name">' + escapeHtml(p.discord_username) + '</td>' +
         '<td>' + parseFloat(p.amount_ban).toFixed(2) + ' BAN</td>' +
         '<td><span class="badge badge-' + p.status + '">' + p.status + '</span></td>' +
-        '<td class="tx-hash" title="' + (p.tx_hash || "") + '">' + (p.tx_hash ? p.tx_hash.substring(0, 12) + "..." : "-") + '</td>' +
-        '<td>' + (p.created_at ? fmtDate(p.created_at) : "-") + '</td>' +
+        txHashCell(p.tx_hash, date) +
         '</tr>';
     }).join("");
   }
@@ -323,16 +357,18 @@
     if (!tbody) return;
     if (rows.length === 0) {
       const hint = isDryRun ? ' Click "Seed Demo Data" to generate sample data.' : '';
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No accruals yet.' + hint + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No accruals yet.' + hint + '</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (a) {
+      var statusLabel = a.settled ? "settled" : "pending";
+      var statusClass = a.settled ? "badge-sent" : "badge-pending";
+      var date = shortDate(a.created_at);
       return '<tr>' +
         '<td>' + a.id + '</td>' +
         '<td>' + a.kills + '</td>' +
         '<td>' + parseFloat(a.amount_ban).toFixed(2) + ' BAN</td>' +
-        '<td><span class="badge ' + (a.settled ? "badge-sent" : "badge-pending") + '">' + (a.settled ? "settled" : "pending") + '</span></td>' +
-        '<td>' + (a.created_at ? fmtDate(a.created_at) : "-") + '</td>' +
+        '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span>' + (date ? ' <span class="cell-date">' + date + '</span>' : '') + '</td>' +
         '</tr>';
     }).join("");
   }
@@ -342,16 +378,16 @@
     if (!tbody) return;
     if (rows.length === 0) {
       const hint = isDryRun ? ' Run the scheduler to settle pending accruals.' : '';
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No payouts yet.' + hint + '</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No payouts yet.' + hint + '</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (p) {
+      var date = shortDate(p.created_at);
       return '<tr>' +
         '<td>' + p.id + '</td>' +
         '<td>' + parseFloat(p.amount_ban).toFixed(2) + ' BAN</td>' +
         '<td><span class="badge badge-' + p.status + '">' + p.status + '</span></td>' +
-        '<td class="tx-hash" title="' + (p.tx_hash || "") + '">' + (p.tx_hash ? p.tx_hash.substring(0, 12) + "..." : "-") + '</td>' +
-        '<td>' + (p.created_at ? fmtDate(p.created_at) : "-") + '</td>' +
+        txHashCell(p.tx_hash, date) +
         '</tr>';
     }).join("");
   }

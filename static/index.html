@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pay2Slay Faucet</title>
-  <link rel="stylesheet" href="/static/style.css?v=3">
+  <link rel="stylesheet" href="/static/style.css?v=4">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
@@ -35,8 +35,7 @@
         <div class="donate-cta">help pay others to slay today! donate here!</div>
         <code id="donate-address" class="donate-address"></code>
       </div>
-    </div>
-    <div class="how-it-works">
+      <div class="how-it-works">
       <div class="step">
         <div class="step-num">1</div>
         <div class="step-text">Link Discord</div>
@@ -52,6 +51,8 @@
         <div class="step-text">Get Banano</div>
       </div>
     </div>
+    </div>
+    
   </div>
 </div>
 
@@ -116,10 +117,10 @@
       </div>
       <table>
         <thead>
-          <tr><th>Player</th><th>Kills</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+          <tr><th>Player</th><th>Kills</th><th>Amount</th><th>Status</th></tr>
         </thead>
         <tbody id="feed-accruals-tbody">
-          <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+          <tr><td colspan="4" class="empty-state">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -131,10 +132,10 @@
       </div>
       <table>
         <thead>
-          <tr><th>Player</th><th>Amount</th><th>Status</th><th>TX Hash</th><th>Date</th></tr>
+          <tr><th>Player</th><th>Amount</th><th>Status</th><th>TX Hash</th></tr>
         </thead>
         <tbody id="feed-payouts-tbody">
-          <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+          <tr><td colspan="4" class="empty-state">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -193,10 +194,10 @@
       </div>
       <table>
         <thead>
-          <tr><th>ID</th><th>Kills</th><th>Amount</th><th>Status</th><th>Date</th></tr>
+          <tr><th>ID</th><th>Kills</th><th>Amount</th><th>Status</th></tr>
         </thead>
         <tbody id="accruals-tbody">
-          <tr><td colspan="5" class="empty-state">No accruals yet.</td></tr>
+          <tr><td colspan="4" class="empty-state">No accruals yet.</td></tr>
         </tbody>
       </table>
     </div>
@@ -209,10 +210,10 @@
       </div>
       <table>
         <thead>
-          <tr><th>ID</th><th>Amount</th><th>Status</th><th>TX Hash</th><th>Date</th></tr>
+          <tr><th>ID</th><th>Amount</th><th>Status</th><th>TX Hash</th></tr>
         </thead>
         <tbody id="payouts-tbody">
-          <tr><td colspan="5" class="empty-state">No payouts yet.</td></tr>
+          <tr><td colspan="4" class="empty-state">No payouts yet.</td></tr>
         </tbody>
       </table>
     </div>
