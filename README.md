@@ -28,18 +28,65 @@
 
 1. **Login with Discord** — OAuth authenticates you, Yunite maps your Discord to your Epic Games account.
 2. **Link your Banano wallet** — Paste your `ban_` address (Kalium, Banano Vault, etc.).
-3. **Play Fortnite** — The scheduler tracks your kills and pays you **2.1 BAN per kill**, auto-settled to your wallet.
+3. **Play Fortnite** — The scheduler tracks your kills and pays you **0.05 BAN per kill** (base rate), auto-settled to your wallet.
 
-Payouts are capped at **100 BAN/day** and **300 BAN/week**. Community donations unlock milestone multipliers up to **3x**.
+Payouts are dynamically adjusted by a **sustainability factor** and **donation milestones**. Daily and weekly kill caps keep the fund healthy.
 
 ## Features
 
 - **Live leaderboard** with kill counts, earnings, and activity feed
-- **Donation milestones** — 10 tiers from Fresh Spawn (1x) to Potassium Singularity (3x) with a 1M BAN goal
-- **Daily/weekly payout caps** with abuse detection heuristics
+- **Donation milestones** — 10 tiers from Fresh Spawn (1.0x) to Potassium Singularity (1.5x) with a 10K BAN goal
+- **Sustainability factor** — dynamic payout adjustment based on donate-to-leach ratio
+- **Transparent economics** — live formula breakdown shown on the Donations page
+- **Daily/weekly payout caps** (100 / 500 kills) with abuse detection heuristics
 - **Admin panel** — scheduler control, payout config, operator seed management, audit log
 - **Demo mode** — full dry-run with seeded data for local testing
 - **Supply chain security** — Cosign-signed images, SBOM attestation, digest verification
+
+## Faucet Economics
+
+Pay2Slay uses a self-balancing payout formula to keep the faucet sustainable:
+
+```
+effective_rate = base_rate × milestone_multiplier × sustainability_factor
+```
+
+| Parameter | Value | Notes |
+|-----------|-------|-------|
+| Base rate | **0.05 BAN/kill** | Configured in `payout.yaml` |
+| Daily kill cap | **100 kills** (≈5 BAN/day) | Per-player limit |
+| Weekly kill cap | **500 kills** (≈25 BAN/week) | Per-player limit |
+| Seed fund | **1,336 BAN** | Initial operator-funded balance |
+| Donation goal | **10,000 BAN** | Unlocks all milestone tiers |
+
+### Sustainability Factor
+
+The sustainability factor automatically adjusts payouts based on the ratio of inflow (seed fund + donations) to outflow (total paid out):
+
+```
+sustainability = clamp((seed_fund + total_donated) / total_paid_out, 0.1, 2.0)
+```
+
+- **≥ 1.0x** (green) — Donations keeping pace or ahead; full or bonus payouts
+- **0.5–1.0x** (amber) — Payouts outpacing donations; rate reduced
+- **< 0.5x** (red) — Fund draining; significant rate reduction to extend lifetime
+
+### Milestone Tiers
+
+| Tier | Threshold | Multiplier |
+|------|-----------|------------|
+| 🌱 Fresh Spawn | 0 BAN | 1.00x |
+| 🩸 First Blood | 100 BAN | 1.05x |
+| 📦 Loot Drop | 500 BAN | 1.10x |
+| 🪂 Supply Drop | 1,000 BAN | 1.15x |
+| ⛈️ Storm Surge | 2,500 BAN | 1.20x |
+| 🛩️ Airdrop Inbound | 5,000 BAN | 1.25x |
+| 👑 Victory Royale | 10,000 BAN | 1.30x |
+| 💎 Mythic Rarity | 25,000 BAN | 1.40x |
+| 🐒 The Monke Awakens | 50,000 BAN | 1.45x |
+| 🍌 Potassium Singularity | 100,000 BAN | 1.50x |
+
+All economics data is displayed transparently on the Donations page, including the live formula, sustainability gauge, and fund breakdown.
 
 ## Quick Start
 
@@ -63,7 +110,7 @@ YAML configs in `configs/`:
 
 | File | Controls |
 |------|----------|
-| `payout.yaml` | `ban_per_kill`, `daily_payout_cap`, `weekly_payout_cap`, scheduler interval, batch size |
+| `payout.yaml` | `ban_per_kill`, `daily_payout_cap`, `weekly_payout_cap`, `seed_fund_ban`, scheduler interval |
 | `integrations.yaml` | Banano RPC, Discord OAuth, Yunite, Fortnite API, abuse heuristics |
 | `product.yaml` | App name, feature flags, Discord invite URL |
 
