@@ -481,6 +481,10 @@ td.tx-hash {
 }
 .player-name {
   font-weight: 600;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .earned-cell {
   white-space: nowrap;
