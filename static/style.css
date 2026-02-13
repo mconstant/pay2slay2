@@ -27,20 +27,41 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px;
+  padding: 12px 24px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 header .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-size: 18px;
   font-weight: 700;
   color: var(--accent);
+  flex-shrink: 0;
 }
 header .brand span.logo {
   font-size: 24px;
+}
+.header-donate {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 header .user-info {
   display: flex;
@@ -48,6 +69,7 @@ header .user-info {
   gap: 12px;
   font-size: 14px;
   color: var(--text-muted);
+  flex-shrink: 0;
 }
 header .user-info .username {
   color: var(--text);
@@ -112,49 +134,34 @@ header .user-info .username {
   cursor: not-allowed;
 }
 
-/* ── Donate Bar ─────────────────────────────────────── */
-.donate-bar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 10px 24px;
-}
-.donate-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  max-width: 960px;
-  margin: 0 auto;
-}
-.donate-content {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
+/* ── Donate (inside header) ──────────────────────────── */
 .donate-qr {
   flex-shrink: 0;
   background: #fff;
-  border-radius: 6px;
-  padding: 4px;
+  border-radius: 4px;
+  padding: 2px;
   line-height: 0;
 }
-.donate-qr svg { display: block; width: 56px; height: 56px; }
-.donate-info { flex: 1; }
+.donate-qr svg { display: block; width: 40px; height: 40px; }
+.donate-info {
+  min-width: 0;
+}
 .donate-balance {
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 700;
   color: var(--accent);
+  white-space: nowrap;
 }
 .donate-cta {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--text-muted);
-  margin-top: 2px;
+  margin-top: 1px;
 }
 .donate-address {
-  font-size: 10px;
+  font-size: 9px;
   word-break: break-all;
   display: block;
-  margin-top: 4px;
+  margin-top: 2px;
   background: transparent;
   padding: 0;
   color: var(--text-muted);
@@ -461,6 +468,21 @@ td.tx-hash {
 .player-name {
   font-weight: 600;
 }
+.earned-cell {
+  white-space: nowrap;
+  font-size: 13px;
+}
+.earned-paid {
+  color: var(--success);
+  font-weight: 600;
+}
+.earned-sep {
+  color: var(--text-muted);
+  margin: 0 2px;
+}
+.earned-owed {
+  color: var(--info);
+}
 .login-cta {
   display: flex;
   justify-content: center;
@@ -492,21 +514,27 @@ td.tx-hash {
 @media (max-width: 640px) {
   main { padding: 16px; padding-bottom: 72px; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
-  header { padding: 12px 16px; }
+  header { padding: 10px 12px; gap: 8px; }
+  .header-left { gap: 10px; flex-wrap: wrap; }
+  .header-right { width: 100%; justify-content: center; }
+  header .brand { font-size: 15px; gap: 6px; }
+  header .brand span.logo { font-size: 20px; }
+  .header-donate { gap: 8px; }
+  .donate-qr svg { width: 32px; height: 32px; }
+  .donate-balance { font-size: 13px; }
+  .donate-cta { display: none; }
+  .donate-address { font-size: 8px; }
   nav { padding: 0 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
   nav button { padding: 10px 12px; font-size: 13px; white-space: nowrap; }
   .login-page h1 { font-size: 36px; }
-  .how-it-works { gap: 8px; flex-wrap: wrap; }
-  .step-arrow { font-size: 16px; }
+  .how-it-works { gap: 8px; }
+  .step-num { width: 28px; height: 28px; font-size: 12px; }
+  .step-text { font-size: 10px; }
+  .step-arrow { font-size: 14px; margin-bottom: 14px; }
   .login-cta { flex-direction: column; align-items: center; }
   .card { padding: 14px; overflow-x: auto; }
-  table { min-width: 400px; }
+  table { min-width: 340px; }
   .section-header { flex-direction: column; align-items: flex-start; gap: 8px; }
-  .donate-bar { padding: 10px 16px; }
-  .donate-content { flex-direction: column; align-items: flex-start; gap: 10px; }
-  .donate-qr { align-self: center; }
-  .donate-balance { font-size: 16px; }
-  .donate-address { font-size: 9px; }
   .stat-box .value { font-size: 22px; }
   .stat-box .label { font-size: 10px; }
   .btn-lg { font-size: 15px; padding: 10px 24px; }
@@ -516,16 +544,21 @@ td.tx-hash {
 
 @media (max-width: 400px) {
   main { padding: 12px; padding-bottom: 72px; }
-  header .brand { font-size: 15px; gap: 6px; }
-  header .brand span.logo { font-size: 20px; }
+  header { padding: 8px 10px; }
+  header .brand { font-size: 14px; }
+  header .brand span.logo { font-size: 18px; }
+  .header-donate { gap: 6px; }
+  .donate-qr svg { width: 28px; height: 28px; }
+  .donate-balance { font-size: 12px; }
+  .donate-address { display: none; }
+  .how-it-works { gap: 4px; }
+  .step-num { width: 24px; height: 24px; font-size: 10px; border-width: 1.5px; }
+  .step-text { font-size: 9px; }
+  .step-arrow { font-size: 11px; margin-bottom: 10px; }
   .stat-grid { grid-template-columns: 1fr; gap: 8px; }
   .login-page { padding-top: 32px; }
   .login-page h1 { font-size: 28px; }
   .login-page .tagline { font-size: 15px; margin-bottom: 24px; }
-  .how-it-works { gap: 6px; }
-  .step-num { width: 32px; height: 32px; font-size: 13px; }
-  .step-text { font-size: 11px; }
-  .step-arrow { font-size: 14px; margin-bottom: 14px; }
   nav button { padding: 8px 10px; font-size: 12px; }
   #cycle-footer { flex-wrap: wrap; gap: 4px; }
   #cycle-footer span[style*="margin"] { display: none; }

@@ -193,16 +193,17 @@
     const tbody = $("#leaderboard-tbody");
     if (!tbody) return;
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No players yet. Be the first!</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No players yet. Be the first!</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (p, i) {
+      var paid = parseFloat(p.total_paid_ban).toFixed(2);
+      var owed = parseFloat(p.total_accrued_ban).toFixed(2);
       return '<tr>' +
         '<td class="rank">' + (i + 1) + '</td>' +
         '<td class="player-name">' + escapeHtml(p.discord_username) + '</td>' +
         '<td>' + p.total_kills + '</td>' +
-        '<td>' + parseFloat(p.total_accrued_ban).toFixed(2) + '</td>' +
-        '<td>' + parseFloat(p.total_paid_ban).toFixed(2) + '</td>' +
+        '<td class="earned-cell"><span class="earned-paid" title="Paid (settled)">' + paid + '</span> <span class="earned-sep">/</span> <span class="earned-owed" title="Owed (accrued)">' + owed + '</span></td>' +
         '</tr>';
     }).join("");
   }
@@ -843,7 +844,7 @@
       if (!d.address) return;
       var bar = $("#donate-bar");
       if (!bar) return;
-      bar.style.display = "block";
+      bar.style.display = "flex";
       var addrEl = $("#donate-address");
       if (addrEl) addrEl.textContent = d.address;
       var balEl = $("#donate-balance-value");

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pay2Slay Faucet</title>
-  <link rel="stylesheet" href="/static/style.css?v=4">
+  <link rel="stylesheet" href="/static/style.css?v=5">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
@@ -15,46 +15,34 @@
 
 <!-- Header -->
 <header>
-  <div class="brand">
-    <span class="logo">&#127918;</span>
-    <span class="brand-name">Pay2Slay Faucet</span>
-  </div>
-  <div class="user-info" style="display:none;">
-    <span class="username"></span>
-    <button class="btn btn-sm btn-danger" onclick="logout()">Logout</button>
-  </div>
-</header>
-
-<!-- Donate Bar -->
-<div id="donate-bar" class="donate-bar" style="display:none;">
-  <div class="donate-row">
-    <div class="donate-content">
+  <div class="header-left">
+    <div class="brand">
+      <span class="logo">&#127918;</span>
+      <span class="brand-name">Pay2Slay Faucet</span>
+    </div>
+    <div id="donate-bar" class="header-donate" style="display:none;">
       <div id="donate-qr" class="donate-qr"></div>
       <div class="donate-info">
         <div class="donate-balance"><span id="donate-balance-value">--</span> BAN</div>
-        <div class="donate-cta">help pay others to slay today! donate here!</div>
+        <div class="donate-cta">donate here!</div>
         <code id="donate-address" class="donate-address"></code>
       </div>
-      <div class="how-it-works">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-text">Link Discord</div>
-      </div>
-      <div class="step-arrow">&rarr;</div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-text">Play Fortnite</div>
-      </div>
-      <div class="step-arrow">&rarr;</div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-text">Get Banano</div>
-      </div>
     </div>
-    </div>
-    
   </div>
-</div>
+  <div class="header-right">
+    <div class="how-it-works">
+      <div class="step"><div class="step-num">1</div><div class="step-text">Link Discord</div></div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step"><div class="step-num">2</div><div class="step-text">Play Fortnite</div></div>
+      <div class="step-arrow">&rarr;</div>
+      <div class="step"><div class="step-num">3</div><div class="step-text">Get Banano</div></div>
+    </div>
+    <div class="user-info" style="display:none;">
+      <span class="username"></span>
+      <button class="btn btn-sm btn-danger" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</header>
 
 <!-- Navigation -->
 <nav>
@@ -88,12 +76,11 @@
             <th>#</th>
             <th>Player</th>
             <th>Kills</th>
-            <th>Accrued BAN</th>
-            <th>Paid BAN</th>
+            <th>Earned</th>
           </tr>
         </thead>
         <tbody id="leaderboard-tbody">
-          <tr><td colspan="5" class="empty-state">Loading...</td></tr>
+          <tr><td colspan="4" class="empty-state">Loading...</td></tr>
         </tbody>
       </table>
     </div>
