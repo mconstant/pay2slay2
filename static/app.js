@@ -98,9 +98,11 @@
     });
     const userInfo = $(".user-info");
     if (userInfo) userInfo.style.display = user ? "flex" : "none";
-    // Hide login CTA on leaderboard if logged in
+    // Hide login CTAs on public pages if logged in
     const cta = $("#leaderboard-login-cta");
     if (cta) cta.style.display = user ? "none" : "";
+    const actCta = $("#activity-login-cta");
+    if (actCta) actCta.style.display = user ? "none" : "";
   }
 
   function showPage(name) {

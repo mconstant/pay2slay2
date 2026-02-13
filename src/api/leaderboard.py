@@ -185,7 +185,26 @@ def donate_info(
         try:
             from src.services.banano_client import BananoClient
 
-            banano = BananoClient(node_url=integrations.node_rpc, dry_run=integrations.dry_run)
+            # Load operator seed so we can auto-receive pending donations
+            seed_hex: str | None = None
+            from src.lib.crypto import decrypt_value as _dv
+            from src.models.models import SecureConfig
+
+            _seed_row = (
+                db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+            )
+            if _seed_row:
+                seed_hex = _dv(_seed_row.encrypted_value)
+
+            banano = BananoClient(
+                node_url=integrations.node_rpc,
+                dry_run=integrations.dry_run,
+                seed=seed_hex,
+            )
+
+            # Auto-receive any pending blocks before checking balance
+            banano.receive_all_pending(account=operator_account)
+
             balance, pending = banano.account_balance(operator_account)
         except Exception:
             pass
