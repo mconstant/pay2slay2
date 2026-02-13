@@ -844,7 +844,7 @@
       if (!d.address) return;
       var bar = $("#donate-bar");
       if (!bar) return;
-      bar.style.display = "flex";
+      bar.style.display = "block";
       var addrEl = $("#donate-address");
       if (addrEl) addrEl.textContent = d.address;
       var balEl = $("#donate-balance-value");
@@ -859,6 +859,17 @@
       }
     } catch (_) {}
   }
+
+  /** Copy the donate address to clipboard. */
+  window.copyDonateAddress = function () {
+    var addrEl = $("#donate-address");
+    if (!addrEl || !addrEl.textContent) { toast("No address available", "error"); return; }
+    navigator.clipboard.writeText(addrEl.textContent).then(function () {
+      toast("Donate address copied!", "success");
+    }).catch(function () {
+      toast("Copy failed", "error");
+    });
+  };
 
   // ── Boot ─────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", function () {

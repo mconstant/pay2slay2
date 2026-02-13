@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pay2Slay Faucet</title>
-  <link rel="stylesheet" href="/static/style.css?v=5">
+  <link rel="stylesheet" href="/static/style.css?v=6">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎮</text></svg>">
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
@@ -15,34 +15,35 @@
 
 <!-- Header -->
 <header>
-  <div class="header-left">
-    <div class="brand">
-      <span class="logo">&#127918;</span>
-      <span class="brand-name">Pay2Slay Faucet</span>
-    </div>
-    <div id="donate-bar" class="header-donate" style="display:none;">
-      <div id="donate-qr" class="donate-qr"></div>
-      <div class="donate-info">
-        <div class="donate-balance"><span id="donate-balance-value">--</span> BAN</div>
-        <div class="donate-cta">donate here!</div>
-        <code id="donate-address" class="donate-address"></code>
-      </div>
-    </div>
+  <div class="brand">
+    <span class="logo">&#127918;</span>
+    <span class="brand-name">Pay2Slay</span>
   </div>
-  <div class="header-right">
-    <div class="how-it-works">
-      <div class="step"><div class="step-num">1</div><div class="step-text">Link Discord</div></div>
-      <div class="step-arrow">&rarr;</div>
-      <div class="step"><div class="step-num">2</div><div class="step-text">Play Fortnite</div></div>
-      <div class="step-arrow">&rarr;</div>
-      <div class="step"><div class="step-num">3</div><div class="step-text">Get Banano</div></div>
-    </div>
-    <div class="user-info" style="display:none;">
-      <span class="username"></span>
-      <button class="btn btn-sm btn-danger" onclick="logout()">Logout</button>
-    </div>
+  <div class="steps-inline">
+    <span class="step-inline"><strong>1</strong> Link Discord</span>
+    <span class="step-sep">&rarr;</span>
+    <span class="step-inline"><strong>2</strong> Play Fortnite</span>
+    <span class="step-sep">&rarr;</span>
+    <span class="step-inline"><strong>3</strong> Get Banano</span>
+  </div>
+  <div class="user-info" style="display:none;">
+    <span class="username"></span>
+    <button class="btn btn-sm btn-danger" onclick="logout()">Logout</button>
   </div>
 </header>
+
+<!-- Donate Strip -->
+<div id="donate-bar" class="donate-strip" style="display:none;">
+  <div class="donate-strip-inner">
+    <div id="donate-qr" class="donate-qr"></div>
+    <div class="donate-info">
+      <div class="donate-balance"><span id="donate-balance-value">--</span> <span class="donate-unit">BAN</span></div>
+      <div class="donate-cta">in the pot &mdash; help fund rewards!</div>
+    </div>
+    <button class="btn btn-sm btn-primary" onclick="copyDonateAddress()">Copy Address</button>
+    <code id="donate-address" class="sr-only"></code>
+  </div>
+</div>
 
 <!-- Navigation -->
 <nav>
@@ -413,6 +414,6 @@
   <span>Stats ready for accrual ~5min post-match.</span>
 </footer>
 
-<script src="/static/app.js?v=3"></script>
+<script src="/static/app.js?v=4"></script>
 </body>
 </html>
