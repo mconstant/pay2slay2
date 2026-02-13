@@ -149,6 +149,7 @@ jobs:
           P2S_OPERATOR_ACCOUNT: ${{ vars.P2S_OPERATOR_ACCOUNT }}
           MIN_OPERATOR_BALANCE_BAN: ${{ vars.MIN_OPERATOR_BALANCE_BAN || '50' }}
           ADMIN_DISCORD_USERNAMES: ${{ vars.ADMIN_DISCORD_USERNAMES }}
+          DISCORD_INVITE_URL: ${{ vars.DISCORD_INVITE_URL }}
         run: |
           envsubst < infra/akash/deploy.yaml > deploy-final.yaml
           echo "=== Final SDL ==="
