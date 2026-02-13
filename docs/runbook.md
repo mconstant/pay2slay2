@@ -12,6 +12,7 @@ This document summarizes operational procedures, alert responses, and routine ma
 ## 2. Core Services
 - Accrual job: Periodic kill accrual; monitor for lag > 2 cycles.
 - Settlement & payout: Use Decimal(18,8) amounts; payout idempotency key prevents duplicates.
+- HODL balance scan: Runs every accrual cycle. Scans all users with a linked Solana wallet, fetches on-chain $JPMT balance from Solana RPC, and updates their tier/multiplier. Controlled by `hodl_boost_enabled` in `configs/payout.yaml`.
 
 ## 3. Metrics (Prometheus)
 - http_requests_total / http_request_duration_seconds
@@ -21,6 +22,7 @@ This document summarizes operational procedures, alert responses, and routine ma
 - payout_attempts_total (counter)
 - payout_retry_latency_seconds (histogram)
 - app_dry_run_mode (gauge)
+- hodl_scan_users_total / hodl_scan_updated_total (HODL scan counters)
 
 ## 4. Alerting Suggestions
 | Condition | Threshold | Action |
@@ -66,4 +68,12 @@ This document summarizes operational procedures, alert responses, and routine ma
 - Wallet balance anomaly detection.  
 - Advanced kill delta reconciliation story.
 
-_Last updated: 2025-09-25._
+## 10. HODL Boost Operations
+- **Config:** `configs/payout.yaml` — `hodl_boost_enabled`, `hodl_boost_token_ca`, `hodl_boost_solana_rpc`
+- **Scanner:** Runs in the scheduler loop every accrual cycle (`src/jobs/hodl_scan.py`). Fetches on-chain $JPMT balances for all users with linked Solana wallets and updates their tier.
+- **Manual verify:** Users can also verify on-demand via Dashboard → Verify $JPMT Holdings.
+- **Tiers:** No Bag (1.0×) → Bronze 10K (1.10×) → Silver 100K (1.20×) → Gold 1M (1.35×) → Diamond 10M (1.50×) → Whale 100M (1.75×).
+- **RPC rate limits:** Default public Solana RPC has rate limits. For large user bases, configure a dedicated RPC endpoint via `SOLANA_RPC_URL` env var.
+- **Disabling:** Set `hodl_boost_enabled: false` in `payout.yaml` or at runtime via scheduler overrides.
+
+_Last updated: 2026-02-13._

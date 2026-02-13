@@ -56,7 +56,7 @@
             { title: "Wait for Accrual", desc: "Stats are detected a few minutes after your match ends. Check the <strong>Activity</strong> feed to see your kills appear." },
             { title: "Get Paid", desc: "Every settlement cycle, your accrued Banano is sent to your wallet automatically. No action needed." }
           ],
-          tip: "⏱️ <strong>Timing:</strong> Stats usually appear ~5 minutes after the match ends. Settlement happens on a regular cycle shown in the footer countdown."
+          tip: "⏱️ <strong>Timing:</strong> Stats are counted in the Fortnite API ~5 minutes after the match ends but will not show in the Pay2Slay UI until the accrual cycle after that (check the countdowns in the footer)."
         }
       ],
       faq: {
@@ -64,7 +64,7 @@
         items: [
           { q: "I logged in but my Epic account isn't linked", a: "Go back to our Discord server and complete the Yunite verification (Step 2). Make sure you see the confirmation message from Yunite. Then log out of Pay2Slay and log back in." },
           { q: "I linked the wrong Epic account", a: "In our Discord server, use the Yunite unlink command or button, then redo the link process with the correct Epic account. Log out and back in to Pay2Slay afterward." },
-          { q: "My kills aren't showing up", a: "Stats only count from public matches (not Creative, Team Rumble, or private matches). Make sure your Epic account is correct on the Dashboard. Stats appear ~5 minutes after the match ends." },
+          { q: "My kills aren't showing up", a: "Stats only count from public matches (not Creative, Team Rumble, or private matches). Make sure your Epic account is correct on the Dashboard. Stats are counted in the Fortnite API ~5 minutes after the match ends but will not show in the Pay2Slay UI until the accrual cycle after that (check the countdowns in the footer)." },
           { q: "I haven't received my Banano payout", a: "Check that your wallet address is set in the Wallet tab. Payouts happen every settlement cycle (see the countdown in the footer). If your balance is below the minimum payout threshold, it will carry over to the next cycle." },
           { q: "Can I change my wallet address?", a: "Yes — go to the Wallet tab and update it anytime. The new address takes effect on the next settlement." },
           { q: "What's the payout rate per kill?", a: "The per-kill rate depends on the faucet balance and is set by the operators. Check the Dashboard for the current rate." },
@@ -78,10 +78,10 @@
         howSteps: [
           { title: "Get $JPMT", desc: 'Buy $JPMT on <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> using any Solana wallet (Phantom, Solflare, etc.).' },
           { title: "Connect Your Wallet", desc: "On Panel Dashboard, paste your Solana wallet address and click <strong>Verify $JPMT Holdings</strong>." },
-          { title: "Get Boosted", desc: "Your tier and multiplier are applied automatically to all future kill payouts. Re-verify anytime to update." }
+          { title: "Get Boosted", desc: "Your tier and multiplier are applied automatically to all future kill payouts. The system also scans your balance periodically so your tier stays up to date — no need to re-verify manually." }
         ],
         tiersTitle: "Boost Tiers",
-        tip: "💎 <strong>Pro tip:</strong> Your boost is based on your balance at verification time. Re-verify after buying more $JPMT to upgrade your tier!",
+        tip: "💎 <strong>Pro tip:</strong> Your balance is scanned automatically every accrual cycle. Buy more $JPMT anytime and your tier will update on the next scan!",
         links: {
           buy: "Buy $JPMT on Jupiter",
           website: "JPMT Website",
@@ -142,7 +142,7 @@
             { title: "Чекайте нарахування", desc: "Статистика з'являється через кілька хвилин після закінчення матчу. Перевіряйте стрічку <strong>Activity</strong>." },
             { title: "Отримуйте оплату", desc: "Кожен цикл розрахунку ваші Banano надсилаються на гаманець автоматично." }
           ],
-          tip: "⏱️ <strong>Час:</strong> Статистика зазвичай з'являється ~5 хвилин після закінчення матчу."
+          tip: "⏱️ <strong>Час:</strong> Статистика з'являється у Fortnite API ~5 хвилин після матчу, але в інтерфейсі Pay2Slay — лише після наступного циклу нарахування (дивіться зворотні відліки в підвалі)."
         }
       ],
       faq: {
@@ -150,7 +150,7 @@
         items: [
           { q: "Я увійшов, але мій Epic не прив'язаний", a: "Поверніться на Discord сервер і завершіть верифікацію Yunite (Крок 2). Потім вийдіть з Pay2Slay і увійдіть знову." },
           { q: "Я прив'язав неправильний акаунт Epic", a: "На Discord сервері використайте команду відв'язки Yunite, потім повторіть прив'язку з правильним акаунтом." },
-          { q: "Мої кіли не відображаються", a: "Статистика рахується лише з публічних матчів. Перевірте акаунт Epic на Dashboard." },
+          { q: "Мої кіли не відображаються", a: "Статистика рахується лише з публічних матчів. Перевірте акаунт Epic на Dashboard. Статистика з'являється у Fortnite API ~5 хвилин після матчу, але в Pay2Slay — лише після наступного циклу нарахування (дивіться зворотні відліки в підвалі)." },
           { q: "Я не отримав виплату Banano", a: "Перевірте адресу гаманця у вкладці Wallet. Виплати відбуваються кожен цикл розрахунку." },
           { q: "Чи можу я змінити адресу гаманця?", a: "Так — перейдіть у вкладку Wallet і оновіть адресу в будь-який час." },
           { q: "Який коефіцієнт виплати за кіл?", a: "Коефіцієнт залежить від балансу фонду і встановлюється операторами." },
@@ -164,10 +164,10 @@
         howSteps: [
           { title: "Отримайте $JPMT", desc: 'Купіть $JPMT на <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> використовуючи будь-який Solana гаманець.' },
           { title: "Підключіть гаманець", desc: "На Dashboard вставте вашу адресу Solana гаманця і натисніть <strong>Verify $JPMT Holdings</strong>." },
-          { title: "Отримайте буст", desc: "Ваш рівень і множник застосовуються автоматично. Перевіряйте знову після покупки нових $JPMT." }
+          { title: "Отримайте буст", desc: "Ваш рівень і множник застосовуються автоматично. Система періодично сканує ваш баланс, тому рівень оновлюється автоматично." }
         ],
         tiersTitle: "Рівні бусту",
-        tip: "💎 <strong>Порада:</strong> Буст базується на балансі під час верифікації. Перевірте знову після покупки більше $JPMT!",
+        tip: "💎 <strong>Порада:</strong> Ваш баланс сканується автоматично кожен цикл. Купуйте більше $JPMT і ваш рівень оновиться при наступному скануванні!",
         links: { buy: "Купити $JPMT на Jupiter", website: "Сайт JPMT", discord: "Discord JPMT" }
       }
     },
@@ -224,7 +224,7 @@
             { title: "Espera la acumulación", desc: "Las estadísticas aparecen unos minutos después del partido. Revisa el feed de <strong>Activity</strong>." },
             { title: "Recibe tu pago", desc: "Cada ciclo de liquidación, tus Banano se envían automáticamente a tu billetera." }
           ],
-          tip: "⏱️ <strong>Tiempo:</strong> Las estadísticas suelen aparecer ~5 minutos después del partido."
+          tip: "⏱️ <strong>Tiempo:</strong> Las estadísticas se cuentan en la API de Fortnite ~5 minutos después del partido, pero no aparecerán en la interfaz de Pay2Slay hasta el siguiente ciclo de acumulación (revisa las cuentas regresivas en el pie de página)."
         }
       ],
       faq: {
@@ -232,7 +232,7 @@
         items: [
           { q: "Inicié sesión pero mi Epic no está vinculado", a: "Vuelve a nuestro servidor de Discord y completa la verificación de Yunite (Paso 2). Luego cierra sesión y vuelve a iniciarla." },
           { q: "Vinculé la cuenta Epic equivocada", a: "En Discord, usa el comando de desvinculación de Yunite, luego repite el proceso con la cuenta correcta." },
-          { q: "Mis eliminaciones no aparecen", a: "Las estadísticas solo cuentan de partidas públicas. Verifica tu cuenta Epic en el Dashboard." },
+          { q: "Mis eliminaciones no aparecen", a: "Las estadísticas solo cuentan de partidas públicas. Verifica tu cuenta Epic en el Dashboard. Las estadísticas se cuentan en la API de Fortnite ~5 minutos después del partido, pero no aparecerán en Pay2Slay hasta el siguiente ciclo de acumulación (revisa las cuentas regresivas en el pie de página)." },
           { q: "No he recibido mi pago de Banano", a: "Verifica tu dirección de billetera en la pestaña Wallet. Los pagos ocurren cada ciclo de liquidación." },
           { q: "¿Puedo cambiar mi dirección de billetera?", a: "Sí — ve a la pestaña Wallet y actualízala en cualquier momento." },
           { q: "¿Cuál es la tasa de pago por eliminación?", a: "La tasa depende del saldo del fondo y es establecida por los operadores." },
@@ -246,10 +246,10 @@
         howSteps: [
           { title: "Obtén $JPMT", desc: 'Compra $JPMT en <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> usando cualquier billetera Solana.' },
           { title: "Conecta tu billetera", desc: "En el Dashboard, pega tu dirección de billetera Solana y haz clic en <strong>Verify $JPMT Holdings</strong>." },
-          { title: "Recibe el boost", desc: "Tu nivel y multiplicador se aplican automáticamente. ¡Re-verifica después de comprar más $JPMT!" }
+          { title: "Recibe el boost", desc: "Tu nivel y multiplicador se aplican automáticamente. El sistema también escanea tu saldo periódicamente para mantener tu nivel actualizado." }
         ],
         tiersTitle: "Niveles de Boost",
-        tip: "💎 <strong>Consejo:</strong> El boost se basa en tu saldo al momento de la verificación. ¡Re-verifica después de comprar más $JPMT!",
+        tip: "💎 <strong>Consejo:</strong> Tu saldo se escanea automáticamente cada ciclo. ¡Compra más $JPMT y tu nivel se actualizará en el próximo escaneo!",
         links: { buy: "Comprar $JPMT en Jupiter", website: "Sitio web JPMT", discord: "Discord JPMT" }
       }
     },
@@ -306,7 +306,7 @@
             { title: "Aguarde o acúmulo", desc: "As estatísticas aparecem alguns minutos após a partida. Verifique o feed de <strong>Activity</strong>." },
             { title: "Receba seu pagamento", desc: "A cada ciclo de liquidação, seus Banano são enviados automaticamente para sua carteira." }
           ],
-          tip: "⏱️ <strong>Tempo:</strong> As estatísticas geralmente aparecem ~5 minutos após a partida."
+          tip: "⏱️ <strong>Tempo:</strong> As estatísticas são contadas na API do Fortnite ~5 minutos após a partida, mas só aparecerão na interface do Pay2Slay após o próximo ciclo de acumulação (confira as contagens regressivas no rodapé)."
         }
       ],
       faq: {
@@ -314,7 +314,7 @@
         items: [
           { q: "Fiz login mas meu Epic não está vinculado", a: "Volte ao nosso servidor Discord e complete a verificação do Yunite (Passo 2). Depois saia e entre novamente no Pay2Slay." },
           { q: "Vinculei a conta Epic errada", a: "No Discord, use o comando de desvinculação do Yunite, depois refaça o processo com a conta correta." },
-          { q: "Minhas eliminações não aparecem", a: "As estatísticas contam apenas de partidas públicas. Verifique sua conta Epic no Dashboard." },
+          { q: "Minhas eliminações não aparecem", a: "As estatísticas contam apenas de partidas públicas. Verifique sua conta Epic no Dashboard. As estatísticas são contadas na API do Fortnite ~5 minutos após a partida, mas só aparecerão no Pay2Slay após o próximo ciclo de acumulação (confira as contagens regressivas no rodapé)." },
           { q: "Não recebi meu pagamento Banano", a: "Verifique seu endereço de carteira na aba Wallet. Os pagamentos acontecem a cada ciclo de liquidação." },
           { q: "Posso mudar meu endereço de carteira?", a: "Sim — vá para a aba Wallet e atualize a qualquer momento." },
           { q: "Qual é a taxa de pagamento por eliminação?", a: "A taxa depende do saldo do fundo e é definida pelos operadores." },
@@ -328,10 +328,10 @@
         howSteps: [
           { title: "Obtenha $JPMT", desc: 'Compre $JPMT no <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> usando qualquer carteira Solana.' },
           { title: "Conecte sua carteira", desc: "No Dashboard, cole o endereço da sua carteira Solana e clique em <strong>Verify $JPMT Holdings</strong>." },
-          { title: "Receba o boost", desc: "Seu nível e multiplicador são aplicados automaticamente. Re-verifique após comprar mais $JPMT!" }
+          { title: "Receba o boost", desc: "Seu nível e multiplicador são aplicados automaticamente. O sistema também escaneia seu saldo periodicamente para manter seu nível atualizado." }
         ],
         tiersTitle: "Níveis de Boost",
-        tip: "💎 <strong>Dica:</strong> O boost é baseado no seu saldo no momento da verificação. Re-verifique após comprar mais $JPMT!",
+        tip: "💎 <strong>Dica:</strong> Seu saldo é escaneado automaticamente a cada ciclo. Compre mais $JPMT e seu nível será atualizado no próximo escaneamento!",
         links: { buy: "Comprar $JPMT no Jupiter", website: "Site JPMT", discord: "Discord JPMT" }
       }
     },
@@ -388,7 +388,7 @@
             { title: "計上を待つ", desc: "マッチ終了後数分で統計が表示されます。<strong>Activity</strong>フィードで確認してください。" },
             { title: "支払いを受け取る", desc: "各決済サイクルで、蓄積されたBananoが自動的にウォレットに送信されます。" }
           ],
-          tip: "⏱️ <strong>タイミング：</strong>統計は通常マッチ終了後約5分で表示されます。"
+          tip: "⏱️ <strong>タイミング：</strong>統計はマッチ終了後約5分でFortnite APIに記録されますが、Pay2Slay UIに表示されるのはその後の次の計上サイクルです（フッターのカウントダウンを確認してください）。"
         }
       ],
       faq: {
@@ -396,7 +396,7 @@
         items: [
           { q: "ログインしたがEpicがリンクされていない", a: "Discordサーバーに戻り、Yunite認証（ステップ2）を完了してください。その後Pay2Slayからログアウトして再ログインしてください。" },
           { q: "間違ったEpicアカウントをリンクした", a: "Discordサーバーで Yuniteのリンク解除コマンドを使用し、正しいアカウントでリンクし直してください。" },
-          { q: "キルが表示されない", a: "統計はパブリックマッチのみカウントされます。DashboardでEpicアカウントを確認してください。" },
+          { q: "キルが表示されない", a: "統計はパブリックマッチのみカウントされます。DashboardでEpicアカウントを確認してください。統計はマッチ終了後約5分でFortnite APIに記録されますが、Pay2Slay UIに表示されるのは次の計上サイクルです（フッターのカウントダウンを確認）。" },
           { q: "Banano支払いを受け取っていない", a: "Walletタブでウォレットアドレスを確認してください。支払いは各決済サイクルで行われます。" },
           { q: "ウォレットアドレスを変更できますか？", a: "はい — Walletタブでいつでも更新できます。" },
           { q: "キルあたりの支払い率は？", a: "レートはファンドの残高に依存し、運営者が設定します。" },
@@ -410,10 +410,10 @@
         howSteps: [
           { title: "$JPMTを取得", desc: '<a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a>で任意のSolanaウォレットを使って$JPMTを購入してください。' },
           { title: "ウォレットを接続", desc: "DashboardでSolanaウォレットアドレスを貼り付け、<strong>Verify $JPMT Holdings</strong>をクリックしてください。" },
-          { title: "ブーストを受け取る", desc: "ティアと倍率は自動的に適用されます。$JPMTを追加購入した後に再確認してください！" }
+          { title: "ブーストを受け取る", desc: "ティアと倍率は自動的に適用されます。システムは定期的に残高をスキャンし、ティアを自動更新します。" }
         ],
         tiersTitle: "ブーストティア",
-        tip: "💎 <strong>ヒント：</strong>ブーストは確認時の残高に基づきます。$JPMTを追加購入した後に再確認してください！",
+        tip: "💎 <strong>ヒント：</strong>残高は各サイクルで自動スキャンされます。$JPMTを追加購入すると次のスキャンでティアが更新されます！",
         links: { buy: "Jupiterで$JPMTを購入", website: "JPMTウェブサイト", discord: "JPMT Discord" }
       }
     },
@@ -470,7 +470,7 @@
             { title: "Attendez l'accumulation", desc: "Les statistiques apparaissent quelques minutes après la partie. Consultez le flux <strong>Activity</strong>." },
             { title: "Recevez votre paiement", desc: "À chaque cycle de règlement, vos Banano sont envoyés automatiquement à votre portefeuille." }
           ],
-          tip: "⏱️ <strong>Timing :</strong> Les statistiques apparaissent généralement ~5 minutes après la fin de la partie."
+          tip: "⏱️ <strong>Timing :</strong> Les statistiques sont comptées dans l'API Fortnite ~5 minutes après la partie, mais n'apparaîtront dans l'interface Pay2Slay qu'après le prochain cycle d'accumulation (vérifiez les comptes à rebours en pied de page)."
         }
       ],
       faq: {
@@ -478,7 +478,7 @@
         items: [
           { q: "Je me suis connecté mais mon Epic n'est pas lié", a: "Retournez sur notre serveur Discord et complétez la vérification Yunite (Étape 2). Ensuite déconnectez-vous et reconnectez-vous à Pay2Slay." },
           { q: "J'ai lié le mauvais compte Epic", a: "Sur Discord, utilisez la commande de déliaison de Yunite, puis refaites le processus avec le bon compte." },
-          { q: "Mes éliminations n'apparaissent pas", a: "Les statistiques ne comptent que les parties publiques. Vérifiez votre compte Epic dans le Dashboard." },
+          { q: "Mes éliminations n'apparaissent pas", a: "Les statistiques ne comptent que les parties publiques. Vérifiez votre compte Epic dans le Dashboard. Les statistiques sont comptées dans l'API Fortnite ~5 minutes après la partie, mais n'apparaîtront dans Pay2Slay qu'après le prochain cycle d'accumulation (vérifiez les comptes à rebours en pied de page)." },
           { q: "Je n'ai pas reçu mon paiement Banano", a: "Vérifiez votre adresse dans l'onglet Wallet. Les paiements ont lieu à chaque cycle de règlement." },
           { q: "Puis-je changer mon adresse de portefeuille ?", a: "Oui — allez dans l'onglet Wallet et mettez-la à jour à tout moment." },
           { q: "Quel est le taux de paiement par élimination ?", a: "Le taux dépend du solde du fonds et est fixé par les opérateurs." },
@@ -492,10 +492,10 @@
         howSteps: [
           { title: "Obtenez des $JPMT", desc: 'Achetez des $JPMT sur <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> avec n\'importe quel portefeuille Solana.' },
           { title: "Connectez votre portefeuille", desc: "Sur le Dashboard, collez votre adresse de portefeuille Solana et cliquez sur <strong>Verify $JPMT Holdings</strong>." },
-          { title: "Obtenez le boost", desc: "Votre niveau et multiplicateur s'appliquent automatiquement. Re-vérifiez après avoir acheté plus de $JPMT !" }
+          { title: "Obtenez le boost", desc: "Votre niveau et multiplicateur s'appliquent automatiquement. Le système scanne aussi votre solde périodiquement pour garder votre niveau à jour." }
         ],
         tiersTitle: "Niveaux de Boost",
-        tip: "💎 <strong>Astuce :</strong> Le boost est basé sur votre solde au moment de la vérification. Re-vérifiez après avoir acheté plus de $JPMT !",
+        tip: "💎 <strong>Astuce :</strong> Votre solde est scanné automatiquement à chaque cycle. Achetez plus de $JPMT et votre niveau sera mis à jour au prochain scan !",
         links: { buy: "Acheter $JPMT sur Jupiter", website: "Site web JPMT", discord: "Discord JPMT" }
       }
     },
@@ -552,7 +552,7 @@
             { title: "Auf Anrechnung warten", desc: "Statistiken erscheinen einige Minuten nach dem Match. Überprüfe den <strong>Activity</strong>-Feed." },
             { title: "Auszahlung erhalten", desc: "In jedem Abrechnungszyklus werden deine Banano automatisch an dein Wallet gesendet." }
           ],
-          tip: "⏱️ <strong>Timing:</strong> Statistiken erscheinen normalerweise ~5 Minuten nach Spielende."
+          tip: "⏱️ <strong>Timing:</strong> Statistiken werden in der Fortnite-API ~5 Minuten nach Spielende erfasst, erscheinen aber in der Pay2Slay-Oberfläche erst nach dem nächsten Anrechnungszyklus (siehe die Countdowns in der Fußzeile)."
         }
       ],
       faq: {
@@ -560,7 +560,7 @@
         items: [
           { q: "Ich habe mich angemeldet, aber mein Epic ist nicht verknüpft", a: "Gehe zurück zu unserem Discord-Server und schließe die Yunite-Verifizierung ab (Schritt 2). Dann melde dich ab und wieder an." },
           { q: "Ich habe das falsche Epic-Konto verknüpft", a: "Verwende auf Discord den Yunite-Entkoppeln-Befehl und verknüpfe dann das richtige Konto." },
-          { q: "Meine Eliminierungen werden nicht angezeigt", a: "Statistiken zählen nur aus öffentlichen Matches. Überprüfe dein Epic-Konto im Dashboard." },
+          { q: "Meine Eliminierungen werden nicht angezeigt", a: "Statistiken zählen nur aus öffentlichen Matches. Überprüfe dein Epic-Konto im Dashboard. Statistiken werden in der Fortnite-API ~5 Minuten nach Spielende erfasst, erscheinen aber in Pay2Slay erst nach dem nächsten Anrechnungszyklus (siehe die Countdowns in der Fußzeile)." },
           { q: "Ich habe meine Banano-Auszahlung nicht erhalten", a: "Überprüfe deine Wallet-Adresse im Wallet-Tab. Auszahlungen erfolgen in jedem Abrechnungszyklus." },
           { q: "Kann ich meine Wallet-Adresse ändern?", a: "Ja — gehe zum Wallet-Tab und aktualisiere sie jederzeit." },
           { q: "Wie hoch ist die Auszahlungsrate pro Eliminierung?", a: "Die Rate hängt vom Fondsguthaben ab und wird von den Betreibern festgelegt." },
@@ -574,10 +574,10 @@
         howSteps: [
           { title: "$JPMT kaufen", desc: 'Kaufe $JPMT auf <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> mit jeder Solana-Wallet.' },
           { title: "Wallet verbinden", desc: "Im Dashboard füge deine Solana-Wallet-Adresse ein und klicke auf <strong>Verify $JPMT Holdings</strong>." },
-          { title: "Boost erhalten", desc: "Dein Tier und Multiplikator werden automatisch angewendet. Nach dem Kauf von mehr $JPMT erneut verifizieren!" }
+          { title: "Boost erhalten", desc: "Dein Tier und Multiplikator werden automatisch angewendet. Das System scannt dein Guthaben regelmäßig, um deinen Tier aktuell zu halten." }
         ],
         tiersTitle: "Boost-Stufen",
-        tip: "💎 <strong>Tipp:</strong> Der Boost basiert auf deinem Guthaben zum Zeitpunkt der Verifizierung. Nach dem Kauf von mehr $JPMT erneut verifizieren!",
+        tip: "💎 <strong>Tipp:</strong> Dein Guthaben wird automatisch bei jedem Zyklus gescannt. Kaufe mehr $JPMT und dein Tier wird beim nächsten Scan aktualisiert!",
         links: { buy: "$JPMT auf Jupiter kaufen", website: "JPMT-Website", discord: "JPMT Discord" }
       }
     },
@@ -634,7 +634,7 @@
             { title: "等待累计", desc: "比赛结束后几分钟统计数据就会出现。查看<strong>Activity</strong>动态。" },
             { title: "接收付款", desc: "每个结算周期，您累计的Banano会自动发送到您的钱包。" }
           ],
-          tip: "⏱️ <strong>时间：</strong>统计数据通常在比赛结束后约5分钟出现。"
+          tip: "⏱️ <strong>时间：</strong>统计数据在比赛结束后约5分钟由Fortnite API记录，但要在下一个累计周期后才会显示在Pay2Slay界面中（请查看页脚的倒计时）。"
         }
       ],
       faq: {
@@ -642,7 +642,7 @@
         items: [
           { q: "我已登录但Epic账户未关联", a: "返回我们的Discord服务器完成Yunite验证（第2步）。然后退出Pay2Slay并重新登录。" },
           { q: "我关联了错误的Epic账户", a: "在Discord使用Yunite的取消关联命令，然后用正确的账户重新关联。" },
-          { q: "我的淘汰数没有显示", a: "统计数据仅计算公开比赛。在Dashboard检查您的Epic账户。" },
+          { q: "我的淘汰数没有显示", a: "统计数据仅计算公开比赛。在Dashboard检查您的Epic账户。统计数据在比赛结束后约5分钟由Fortnite API记录，但要在下一个累计周期后才会显示在Pay2Slay中（请查看页脚的倒计时）。" },
           { q: "我没有收到Banano付款", a: "在Wallet标签中检查您的钱包地址。付款在每个结算周期进行。" },
           { q: "我可以更改钱包地址吗？", a: "可以——前往Wallet标签随时更新。" },
           { q: "每次淘汰的支付率是多少？", a: "费率取决于资金余额，由运营者设定。" },
@@ -656,10 +656,10 @@
         howSteps: [
           { title: "获取$JPMT", desc: '使用任何Solana钱包在<a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a>上购买$JPMT。' },
           { title: "连接钱包", desc: "在Dashboard中，粘贴您的Solana钱包地址并点击<strong>Verify $JPMT Holdings</strong>。" },
-          { title: "获得加速", desc: "您的等级和倍率会自动应用。购买更多$JPMT后重新验证！" }
+          { title: "获得加速", desc: "您的等级和倍率会自动应用。系统还会定期扫描您的余额以保持等级更新。" }
         ],
         tiersTitle: "加速等级",
-        tip: "💎 <strong>提示：</strong>加速基于验证时的余额。购买更多$JPMT后重新验证以升级！",
+        tip: "💎 <strong>提示：</strong>您的余额每个周期自动扫描。购买更多$JPMT后等级会在下次扫描时更新！",
         links: { buy: "在Jupiter购买$JPMT", website: "JPMT网站", discord: "JPMT Discord" }
       }
     }

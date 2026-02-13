@@ -24,6 +24,7 @@ from src.lib.observability import get_logger, get_tracer  # noqa: E402
 from src.services.fortnite_service import FortniteService  # noqa: E402
 
 from .accrual import AccrualJobConfig, run_accrual  # noqa: E402
+from .hodl_scan import run_hodl_scan  # noqa: E402
 from .settlement import SchedulerConfig, run_settlement  # noqa: E402
 
 log = get_logger("jobs.main")
@@ -81,6 +82,7 @@ def _run_once(
     except Exception as exc:  # pragma: no cover
         JOB_ERRORS.inc()
         log.error("accrual_cycle_error", error=str(exc))
+    _run_hodl_scan_phase(session)
     try:
         from src.services.banano_client import BananoClient
 
@@ -179,6 +181,18 @@ def _write_heartbeat(hb: HeartbeatInfo) -> None:
         HEARTBEAT_PATH.write_text(json.dumps(data))
     except Exception:
         pass  # best-effort
+
+
+def _run_hodl_scan_phase(session: Session) -> None:
+    """Run the HODL balance scan phase."""
+    tracer = get_tracer("scheduler")
+    try:
+        with tracer.start_as_current_span("hodl_scan_cycle"):
+            scan_res = run_hodl_scan(session)
+            log.info("hodl_scan_cycle", **scan_res)
+    except Exception as exc:  # pragma: no cover
+        JOB_ERRORS.inc()
+        log.error("hodl_scan_cycle_error", error=str(exc))
 
 
 def _run_accrual_only(
@@ -335,6 +349,7 @@ def _scheduler_loop(
     try:
         if run_accrual_now:
             _run_accrual_only(session, effective_cfg, fortnite, accrual_cfg)
+            _run_hodl_scan_phase(session)
             state.last_accrual_ts = time.time()
         if run_settle_now:
             _run_settlement_only(session, effective_cfg)
