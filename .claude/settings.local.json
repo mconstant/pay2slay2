@@ -34,7 +34,13 @@
       "Bash(gh workflow run:*)",
       "Bash(gh run list:*)",
       "Bash(gh run watch:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(gh run view:*)",
+      "Bash(funds\" on every real payout.\n\nNow BananoClient.send\\(\\) accepts optional amount_ban for the bananopie\npath while still using amount_raw for the direct node RPC path.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(# Check if there''s an admin endpoint that shows error_detail curl -s https://pay2slay.cc/admin/payouts)",
+      "Bash(balance\" failures even with 300 BAN available.\n\nBalance is already checked at two other levels:\n1. Scheduler loop checks P2S_OPERATOR_ACCOUNT balance before settlement\n2. bananopie''s Wallet.send\\(\\) checks balance and raises ValueError\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(gh run cancel:*)",
+      "Bash(chmod:*)"
     ]
   }
 }

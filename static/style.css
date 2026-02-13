@@ -458,12 +458,43 @@ td.tx-hash {
 
 /* ── Responsive ──────────────────────────────────────── */
 @media (max-width: 640px) {
-  main { padding: 16px; }
+  main { padding: 16px; padding-bottom: 72px; }
   .stat-grid { grid-template-columns: 1fr 1fr; }
   header { padding: 12px 16px; }
-  nav { padding: 0 16px; }
+  nav { padding: 0 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  nav button { padding: 10px 12px; font-size: 13px; white-space: nowrap; }
   .login-page h1 { font-size: 36px; }
-  .how-it-works { gap: 10px; }
+  .how-it-works { gap: 8px; flex-wrap: wrap; }
   .step-arrow { font-size: 16px; }
   .login-cta { flex-direction: column; align-items: center; }
+  .card { padding: 14px; overflow-x: auto; }
+  table { min-width: 480px; }
+  .section-header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .donate-bar { padding: 10px 16px; }
+  .donate-content { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .donate-qr { align-self: center; }
+  .donate-balance { font-size: 16px; }
+  .donate-address { font-size: 9px; }
+  .stat-box .value { font-size: 22px; }
+  .stat-box .label { font-size: 10px; }
+  .btn-lg { font-size: 15px; padding: 10px 24px; }
+  #cycle-footer { padding: 6px 12px; font-size: 11px; }
+  #cycle-footer span[id^="cycle-countdown"] { font-size: 11px; }
+}
+
+@media (max-width: 400px) {
+  main { padding: 12px; padding-bottom: 72px; }
+  header .brand { font-size: 15px; gap: 6px; }
+  header .brand span.logo { font-size: 20px; }
+  .stat-grid { grid-template-columns: 1fr; gap: 8px; }
+  .login-page { padding-top: 32px; }
+  .login-page h1 { font-size: 28px; }
+  .login-page .tagline { font-size: 15px; margin-bottom: 24px; }
+  .how-it-works { gap: 6px; }
+  .step-num { width: 32px; height: 32px; font-size: 13px; }
+  .step-text { font-size: 11px; }
+  .step-arrow { font-size: 14px; margin-bottom: 14px; }
+  nav button { padding: 8px 10px; font-size: 12px; }
+  #cycle-footer { flex-wrap: wrap; gap: 4px; }
+  #cycle-footer span[style*="margin"] { display: none; }
 }

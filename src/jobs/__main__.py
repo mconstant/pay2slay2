@@ -196,7 +196,20 @@ def _run_settlement_only(
     try:
         from src.services.banano_client import BananoClient
 
-        banano = BananoClient(node_url=cfg.node_url, dry_run=cfg.dry_run)
+        seed_hex = None
+        if not cfg.dry_run:
+            from src.jobs.settlement import _load_operator_seed
+
+            seed_hex = _load_operator_seed(session)
+        banano = BananoClient(node_url=cfg.node_url, dry_run=cfg.dry_run, seed=seed_hex)
+        # Auto-receive pending donations before checking balance
+        with tracer.start_as_current_span(
+            "operator_receive_pending",
+            attributes={"scheduler.dry_run": cfg.dry_run},
+        ):
+            received = banano.receive_all_pending(account=cfg.operator_account)
+            if received:
+                log.info("operator_received_pending", blocks=received)
         with tracer.start_as_current_span(
             "operator_balance_check",
             attributes={

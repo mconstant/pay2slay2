@@ -69,12 +69,20 @@ class SettlementService:
 
         day_count = (
             self.session.query(Payout)
-            .filter(Payout.user_id == candidate.user.id, Payout.created_at >= day_ago)
+            .filter(
+                Payout.user_id == candidate.user.id,
+                Payout.created_at >= day_ago,
+                Payout.status == "sent",
+            )
             .count()
         )
         week_count = (
             self.session.query(Payout)
-            .filter(Payout.user_id == candidate.user.id, Payout.created_at >= week_ago)
+            .filter(
+                Payout.user_id == candidate.user.id,
+                Payout.created_at >= week_ago,
+                Payout.status == "sent",
+            )
             .count()
         )
         remaining_daily = max(self.daily_cap - day_count, 0)

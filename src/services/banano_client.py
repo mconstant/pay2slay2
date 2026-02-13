@@ -166,3 +166,25 @@ class BananoClient:
             return False
         bal, _pending = self.account_balance(operator_account)
         return bal >= min_ban
+
+    def receive_all_pending(self, account: str | None = None) -> int:
+        """Pocket all receivable (pending) blocks for the operator wallet.
+
+        Uses bananopie Wallet.receive_all() when a seed is available.
+        Returns the number of blocks received, or 0 on dry-run / error.
+        """
+        if self.dry_run:
+            return 0
+        if not self._seed or not account:
+            return 0
+        try:
+            from bananopie import RPC, Wallet
+
+            rpc = RPC(self.node_url)
+            wallet = Wallet(rpc, seed=self._seed, index=0)
+            result = wallet.receive_all()
+            if isinstance(result, list):
+                return len(result)
+            return 1 if result else 0
+        except Exception:
+            return 0
