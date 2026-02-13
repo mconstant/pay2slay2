@@ -9,7 +9,9 @@
   A cryptocurrency faucet that pays players in BAN for every elimination.
 </p>
 
-https://pay2slay.cc
+<p align="center">
+  https://pay2slay.cc
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.13-blue?style=flat" alt="Python 3.13" />
