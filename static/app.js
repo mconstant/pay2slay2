@@ -16,7 +16,7 @@
 
   // Pages that require auth
   const AUTH_PAGES = new Set(["dashboard", "wallet", "admin"]);
-  const ALL_PAGES = new Set(["leaderboard", "activity", "donations", "dashboard", "wallet", "help", "admin", "login"]);
+  const ALL_PAGES = new Set(["leaderboard", "activity", "donations", "boosted", "dashboard", "wallet", "help", "admin", "login"]);
 
   // ── Init ─────────────────────────────────────────────
   async function init() {
@@ -124,6 +124,7 @@
     if (name === "leaderboard") loadLeaderboard();
     if (name === "activity") loadActivityFeed();
     if (name === "donations") loadDonations();
+    if (name === "boosted") loadBoostedUsers();
     if (name === "dashboard" && user) loadDashboard();
     if (name === "wallet" && user) loadWallet();
     if (name === "admin" && user) loadAdmin();
@@ -428,6 +429,34 @@
   function formatBan(n) {
     if (n == null) return "0";
     return Number(n).toLocaleString(undefined, {maximumFractionDigits: 2});
+  }
+
+  // ── Boosted Users ────────────────────────────────────
+  async function loadBoostedUsers() {
+    try {
+      var r = await fetch("/hodl/boosted");
+      if (!r.ok) return;
+      var data = await r.json();
+      var countEl = $("#boosted-count");
+      if (countEl) countEl.textContent = data.total + " boosted player" + (data.total !== 1 ? "s" : "");
+      var tbody = $("#boosted-tbody");
+      if (!tbody) return;
+      if (!data.boosted_users || data.boosted_users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No boosted players yet — be the first to HODL $JPMT!</td></tr>';
+        return;
+      }
+      tbody.innerHTML = data.boosted_users.map(function (u) {
+        return '<tr>' +
+          '<td class="player-name">' + u.discord_username + '</td>' +
+          '<td>' + u.tier_name + '</td>' +
+          '<td style="font-size:1.4em;">' + u.tier_badge + '</td>' +
+          '<td>' + formatNumber(u.jpmt_balance) + '</td>' +
+          '<td class="boost-mult">' + u.multiplier.toFixed(2) + '×</td>' +
+        '</tr>';
+      }).join("");
+    } catch (e) {
+      console.error("loadBoostedUsers error", e);
+    }
   }
 
   // ── Dashboard ────────────────────────────────────────

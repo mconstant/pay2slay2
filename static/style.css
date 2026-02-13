@@ -657,6 +657,68 @@ td.tx-hash {
   .hodl-links .btn { text-align: center; }
 }
 
+/* ── Boosted Page ───────────────────────────────────── */
+.boosted-affiliates {
+  margin-bottom: 24px;
+}
+.boosted-affiliates h3 {
+  color: var(--accent);
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.affiliate-list {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.affiliate-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: linear-gradient(135deg, rgba(153, 69, 255, 0.15), rgba(20, 241, 149, 0.10));
+  border: 1px solid rgba(153, 69, 255, 0.4);
+  border-radius: 12px;
+  padding: 16px 24px;
+  text-decoration: none;
+  color: var(--text);
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+  min-width: 200px;
+}
+.affiliate-card:hover {
+  border-color: #9945FF;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(153, 69, 255, 0.3);
+}
+.affiliate-token {
+  font-size: 24px;
+  font-weight: 800;
+  background: linear-gradient(135deg, #9945FF, #14F195);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.affiliate-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.affiliate-link {
+  font-size: 12px;
+  color: #9945FF;
+  font-weight: 600;
+}
+.boosted-users-section h3 {
+  color: var(--accent);
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.boost-mult {
+  font-weight: 700;
+  color: #14F195;
+}
+@media (max-width: 640px) {
+  .affiliate-card { min-width: unset; width: 100%; }
+}
+
 /* ── Donations Page ─────────────────────────────────── */
 .donation-card { padding: 20px; }
 .donation-card h3 { margin: 0 0 12px; color: var(--accent); }

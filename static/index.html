@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pay2Slay Faucet</title>
-  <link rel="stylesheet" href="/static/style.css?v=15">
+  <link rel="stylesheet" href="/static/style.css?v=16">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍌</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,6 +56,7 @@
   <button data-page="leaderboard">Leaderboard</button>
   <button data-page="activity" class="active">Activity</button>
   <button data-page="donations">Donations</button>
+  <button data-page="boosted">Boosted</button>
   <button data-page="dashboard" class="auth-only">Dashboard</button>
   <button data-page="wallet" class="auth-only">Wallet</button>
   <button data-page="help">Help</button>
@@ -565,6 +566,43 @@
     </div>
   </div>
 
+  <!-- Boosted Users Page -->
+  <div id="page-boosted" class="page">
+    <div class="section-header">
+      <h2>🚀 Boosted Players</h2>
+      <span class="card-subtitle" id="boosted-count"></span>
+    </div>
+
+    <div class="boosted-affiliates">
+      <h3>🤝 Active Affiliates</h3>
+      <div class="affiliate-list">
+        <a href="https://jpmt.cc" target="_blank" class="affiliate-card">
+          <span class="affiliate-token">$JPMT</span>
+          <span class="affiliate-desc">Hold $JPMT for boosted payouts</span>
+          <span class="affiliate-link">jpmt.cc →</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="boosted-users-section">
+      <h3>💎 HODLers &amp; Their Tiers</h3>
+      <table class="data-table" id="boosted-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Tier</th>
+            <th>Badge</th>
+            <th>Balance</th>
+            <th>Boost</th>
+          </tr>
+        </thead>
+        <tbody id="boosted-tbody">
+          <tr><td colspan="5" class="empty-state">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
   <!-- Help / Sherpa Guide Page -->
   <div id="page-help" class="page help-page">
     <div class="section-header">
@@ -607,8 +645,8 @@
   <svg viewBox="0 0 24 24" width="34" height="34" fill="#FBDD11"><path d="M21 7H20V5A3 3 0 0 0 17 2H5A3 3 0 0 0 2 5V19A3 3 0 0 0 5 22H19A3 3 0 0 0 22 19V10A3 3 0 0 0 21 7ZM5 4H17A1 1 0 0 1 18 5V7H5A1 1 0 0 1 5 5ZM20 16H19A1 1 0 0 1 19 14H20Z"/></svg>
 </a>
 
-<script src="/static/help-i18n.js?v=15"></script>
-<script src="/static/app.js?v=15"></script>
-<script src="/static/banana-rain.js?v=15"></script>
+<script src="/static/help-i18n.js?v=16"></script>
+<script src="/static/app.js?v=16"></script>
+<script src="/static/banana-rain.js?v=16"></script>
 </body>
 </html>

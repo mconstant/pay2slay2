@@ -134,6 +134,29 @@ def hodl_tiers() -> JSONResponse:
     return JSONResponse({"tiers": tiers_as_dicts()})
 
 
+@router.get("/hodl/boosted")
+def hodl_boosted(
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Public endpoint returning all users with an active HODL boost (balance > 0)."""
+    users = db.query(User).filter(User.jpmt_balance > 0).order_by(User.jpmt_balance.desc()).all()
+    result = []
+    for u in users:
+        tier = get_tier_for_balance(u.jpmt_balance or 0)
+        result.append(
+            {
+                "discord_username": u.discord_username or "Unknown",
+                "jpmt_balance": u.jpmt_balance or 0,
+                "tier_name": tier.name,
+                "tier_emoji": tier.emoji,
+                "tier_badge": tier.badge,
+                "multiplier": tier.multiplier,
+                "verified_at": u.jpmt_verified_at.isoformat() if u.jpmt_verified_at else None,
+            }
+        )
+    return JSONResponse({"boosted_users": result, "total": len(result)})
+
+
 @router.post("/me/reverify")
 def me_reverify(
     request: Request,
