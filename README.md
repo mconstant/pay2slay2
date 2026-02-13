@@ -14,6 +14,14 @@
 </p>
 
 <p align="center">
+  <strong>English</strong> ·
+  <a href="README.uk.md">Українська</a> ·
+  <a href="README.es.md">Español</a> ·
+  <a href="README.pt.md">Português</a> ·
+  <a href="README.ja.md">日本語</a>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/python-3.13-blue?style=flat" alt="Python 3.13" />
   <img src="https://img.shields.io/badge/framework-FastAPI-009688?style=flat" alt="FastAPI" />
   <img src="https://img.shields.io/badge/chain-Banano-FBDD11?style=flat" alt="Banano" />
