@@ -383,10 +383,23 @@ def admin_stats(
         except Exception as e:
             log.warning("Failed to fetch operator balance", error=str(e))
 
-    # Get payout config values
+    # Get payout config values (runtime overrides take precedence)
     ban_per_kill = payout_cfg.payout_amount_ban_per_kill if payout_cfg else 0
     daily_cap = payout_cfg.daily_payout_cap if payout_cfg else 0
     weekly_cap = payout_cfg.weekly_payout_cap if payout_cfg else 0
+    from src.jobs.__main__ import SCHEDULER_CONFIG_PATH as _SCP
+
+    if _SCP.exists():
+        try:
+            _ovr = json.loads(_SCP.read_text()).get("payout", {})
+            if "ban_per_kill" in _ovr:
+                ban_per_kill = float(_ovr["ban_per_kill"])
+            if "daily_kill_cap" in _ovr:
+                daily_cap = int(_ovr["daily_kill_cap"])
+            if "weekly_kill_cap" in _ovr:
+                weekly_cap = int(_ovr["weekly_kill_cap"])
+        except Exception:
+            pass
     scheduler_minutes = payout_cfg.scheduler_minutes if payout_cfg else 0
 
     return JSONResponse(
@@ -404,8 +417,8 @@ def admin_stats(
             "operator_pending_ban": operator_pending,
             # Payout config
             "ban_per_kill": float(ban_per_kill),
-            "daily_payout_cap": daily_cap,
-            "weekly_payout_cap": weekly_cap,
+            "daily_kill_cap": daily_cap,
+            "weekly_kill_cap": weekly_cap,
             "scheduler_minutes": scheduler_minutes,
             "dry_run": integrations.dry_run if integrations else True,
         }
@@ -608,7 +621,7 @@ def admin_get_scheduler_config(
     from src.jobs.__main__ import SCHEDULER_CONFIG_PATH
 
     default_interval = int(os.getenv("P2S_INTERVAL_SECONDS", "1200"))
-    result = {
+    result: dict[str, object] = {
         "accrual_interval_seconds": default_interval,
         "settlement_interval_seconds": default_interval,
     }
@@ -676,3 +689,104 @@ def admin_set_scheduler_config(
             ),
         }
     )
+
+
+@router.get("/payout/config")
+def admin_get_payout_config(
+    _: None = Depends(_require_admin),
+) -> JSONResponse:
+    """Return current payout configuration (overrides merged with defaults)."""
+    from src.jobs.__main__ import SCHEDULER_CONFIG_PATH
+    from src.lib.config import get_config
+
+    payout_cfg = get_config().payout
+    ban_per_kill = payout_cfg.payout_amount_ban_per_kill if payout_cfg else 0
+    daily_kill_cap = payout_cfg.daily_payout_cap if payout_cfg else 0
+    weekly_kill_cap = payout_cfg.weekly_payout_cap if payout_cfg else 0
+
+    has_overrides = False
+    if SCHEDULER_CONFIG_PATH.exists():
+        try:
+            ovr = json.loads(SCHEDULER_CONFIG_PATH.read_text()).get("payout", {})
+            if "ban_per_kill" in ovr:
+                ban_per_kill = float(ovr["ban_per_kill"])
+                has_overrides = True
+            if "daily_kill_cap" in ovr:
+                daily_kill_cap = int(ovr["daily_kill_cap"])
+                has_overrides = True
+            if "weekly_kill_cap" in ovr:
+                weekly_kill_cap = int(ovr["weekly_kill_cap"])
+                has_overrides = True
+        except Exception:
+            pass
+
+    return JSONResponse(
+        {
+            "ban_per_kill": float(ban_per_kill),
+            "daily_kill_cap": daily_kill_cap,
+            "weekly_kill_cap": weekly_kill_cap,
+            "has_overrides": has_overrides,
+        }
+    )
+
+
+@router.post("/payout/config")
+def admin_set_payout_config(
+    request: Request,
+    ban_per_kill: float | None = Body(None),
+    daily_kill_cap: int | None = Body(None),
+    weekly_kill_cap: int | None = Body(None),
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Update payout configuration on the fly."""
+    from src.jobs.__main__ import SCHEDULER_CONFIG_PATH
+
+    # Validate
+    if ban_per_kill is not None and ban_per_kill <= 0:
+        raise HTTPException(400, "ban_per_kill must be positive")
+    if daily_kill_cap is not None and daily_kill_cap < 0:
+        raise HTTPException(400, "daily_kill_cap must be non-negative")
+    if weekly_kill_cap is not None and weekly_kill_cap < 0:
+        raise HTTPException(400, "weekly_kill_cap must be non-negative")
+
+    # Read existing config file
+    current: dict[str, object] = {}
+    if SCHEDULER_CONFIG_PATH.exists():
+        try:
+            current = json.loads(SCHEDULER_CONFIG_PATH.read_text())
+        except Exception:
+            pass
+
+    payout: dict[str, object] = {}
+    raw_payout = current.get("payout")
+    if isinstance(raw_payout, dict):
+        payout = raw_payout
+    if ban_per_kill is not None:
+        payout["ban_per_kill"] = ban_per_kill
+    if daily_kill_cap is not None:
+        payout["daily_kill_cap"] = daily_kill_cap
+    if weekly_kill_cap is not None:
+        payout["weekly_kill_cap"] = weekly_kill_cap
+    current["payout"] = payout
+    SCHEDULER_CONFIG_PATH.write_text(json.dumps(current))
+
+    # Audit
+    token = request.cookies.get("p2s_admin")
+    admin_email = verify_admin_session(token, session_secret()) if token else "unknown"
+    record_admin_audit(
+        db,
+        AdminAuditPayload(
+            action="update_payout_config",
+            actor_email=admin_email,
+            target_type="payout",
+            target_id="config",
+            summary=f"ban_per_kill={payout.get('ban_per_kill')}, "
+            f"daily_kill_cap={payout.get('daily_kill_cap')}, "
+            f"weekly_kill_cap={payout.get('weekly_kill_cap')}",
+        ),
+    )
+    db.commit()
+    log.info("payout_config_updated", **payout)
+
+    return JSONResponse({"status": "ok", **payout})

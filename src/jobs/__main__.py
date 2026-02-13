@@ -131,6 +131,24 @@ def _read_scheduler_overrides(default_interval: int) -> dict[str, int]:
     return result
 
 
+def _read_payout_overrides() -> dict[str, float | int] | None:
+    """Read admin-set payout config overrides from the shared config file.
+
+    Returns dict with optional keys: ban_per_kill, daily_kill_cap, weekly_kill_cap.
+    Returns None if no overrides exist.
+    """
+    if not SCHEDULER_CONFIG_PATH.exists():
+        return None
+    try:
+        data = json.loads(SCHEDULER_CONFIG_PATH.read_text())
+        payout = data.get("payout")
+        if isinstance(payout, dict):
+            return payout
+    except Exception:
+        pass
+    return None
+
+
 @dataclass
 class HeartbeatInfo:
     """Collects all heartbeat fields to avoid arg bloat."""
@@ -267,13 +285,28 @@ def _scheduler_loop(
         time.sleep(max(1, min(next_a, next_s)))
         return
 
+    # Apply payout config overrides (admin-editable at runtime)
+    payout_ovr = _read_payout_overrides()
+    effective_cfg = cfg
+    if payout_ovr:
+        effective_cfg = SchedulerConfig(
+            min_operator_balance_ban=cfg.min_operator_balance_ban,
+            batch_size=cfg.batch_size,
+            daily_cap=int(payout_ovr.get("daily_kill_cap", cfg.daily_cap)),
+            weekly_cap=int(payout_ovr.get("weekly_kill_cap", cfg.weekly_cap)),
+            dry_run=cfg.dry_run,
+            interval_seconds=cfg.interval_seconds,
+            operator_account=cfg.operator_account,
+            node_url=cfg.node_url,
+        )
+
     session: Session = session_local()
     try:
         if run_accrual_now:
-            _run_accrual_only(session, cfg, fortnite, accrual_cfg)
+            _run_accrual_only(session, effective_cfg, fortnite, accrual_cfg)
             state.last_accrual_ts = time.time()
         if run_settle_now:
-            _run_settlement_only(session, cfg)
+            _run_settlement_only(session, effective_cfg)
             state.last_settlement_ts = time.time()
         _write_heartbeat(
             HeartbeatInfo(

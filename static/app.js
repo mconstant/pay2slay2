@@ -425,7 +425,7 @@
     }
     $("#admin-unauthorized").style.display = "none";
     $("#admin-authed").style.display = "block";
-    await Promise.all([loadAdminStats(), loadAdminAudit(), loadSchedulerStatus(), loadSchedulerConfig()]);
+    await Promise.all([loadAdminStats(), loadAdminAudit(), loadSchedulerStatus(), loadSchedulerConfig(), loadPayoutConfig()]);
   }
 
   async function loadAdminStats() {
@@ -454,9 +454,6 @@
           $("#admin-operator-account").textContent = s.operator_account;
         }
 
-        $("#admin-ban-per-kill").textContent = parseFloat(s.ban_per_kill || 0).toFixed(2);
-        $("#admin-daily-cap").textContent = s.daily_payout_cap || "\u2014";
-        $("#admin-weekly-cap").textContent = s.weekly_payout_cap || "\u2014";
         $("#admin-scheduler").textContent = s.scheduler_minutes || "\u2014";
 
         const dryRunEl = $("#admin-dry-run-status");
@@ -521,6 +518,47 @@
       var d = await r.json();
       toast("Intervals updated: accrual=" + d.accrual_interval_seconds + "s, settlement=" + d.settlement_interval_seconds + "s", "success");
       fetchCountdown();
+    } catch (e) {
+      toast("Failed: " + e.message, "error");
+    }
+  };
+
+  async function loadPayoutConfig() {
+    try {
+      const r = await fetch("/admin/payout/config");
+      if (r.ok) {
+        const d = await r.json();
+        var bpk = $("#payout-ban-per-kill");
+        var dc = $("#payout-daily-cap");
+        var wc = $("#payout-weekly-cap");
+        if (bpk) bpk.value = d.ban_per_kill;
+        if (dc) dc.value = d.daily_kill_cap;
+        if (wc) wc.value = d.weekly_kill_cap;
+        var hint = $("#payout-override-hint");
+        if (hint && d.has_overrides) {
+          hint.innerHTML = '<span class="badge badge-pending">overridden</span> Runtime overrides active. Changes take effect on the next scheduler cycle.';
+        }
+      }
+    } catch (_) {}
+  }
+
+  window.savePayoutConfig = async function () {
+    var bpk = $("#payout-ban-per-kill");
+    var dc = $("#payout-daily-cap");
+    var wc = $("#payout-weekly-cap");
+    var body = {};
+    if (bpk && bpk.value) body.ban_per_kill = parseFloat(bpk.value);
+    if (dc && dc.value) body.daily_kill_cap = parseInt(dc.value, 10);
+    if (wc && wc.value) body.weekly_kill_cap = parseInt(wc.value, 10);
+    try {
+      var r = await fetch("/admin/payout/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error(await r.text());
+      toast("Payout config updated", "success");
+      await loadPayoutConfig();
     } catch (e) {
       toast("Failed: " + e.message, "error");
     }

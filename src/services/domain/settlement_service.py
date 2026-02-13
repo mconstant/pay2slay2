@@ -56,38 +56,47 @@ class SettlementService:
         return [self.apply_caps(c) for c in candidates]
 
     def apply_caps(self, candidate: SettlementCandidate) -> SettlementCandidate:
-        """Derive payable subset of kills honoring daily/weekly payout count caps.
+        """Derive payable subset of kills honoring daily/weekly kill caps.
 
-        Current policy: caps count payouts, not kills. If caps exceeded -> no payout.
-        If remaining daily or weekly allowance is 0, zero out. Otherwise full candidate is payable.
-        (Future: support per-kill monetary caps; partial payment logic would adjust counts.)
+        Caps count total kills paid out (via sent payouts), not number of payouts.
+        If the user has already been paid for >= daily_cap kills today, zero out.
+        Otherwise, clamp the payable kills to the remaining allowance and scale BAN
+        proportionally.
         """
         now = datetime.now(UTC)
         day_ago = now - timedelta(days=1)
         week_ago = now - timedelta(days=7)
         from ...models.models import Payout
 
-        day_count = (
-            self.session.query(Payout)
+        # Sum of kills already paid (via sent payouts) in the daily window.
+        # Each accrual row linked to a sent payout records the kills it covered.
+        day_kills_paid = (
+            self.session.query(func.coalesce(func.sum(RewardAccrual.kills), 0))
+            .join(Payout, RewardAccrual.payout_id == Payout.id)
             .filter(
-                Payout.user_id == candidate.user.id,
+                RewardAccrual.user_id == candidate.user.id,
+                Payout.status == "sent",
                 Payout.created_at >= day_ago,
-                Payout.status == "sent",
             )
-            .count()
-        )
-        week_count = (
-            self.session.query(Payout)
+            .scalar()
+        ) or 0
+
+        week_kills_paid = (
+            self.session.query(func.coalesce(func.sum(RewardAccrual.kills), 0))
+            .join(Payout, RewardAccrual.payout_id == Payout.id)
             .filter(
-                Payout.user_id == candidate.user.id,
-                Payout.created_at >= week_ago,
+                RewardAccrual.user_id == candidate.user.id,
                 Payout.status == "sent",
+                Payout.created_at >= week_ago,
             )
-            .count()
-        )
-        remaining_daily = max(self.daily_cap - day_count, 0)
-        remaining_weekly = max(self.weekly_cap - week_count, 0)
-        if remaining_daily <= 0 or remaining_weekly <= 0:
+            .scalar()
+        ) or 0
+
+        remaining_daily = max(self.daily_cap - day_kills_paid, 0)
+        remaining_weekly = max(self.weekly_cap - week_kills_paid, 0)
+        allowed_kills = min(remaining_daily, remaining_weekly, candidate.total_kills)
+
+        if allowed_kills <= 0:
             return SettlementCandidate(
                 user=candidate.user,
                 total_kills=candidate.total_kills,
@@ -95,11 +104,18 @@ class SettlementService:
                 payable_kills=0,
                 payable_amount_ban=Decimal("0"),
             )
-        # For now, either full amount or zero (no partial monetary cap). Keep fields explicit.
+
+        # Scale BAN proportionally if capped below total
+        if allowed_kills < candidate.total_kills and candidate.total_kills > 0:
+            ratio = Decimal(str(allowed_kills)) / Decimal(str(candidate.total_kills))
+            payable_ban = (candidate.total_amount_ban * ratio).quantize(Decimal("0.00000001"))
+        else:
+            payable_ban = candidate.total_amount_ban
+
         return SettlementCandidate(
             user=candidate.user,
             total_kills=candidate.total_kills,
             total_amount_ban=candidate.total_amount_ban,
-            payable_kills=candidate.total_kills,
-            payable_amount_ban=candidate.total_amount_ban,
+            payable_kills=allowed_kills,
+            payable_amount_ban=payable_ban,
         )
