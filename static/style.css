@@ -118,12 +118,18 @@ header .user-info .username {
   border-bottom: 1px solid var(--border);
   padding: 10px 24px;
 }
+.donate-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: 960px;
+  margin: 0 auto;
+}
 .donate-content {
   display: flex;
   align-items: center;
   gap: 16px;
-  max-width: 960px;
-  margin: 0 auto;
 }
 .donate-qr {
   flex-shrink: 0;
@@ -226,9 +232,8 @@ main {
 .how-it-works {
   display: flex;
   align-items: center;
-  justify-content: center;
   gap: 16px;
-  margin-bottom: 40px;
+  flex-shrink: 0;
 }
 .step {
   display: flex;
@@ -471,7 +476,9 @@ td.tx-hash {
   table { min-width: 480px; }
   .section-header { flex-direction: column; align-items: flex-start; gap: 8px; }
   .donate-bar { padding: 10px 16px; }
+  .donate-row { flex-direction: column; gap: 12px; }
   .donate-content { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .how-it-works { justify-content: center; }
   .donate-qr { align-self: center; }
   .donate-balance { font-size: 16px; }
   .donate-address { font-size: 9px; }
