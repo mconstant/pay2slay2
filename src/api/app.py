@@ -33,6 +33,10 @@ def _ensure_schema_columns(engine: Any, log: Any) -> None:
         ("users", "last_settlement_at", "DATETIME"),
         ("users", "region_code", "VARCHAR(8)"),
         ("users", "abuse_flags", "VARCHAR(500)"),
+        ("donation_ledger", "sender_address", "VARCHAR(128)"),
+        ("donation_ledger", "source", "VARCHAR(32) DEFAULT 'receive'"),
+        ("donation_ledger", "note", "VARCHAR(255)"),
+        ("donation_ledger", "blocks_received", "INTEGER DEFAULT 0"),
     ]
     with engine.connect() as conn:
         for table, col, col_type in additions:

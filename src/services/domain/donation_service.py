@@ -199,27 +199,31 @@ def get_donation_leaderboard(session: Session, limit: int = 50) -> list[dict[str
     """Return top donors grouped by sender_address, ordered by total donated."""
     if not _table_exists(session, "donation_ledger"):
         return []
-    rows = (
-        session.query(
-            DonationLedger.sender_address,
-            func.sum(DonationLedger.amount_ban).label("total"),
-            func.count(DonationLedger.id).label("donations"),
+    try:
+        rows = (
+            session.query(
+                DonationLedger.sender_address,
+                func.sum(DonationLedger.amount_ban).label("total"),
+                func.count(DonationLedger.id).label("donations"),
+            )
+            .filter(DonationLedger.sender_address.isnot(None))
+            .filter(DonationLedger.sender_address != "")
+            .group_by(DonationLedger.sender_address)
+            .order_by(func.sum(DonationLedger.amount_ban).desc())
+            .limit(limit)
+            .all()
         )
-        .filter(DonationLedger.sender_address.isnot(None))
-        .filter(DonationLedger.sender_address != "")
-        .group_by(DonationLedger.sender_address)
-        .order_by(func.sum(DonationLedger.amount_ban).desc())
-        .limit(limit)
-        .all()
-    )
-    return [
-        {
-            "address": row.sender_address,
-            "total_donated": round(float(row.total), 2),
-            "donation_count": row.donations,
-        }
-        for row in rows
-    ]
+        return [
+            {
+                "address": row.sender_address,
+                "total_donated": round(float(row.total), 2),
+                "donation_count": row.donations,
+            }
+            for row in rows
+        ]
+    except Exception:
+        session.rollback()
+        return []
 
 
 def get_donation_status(session: Session) -> dict[str, object]:
