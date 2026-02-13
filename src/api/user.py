@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
@@ -8,6 +9,11 @@ from sqlalchemy.orm import Session
 from src.lib.auth import session_secret, verify_session
 from src.lib.observability import get_logger
 from src.models.models import Payout, RewardAccrual, User, VerificationRecord, WalletLink
+from src.services.domain.hodl_boost_service import (
+    fetch_spl_token_balance,
+    get_tier_for_balance,
+    tiers_as_dicts,
+)
 
 log = get_logger("api.user")
 
@@ -62,6 +68,70 @@ def link_wallet(
         db.add(wl)
     db.commit()
     return JSONResponse({"linked": True, "address": banano_address})
+
+
+_SOL_ADDR_MIN_LEN = 32
+_SOL_ADDR_MAX_LEN = 64
+
+
+@router.post("/me/verify-solana")
+def verify_solana_wallet(
+    request: Request,
+    solana_address: str = Body(..., embed=True),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Link a Solana wallet and verify $JPMT token holdings for HODL boost."""
+    if (
+        not isinstance(solana_address, str)
+        or len(solana_address) < _SOL_ADDR_MIN_LEN
+        or len(solana_address) > _SOL_ADDR_MAX_LEN
+    ):
+        raise HTTPException(status_code=400, detail="Invalid Solana address")
+    token = request.cookies.get("p2s_session") if request else None
+    uid = verify_session(token, session_secret()) if token else None
+    if not uid:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    user = db.query(User).filter(User.discord_user_id == uid).one_or_none()
+    if not user:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    # Get HODL boost config
+    app_state = getattr(getattr(request, "app", None), "state", None)
+    cfg_obj = getattr(app_state, "config", None)
+    payout_cfg = getattr(cfg_obj, "payout", None)
+
+    if not payout_cfg or not payout_cfg.hodl_boost_enabled:
+        raise HTTPException(status_code=400, detail="HODL boost not enabled")
+
+    token_ca = payout_cfg.hodl_boost_token_ca
+    rpc_url = payout_cfg.hodl_boost_solana_rpc
+
+    # Fetch on-chain balance
+    balance = fetch_spl_token_balance(solana_address, token_ca, rpc_url)
+
+    # Update user record
+    user.solana_wallet_address = solana_address
+    user.jpmt_balance = balance
+    user.jpmt_verified_at = datetime.now(UTC)
+    db.commit()
+
+    tier = get_tier_for_balance(balance)
+    return JSONResponse(
+        {
+            "solana_address": solana_address,
+            "jpmt_balance": balance,
+            "tier": tier.name,
+            "badge": tier.badge,
+            "multiplier": tier.multiplier,
+            "verified_at": user.jpmt_verified_at.isoformat(),
+        }
+    )
+
+
+@router.get("/hodl/tiers")
+def hodl_tiers() -> JSONResponse:
+    """Public endpoint returning all HODL boost tiers."""
+    return JSONResponse({"tiers": tiers_as_dicts()})
 
 
 @router.post("/me/reverify")
@@ -153,6 +223,13 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
         # Get the most recently linked wallet
         latest_wallet = max(user.wallet_links, key=lambda w: w.created_at or w.id)
         wallet_address = latest_wallet.address
+
+    # HODL boost status
+    jpmt_balance = getattr(user, "jpmt_balance", 0) or 0
+    tier = get_tier_for_balance(jpmt_balance)
+    solana_addr = getattr(user, "solana_wallet_address", None)
+    jpmt_verified = getattr(user, "jpmt_verified_at", None)
+
     return JSONResponse(
         {
             "discord_username": user.discord_username,
@@ -162,6 +239,12 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
             "last_verified_status": last_verified_status,
             "last_verified_source": last_verified_source,
             "accrued_rewards_ban": float(total_accrued),
+            "solana_wallet": solana_addr,
+            "jpmt_balance": jpmt_balance,
+            "jpmt_tier": tier.name,
+            "jpmt_badge": tier.badge,
+            "jpmt_multiplier": tier.multiplier,
+            "jpmt_verified_at": jpmt_verified.isoformat() if jpmt_verified else None,
         }
     )
 

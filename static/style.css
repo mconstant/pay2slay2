@@ -579,6 +579,84 @@ td.tx-hash {
   #cycle-footer span[style*="margin"] { display: none; }
 }
 
+/* ── HODL Boost Card ────────────────────────────────── */
+.hodl-boost-card {
+  border: 1px solid rgba(148, 90, 245, .3);
+  background: linear-gradient(135deg, var(--surface) 0%, rgba(148, 90, 245, .06) 100%);
+}
+.hodl-boost-card .card-header h2 {
+  color: #c4a5f7;
+}
+.hodl-subtitle {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+.hodl-badge-display {
+  font-size: 28px;
+  line-height: 1;
+}
+.hodl-stats {
+  margin-bottom: 16px;
+}
+.hodl-wallet-connect {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.hodl-wallet-connect .form-group {
+  flex: 1;
+  min-width: 200px;
+}
+.btn-sol {
+  background: linear-gradient(135deg, #9945FF 0%, #14F195 100%);
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  white-space: nowrap;
+}
+.btn-sol:hover {
+  opacity: .9;
+}
+.btn-jpmt {
+  background: linear-gradient(135deg, #9945FF 0%, #14F195 100%);
+  color: #fff;
+  font-weight: 600;
+  border: none;
+}
+.btn-jpmt:hover {
+  opacity: .9;
+}
+.hodl-tier-table {
+  margin-bottom: 16px;
+}
+.hodl-tier-table h3 {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+.hodl-tier-table table {
+  font-size: 13px;
+}
+.hodl-tier-table td:first-child {
+  font-size: 18px;
+  text-align: center;
+  width: 40px;
+}
+.hodl-links {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  .hodl-wallet-connect { flex-direction: column; align-items: stretch; }
+  .hodl-links { flex-direction: column; }
+  .hodl-links .btn { text-align: center; }
+}
+
 /* ── Donations Page ─────────────────────────────────── */
 .donation-card { padding: 20px; }
 .donation-card h3 { margin: 0 0 12px; color: var(--accent); }

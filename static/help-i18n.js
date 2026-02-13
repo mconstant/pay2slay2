@@ -70,6 +70,23 @@
           { q: "What's the payout rate per kill?", a: "The per-kill rate depends on the faucet balance and is set by the operators. Check the Dashboard for the current rate." },
           { q: "Discord says 'You need to verify your email'", a: "Go to Discord Settings → My Account → verify your email address. Some servers require verified emails before you can post or interact." }
         ]
+      },
+      hodl: {
+        title: "🚀 $JPMT HODL Boost",
+        intro: "Hold <strong>$JPMT</strong> tokens in your Solana wallet to earn boosted Banano payouts on every kill. The more you hold, the higher your multiplier!",
+        howTitle: "How It Works",
+        howSteps: [
+          { title: "Get $JPMT", desc: 'Buy $JPMT on <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> using any Solana wallet (Phantom, Solflare, etc.).' },
+          { title: "Connect Your Wallet", desc: "On Panel Dashboard, paste your Solana wallet address and click <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Get Boosted", desc: "Your tier and multiplier are applied automatically to all future kill payouts. Re-verify anytime to update." }
+        ],
+        tiersTitle: "Boost Tiers",
+        tip: "💎 <strong>Pro tip:</strong> Your boost is based on your balance at verification time. Re-verify after buying more $JPMT to upgrade your tier!",
+        links: {
+          buy: "Buy $JPMT on Jupiter",
+          website: "JPMT Website",
+          discord: "JPMT Discord"
+        }
       }
     },
 
@@ -139,6 +156,19 @@
           { q: "Який коефіцієнт виплати за кіл?", a: "Коефіцієнт залежить від балансу фонду і встановлюється операторами." },
           { q: "Discord каже 'Потрібно підтвердити email'", a: "Налаштування Discord → Мій акаунт → підтвердіть вашу email адресу." }
         ]
+      },
+      hodl: {
+        title: "🚀 Буст $JPMT HODL",
+        intro: "Тримайте токени <strong>$JPMT</strong> у вашому Solana гаманці, щоб отримувати підвищені виплати Banano за кожен кіл. Чим більше тримаєте, тим вищий множник!",
+        howTitle: "Як це працює",
+        howSteps: [
+          { title: "Отримайте $JPMT", desc: 'Купіть $JPMT на <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> використовуючи будь-який Solana гаманець.' },
+          { title: "Підключіть гаманець", desc: "На Dashboard вставте вашу адресу Solana гаманця і натисніть <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Отримайте буст", desc: "Ваш рівень і множник застосовуються автоматично. Перевіряйте знову після покупки нових $JPMT." }
+        ],
+        tiersTitle: "Рівні бусту",
+        tip: "💎 <strong>Порада:</strong> Буст базується на балансі під час верифікації. Перевірте знову після покупки більше $JPMT!",
+        links: { buy: "Купити $JPMT на Jupiter", website: "Сайт JPMT", discord: "Discord JPMT" }
       }
     },
 
@@ -208,6 +238,19 @@
           { q: "¿Cuál es la tasa de pago por eliminación?", a: "La tasa depende del saldo del fondo y es establecida por los operadores." },
           { q: "Discord dice 'Necesitas verificar tu correo'", a: "Ve a Configuración de Discord → Mi Cuenta → verifica tu correo electrónico." }
         ]
+      },
+      hodl: {
+        title: "🚀 Boost $JPMT HODL",
+        intro: "Mantén tokens <strong>$JPMT</strong> en tu billetera Solana para obtener pagos de Banano aumentados por cada eliminación. ¡Cuanto más mantengas, mayor tu multiplicador!",
+        howTitle: "Cómo funciona",
+        howSteps: [
+          { title: "Obtén $JPMT", desc: 'Compra $JPMT en <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> usando cualquier billetera Solana.' },
+          { title: "Conecta tu billetera", desc: "En el Dashboard, pega tu dirección de billetera Solana y haz clic en <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Recibe el boost", desc: "Tu nivel y multiplicador se aplican automáticamente. ¡Re-verifica después de comprar más $JPMT!" }
+        ],
+        tiersTitle: "Niveles de Boost",
+        tip: "💎 <strong>Consejo:</strong> El boost se basa en tu saldo al momento de la verificación. ¡Re-verifica después de comprar más $JPMT!",
+        links: { buy: "Comprar $JPMT en Jupiter", website: "Sitio web JPMT", discord: "Discord JPMT" }
       }
     },
 
@@ -277,6 +320,19 @@
           { q: "Qual é a taxa de pagamento por eliminação?", a: "A taxa depende do saldo do fundo e é definida pelos operadores." },
           { q: "Discord diz 'Você precisa verificar seu e-mail'", a: "Vá em Configurações do Discord → Minha Conta → verifique seu e-mail." }
         ]
+      },
+      hodl: {
+        title: "🚀 Boost $JPMT HODL",
+        intro: "Segure tokens <strong>$JPMT</strong> na sua carteira Solana para ganhar pagamentos de Banano aumentados por cada eliminação. Quanto mais você segurar, maior o multiplicador!",
+        howTitle: "Como funciona",
+        howSteps: [
+          { title: "Obtenha $JPMT", desc: 'Compre $JPMT no <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> usando qualquer carteira Solana.' },
+          { title: "Conecte sua carteira", desc: "No Dashboard, cole o endereço da sua carteira Solana e clique em <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Receba o boost", desc: "Seu nível e multiplicador são aplicados automaticamente. Re-verifique após comprar mais $JPMT!" }
+        ],
+        tiersTitle: "Níveis de Boost",
+        tip: "💎 <strong>Dica:</strong> O boost é baseado no seu saldo no momento da verificação. Re-verifique após comprar mais $JPMT!",
+        links: { buy: "Comprar $JPMT no Jupiter", website: "Site JPMT", discord: "Discord JPMT" }
       }
     },
 
@@ -346,6 +402,19 @@
           { q: "キルあたりの支払い率は？", a: "レートはファンドの残高に依存し、運営者が設定します。" },
           { q: "Discordが「メールの確認が必要」と表示する", a: "Discord設定 → マイアカウント → メールアドレスを確認してください。" }
         ]
+      },
+      hodl: {
+        title: "🚀 $JPMT HODLブースト",
+        intro: "Solanaウォレットに<strong>$JPMT</strong>トークンを保持して、キルごとのBanano支払いをブーストしましょう。多く保持するほど、倍率が高くなります！",
+        howTitle: "仕組み",
+        howSteps: [
+          { title: "$JPMTを取得", desc: '<a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a>で任意のSolanaウォレットを使って$JPMTを購入してください。' },
+          { title: "ウォレットを接続", desc: "DashboardでSolanaウォレットアドレスを貼り付け、<strong>Verify $JPMT Holdings</strong>をクリックしてください。" },
+          { title: "ブーストを受け取る", desc: "ティアと倍率は自動的に適用されます。$JPMTを追加購入した後に再確認してください！" }
+        ],
+        tiersTitle: "ブーストティア",
+        tip: "💎 <strong>ヒント：</strong>ブーストは確認時の残高に基づきます。$JPMTを追加購入した後に再確認してください！",
+        links: { buy: "Jupiterで$JPMTを購入", website: "JPMTウェブサイト", discord: "JPMT Discord" }
       }
     },
 
@@ -415,6 +484,19 @@
           { q: "Quel est le taux de paiement par élimination ?", a: "Le taux dépend du solde du fonds et est fixé par les opérateurs." },
           { q: "Discord dit 'Vous devez vérifier votre e-mail'", a: "Allez dans Paramètres Discord → Mon Compte → vérifiez votre adresse e-mail." }
         ]
+      },
+      hodl: {
+        title: "🚀 Boost $JPMT HODL",
+        intro: "Détenez des tokens <strong>$JPMT</strong> dans votre portefeuille Solana pour obtenir des paiements Banano augmentés à chaque élimination. Plus vous détenez, plus votre multiplicateur est élevé !",
+        howTitle: "Comment ça marche",
+        howSteps: [
+          { title: "Obtenez des $JPMT", desc: 'Achetez des $JPMT sur <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> avec n\'importe quel portefeuille Solana.' },
+          { title: "Connectez votre portefeuille", desc: "Sur le Dashboard, collez votre adresse de portefeuille Solana et cliquez sur <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Obtenez le boost", desc: "Votre niveau et multiplicateur s'appliquent automatiquement. Re-vérifiez après avoir acheté plus de $JPMT !" }
+        ],
+        tiersTitle: "Niveaux de Boost",
+        tip: "💎 <strong>Astuce :</strong> Le boost est basé sur votre solde au moment de la vérification. Re-vérifiez après avoir acheté plus de $JPMT !",
+        links: { buy: "Acheter $JPMT sur Jupiter", website: "Site web JPMT", discord: "Discord JPMT" }
       }
     },
 
@@ -484,6 +566,19 @@
           { q: "Wie hoch ist die Auszahlungsrate pro Eliminierung?", a: "Die Rate hängt vom Fondsguthaben ab und wird von den Betreibern festgelegt." },
           { q: "Discord sagt 'Du musst deine E-Mail bestätigen'", a: "Gehe zu Discord-Einstellungen → Mein Konto → bestätige deine E-Mail-Adresse." }
         ]
+      },
+      hodl: {
+        title: "🚀 $JPMT HODL-Boost",
+        intro: "Halte <strong>$JPMT</strong>-Tokens in deiner Solana-Wallet, um erhöhte Banano-Auszahlungen für jede Eliminierung zu erhalten. Je mehr du hältst, desto höher dein Multiplikator!",
+        howTitle: "So funktioniert's",
+        howSteps: [
+          { title: "$JPMT kaufen", desc: 'Kaufe $JPMT auf <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a> mit jeder Solana-Wallet.' },
+          { title: "Wallet verbinden", desc: "Im Dashboard füge deine Solana-Wallet-Adresse ein und klicke auf <strong>Verify $JPMT Holdings</strong>." },
+          { title: "Boost erhalten", desc: "Dein Tier und Multiplikator werden automatisch angewendet. Nach dem Kauf von mehr $JPMT erneut verifizieren!" }
+        ],
+        tiersTitle: "Boost-Stufen",
+        tip: "💎 <strong>Tipp:</strong> Der Boost basiert auf deinem Guthaben zum Zeitpunkt der Verifizierung. Nach dem Kauf von mehr $JPMT erneut verifizieren!",
+        links: { buy: "$JPMT auf Jupiter kaufen", website: "JPMT-Website", discord: "JPMT Discord" }
       }
     },
 
@@ -553,6 +648,19 @@
           { q: "每次淘汰的支付率是多少？", a: "费率取决于资金余额，由运营者设定。" },
           { q: "Discord说'您需要验证电子邮件'", a: "前往Discord设置 → 我的账户 → 验证您的电子邮件地址。" }
         ]
+      },
+      hodl: {
+        title: "🚀 $JPMT HODL加速",
+        intro: "在您的Solana钱包中持有<strong>$JPMT</strong>代币，以获得每次淘汰更高的Banano支付。持有越多，倍率越高！",
+        howTitle: "如何运作",
+        howSteps: [
+          { title: "获取$JPMT", desc: '使用任何Solana钱包在<a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank">Jupiter</a>上购买$JPMT。' },
+          { title: "连接钱包", desc: "在Dashboard中，粘贴您的Solana钱包地址并点击<strong>Verify $JPMT Holdings</strong>。" },
+          { title: "获得加速", desc: "您的等级和倍率会自动应用。购买更多$JPMT后重新验证！" }
+        ],
+        tiersTitle: "加速等级",
+        tip: "💎 <strong>提示：</strong>加速基于验证时的余额。购买更多$JPMT后重新验证以升级！",
+        links: { buy: "在Jupiter购买$JPMT", website: "JPMT网站", discord: "JPMT Discord" }
       }
     }
   };
@@ -596,6 +704,46 @@
         html += '<div class="faq-answer">' + faq.a + '</div></details>';
       }
       html += '</div></div>';
+    }
+
+    // HODL Boost
+    if (data.hodl) {
+      var h = data.hodl;
+      html += '<div class="help-section hodl-boost-card">';
+      html += '<h3>' + h.title + '</h3>';
+      html += '<p style="color:var(--text-muted);font-size:14px;line-height:1.6;">' + h.intro + '</p>';
+      html += '<h4 style="margin-top:16px;">' + h.howTitle + '</h4>';
+      html += '<div class="help-steps">';
+      for (var m = 0; m < h.howSteps.length; m++) {
+        var hs = h.howSteps[m];
+        html += '<div class="help-step">';
+        html += '<div class="help-step-num">' + (m + 1) + '</div>';
+        html += '<div class="help-step-body"><strong>' + hs.title + '</strong><p>' + hs.desc + '</p></div>';
+        html += '</div>';
+      }
+      html += '</div>';
+      html += '<h4 style="margin-top:16px;">' + h.tiersTitle + '</h4>';
+      html += '<table class="hodl-tier-table"><thead><tr><th>Tier</th><th>Badge</th><th>Tokens</th><th>Boost</th></tr></thead><tbody>';
+      var tiers = [
+        { name: "Bronze HODLr", badge: "🥉", min: "10,000", mult: "1.10×" },
+        { name: "Silver HODLr", badge: "🥈", min: "100,000", mult: "1.20×" },
+        { name: "Gold HODLr", badge: "🥇", min: "1,000,000", mult: "1.35×" },
+        { name: "Diamond HODLr", badge: "💎", min: "10,000,000", mult: "1.50×" },
+        { name: "Whale HODLr", badge: "🐋", min: "100,000,000", mult: "1.75×" }
+      ];
+      for (var t = 0; t < tiers.length; t++) {
+        html += '<tr><td>' + tiers[t].name + '</td><td>' + tiers[t].badge + '</td><td>' + tiers[t].min + '</td><td>' + tiers[t].mult + '</td></tr>';
+      }
+      html += '</tbody></table>';
+      if (h.tip) {
+        html += '<div class="help-tip">' + h.tip + '</div>';
+      }
+      html += '<div class="hodl-links" style="margin-top:12px;display:flex;gap:10px;flex-wrap:wrap;">';
+      html += '<a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank" class="btn-sol">' + h.links.buy + '</a>';
+      html += '<a href="https://jpmt.cc/" target="_blank" class="btn-jpmt">' + h.links.website + '</a>';
+      html += '<a href="https://discord.gg/ukg7vgjQ48" target="_blank" class="btn-jpmt">' + h.links.discord + '</a>';
+      html += '</div>';
+      html += '</div>';
     }
 
     var container = document.getElementById('help-content');

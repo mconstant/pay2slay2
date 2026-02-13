@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pay2Slay Faucet</title>
-  <link rel="stylesheet" href="/static/style.css?v=13">
+  <link rel="stylesheet" href="/static/style.css?v=14">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍌</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -306,6 +306,66 @@
         </tbody>
       </table>
     </div>
+
+    <!-- JPMT HODL Boost -->
+    <div class="card hodl-boost-card">
+      <div class="card-header">
+        <h2>🚀 $JPMT HODL Boost</h2>
+        <span id="hodl-badge" class="hodl-badge-display"></span>
+      </div>
+      <p class="hodl-subtitle">Hold <strong>$JPMT</strong> tokens to boost your per-kill Banano payouts! Connect your Solana wallet to verify your holdings.</p>
+
+      <div class="hodl-status" id="hodl-status-section">
+        <div class="stat-grid hodl-stats">
+          <div class="stat-box">
+            <div class="value" id="hodl-balance">—</div>
+            <div class="label">$JPMT Balance</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="hodl-tier">—</div>
+            <div class="label">Tier</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="hodl-multiplier">1.0x</div>
+            <div class="label">Boost</div>
+          </div>
+          <div class="stat-box">
+            <div class="value" id="hodl-verified" style="font-size:14px;">never</div>
+            <div class="label">Last Verified</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="hodl-wallet-connect">
+        <div class="form-group">
+          <label for="sol-wallet-address">Solana Wallet Address</label>
+          <input type="text" id="sol-wallet-address" placeholder="Your Solana wallet address..." autocomplete="off">
+        </div>
+        <button class="btn btn-primary btn-sol" onclick="verifySolanaWallet()">🔗 Verify $JPMT Holdings</button>
+      </div>
+
+      <div class="hodl-tier-table" id="hodl-tier-table">
+        <h3>Boost Tiers</h3>
+        <table>
+          <thead>
+            <tr><th>Badge</th><th>Tier</th><th>Hold</th><th>Boost</th></tr>
+          </thead>
+          <tbody id="hodl-tiers-tbody">
+            <tr><td>🥉</td><td>Bronze HODLr</td><td>10K</td><td>1.10x</td></tr>
+            <tr><td>🥈</td><td>Silver HODLr</td><td>100K</td><td>1.20x</td></tr>
+            <tr><td>🥇</td><td>Gold HODLr</td><td>1M</td><td>1.35x</td></tr>
+            <tr><td>💎</td><td>Diamond HODLr</td><td>10M</td><td>1.50x</td></tr>
+            <tr><td>🐋</td><td>Whale HODLr</td><td>100M</td><td>1.75x</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="hodl-links">
+        <a href="https://jup.ag/tokens/7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd" target="_blank" rel="noopener" class="btn btn-sm btn-jpmt">🪙 Buy $JPMT on Jupiter</a>
+        <a href="https://jpmt.cc/" target="_blank" rel="noopener" class="btn btn-sm">🌐 JPMT Website</a>
+        <a href="https://discord.gg/ukg7vgjQ48" target="_blank" rel="noopener" class="btn btn-sm btn-discord btn-sm">💬 JPMT Discord</a>
+      </div>
+    </div>
   </div>
 
   <!-- Wallet Page -->
@@ -547,8 +607,8 @@
   <svg viewBox="0 0 24 24" width="34" height="34" fill="#FBDD11"><path d="M21 7H20V5A3 3 0 0 0 17 2H5A3 3 0 0 0 2 5V19A3 3 0 0 0 5 22H19A3 3 0 0 0 22 19V10A3 3 0 0 0 21 7ZM5 4H17A1 1 0 0 1 18 5V7H5A1 1 0 0 1 5 5ZM20 16H19A1 1 0 0 1 19 14H20Z"/></svg>
 </a>
 
-<script src="/static/help-i18n.js?v=13"></script>
-<script src="/static/app.js?v=13"></script>
-<script src="/static/banana-rain.js?v=13"></script>
+<script src="/static/help-i18n.js?v=14"></script>
+<script src="/static/app.js?v=14"></script>
+<script src="/static/banana-rain.js?v=14"></script>
 </body>
 </html>

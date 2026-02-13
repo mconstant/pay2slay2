@@ -37,6 +37,9 @@ def _ensure_schema_columns(engine: Any, log: Any) -> None:
         ("donation_ledger", "source", "VARCHAR(32) DEFAULT 'receive'"),
         ("donation_ledger", "note", "VARCHAR(255)"),
         ("donation_ledger", "blocks_received", "INTEGER DEFAULT 0"),
+        ("users", "solana_wallet_address", "VARCHAR(64)"),
+        ("users", "jpmt_balance", "INTEGER DEFAULT 0"),
+        ("users", "jpmt_verified_at", "DATETIME"),
     ]
     with engine.connect() as conn:
         for table, col, col_type in additions:

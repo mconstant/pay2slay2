@@ -27,6 +27,11 @@ class User(Base, TimestampMixin):
     region_code: Mapped[str | None] = mapped_column(String(8))
     abuse_flags: Mapped[str | None] = mapped_column(String(500))
 
+    # Solana wallet for HODL boost
+    solana_wallet_address: Mapped[str | None] = mapped_column(String(64))
+    jpmt_balance: Mapped[int] = mapped_column(default=0)  # last verified token balance
+    jpmt_verified_at: Mapped[datetime | None] = mapped_column()
+
     # Linked wallet (ban_ address) through WalletLink
     wallet_links: Mapped[list[WalletLink]] = relationship(back_populates="user")
 

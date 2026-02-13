@@ -6,3 +6,8 @@ reset_tz: UTC
 settlement_order: random
 batch_size: 0
 seed_fund_ban: 1336
+
+# Solana memecoin HODL boost
+hodl_boost_enabled: true
+hodl_boost_token_ca: ${HODL_BOOST_TOKEN_CA:-7ErxzRN1hpyMZC8gps7ANZFTGgeDG7cFmVZcMfE6oGrd}
+hodl_boost_solana_rpc: ${SOLANA_RPC_URL:-https://api.mainnet-beta.solana.com}

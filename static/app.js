@@ -455,8 +455,35 @@
         }
         var discordEl = $("#stat-discord-id");
         if (discordEl) discordEl.textContent = s.discord_username || "—";
+
+        // HODL boost status
+        var hodlBal = $("#hodl-balance");
+        var hodlTier = $("#hodl-tier");
+        var hodlMult = $("#hodl-multiplier");
+        var hodlVerified = $("#hodl-verified");
+        var hodlBadge = $("#hodl-badge");
+        var solInput = $("#sol-wallet-address");
+        if (hodlBal) hodlBal.textContent = s.jpmt_balance ? formatNumber(s.jpmt_balance) : "—";
+        if (hodlTier) hodlTier.textContent = s.jpmt_tier || "—";
+        if (hodlMult) {
+          hodlMult.textContent = (s.jpmt_multiplier || 1.0).toFixed(2) + "x";
+          hodlMult.style.color = s.jpmt_multiplier > 1 ? "var(--success)" : "var(--text-muted)";
+        }
+        if (hodlVerified) hodlVerified.textContent = s.jpmt_verified_at ? fmtDate(s.jpmt_verified_at) : "never";
+        if (hodlBadge) {
+          hodlBadge.textContent = s.jpmt_badge || "";
+          hodlBadge.title = s.jpmt_tier || "";
+        }
+        if (solInput && s.solana_wallet) solInput.value = s.solana_wallet;
       }
     } catch (_) {}
+  }
+
+  function formatNumber(n) {
+    if (n >= 1000000000) return (n / 1000000000).toFixed(1) + "B";
+    if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
+    if (n >= 1000) return (n / 1000).toFixed(1) + "K";
+    return String(n);
   }
 
   async function loadAccruals() {
@@ -565,6 +592,36 @@
       toast("Wallet linked: " + data.address, "success");
       loadWallet();
       input.value = "";
+    } catch (e) {
+      toast(e.message, "error");
+    }
+  };
+
+  window.verifySolanaWallet = async function () {
+    var input = $("#sol-wallet-address");
+    var addr = input ? input.value.trim() : "";
+    if (!addr || addr.length < 32) {
+      toast("Enter a valid Solana wallet address", "error");
+      return;
+    }
+    try {
+      var r = await fetch("/me/verify-solana", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ solana_address: addr }),
+      });
+      if (!r.ok) {
+        var err = await r.json().catch(function () { return { detail: "Failed" }; });
+        throw new Error(err.detail || "Verification failed");
+      }
+      var data = await r.json();
+      toast(
+        data.jpmt_balance > 0
+          ? data.tier + " — " + data.multiplier.toFixed(2) + "x boost! (" + formatNumber(data.jpmt_balance) + " $JPMT)"
+          : "No $JPMT found in this wallet",
+        data.jpmt_balance > 0 ? "success" : "info"
+      );
+      loadStatus();
     } catch (e) {
       toast(e.message, "error");
     }

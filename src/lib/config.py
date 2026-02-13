@@ -42,6 +42,12 @@ class PayoutConfig(BaseModel):
     seed_fund_ban: float = Field(
         0, ge=0, description="Initial operator fund (BAN) for sustainability calc"
     )
+    # Solana memecoin HODL boost
+    hodl_boost_enabled: bool = Field(False, description="Enable token HODL payout multiplier")
+    hodl_boost_token_ca: str = Field("", description="SPL token contract address for HODL boost")
+    hodl_boost_solana_rpc: str = Field(
+        "https://api.mainnet-beta.solana.com", description="Solana RPC endpoint"
+    )
 
 
 class IntegrationsConfig(BaseModel):
