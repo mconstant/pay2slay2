@@ -221,9 +221,10 @@ def _run_settlement_only(
 
             seed_hex = _load_operator_seed(session)
         banano = BananoClient(node_url=cfg.node_url, dry_run=cfg.dry_run, seed=seed_hex)
-        # Snapshot balance before receiving so we can track donations
         op_account: str = cfg.operator_account or ""
-        balance_before, _ = banano.account_balance(op_account)
+
+        # Capture pending blocks with sender info BEFORE receiving
+        pending_blocks = banano.get_receivable_blocks(op_account) if op_account else []
 
         # Auto-receive pending donations before checking balance
         with tracer.start_as_current_span(
@@ -234,24 +235,29 @@ def _run_settlement_only(
             if received:
                 log.info("operator_received_pending", blocks=received)
 
-        # Record donation if balance increased after receiving
-        if received:
+        # Record individual donations with sender addresses
+        if received and pending_blocks:
             try:
-                balance_after, _ = banano.account_balance(op_account)
                 from decimal import Decimal
 
                 from src.services.domain.donation_service import record_donation
 
-                donated_amount = Decimal(str(balance_after)) - Decimal(str(balance_before))
-                if donated_amount > 0:
-                    record_donation(
-                        session,
-                        amount_ban=donated_amount,
-                        blocks_received=received,
-                        source="scheduler",
-                    )
-                    session.commit()
-                    log.info("donation_recorded", amount=float(donated_amount), blocks=received)
+                for block in pending_blocks:
+                    amount = Decimal(str(block["amount_ban"]))
+                    if amount > 0:
+                        record_donation(
+                            session,
+                            amount_ban=amount,
+                            blocks_received=1,
+                            source="scheduler",
+                            sender_address=block.get("sender"),
+                        )
+                session.commit()
+                log.info(
+                    "donations_recorded",
+                    count=len(pending_blocks),
+                    blocks=received,
+                )
             except Exception as exc:
                 log.warning("donation_record_failed", error=str(exc))
         with tracer.start_as_current_span(

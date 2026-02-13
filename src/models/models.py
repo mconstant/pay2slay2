@@ -184,3 +184,4 @@ class DonationLedger(Base, TimestampMixin):
     blocks_received: Mapped[int] = mapped_column(default=0)
     source: Mapped[str] = mapped_column(String(32), default="receive")  # receive / manual / seed
     note: Mapped[str | None] = mapped_column(String(255))
+    sender_address: Mapped[str | None] = mapped_column(String(128))

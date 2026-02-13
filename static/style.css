@@ -665,6 +665,29 @@ td.tx-hash {
 }
 .milestone-status { font-size: 16px; }
 
+/* ── Donation Leaderboard ───────────────────────────── */
+.donor-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; border-radius: 8px;
+  transition: background 0.2s;
+}
+.donor-row:nth-child(odd) { background: rgba(255,255,255,0.02); }
+.donor-row:hover { background: rgba(251,221,17,0.06); }
+.donor-rank {
+  font-size: 18px; min-width: 36px; text-align: center;
+  font-family: var(--font-mono); font-weight: 700;
+}
+.donor-address {
+  flex: 1; font-family: var(--font-mono); font-size: 13px;
+  color: var(--accent); text-decoration: none;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.donor-address:hover { text-decoration: underline; color: var(--accent-green); }
+.donor-amount {
+  font-family: var(--font-mono); font-size: 14px; font-weight: 600;
+  color: var(--accent); white-space: nowrap;
+}
+
 @media (max-width: 640px) {
   .thermo-total { font-size: 24px; }
   .thermo-pct { font-size: 14px; }

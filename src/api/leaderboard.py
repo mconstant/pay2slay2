@@ -202,29 +202,31 @@ def donate_info(
                 seed=seed_hex,
             )
 
-            # Snapshot balance before receiving, so we can track donations
-            balance_before, _ = banano.account_balance(operator_account)
+            # Capture pending blocks with sender info BEFORE receiving
+            pending_blocks = banano.get_receivable_blocks(operator_account)
 
             # Auto-receive any pending blocks before checking balance
             received_blocks = banano.receive_all_pending(account=operator_account)
 
             balance, pending = banano.account_balance(operator_account)
 
-            # Record donation if balance increased after receiving
-            if received_blocks and balance is not None and balance_before is not None:
+            # Record individual donations with sender addresses
+            if received_blocks and pending_blocks:
                 from decimal import Decimal
 
                 from src.services.domain.donation_service import record_donation
 
-                donated_amount = Decimal(str(balance)) - Decimal(str(balance_before))
-                if donated_amount > 0:
-                    record_donation(
-                        db,
-                        amount_ban=donated_amount,
-                        blocks_received=received_blocks,
-                        source="donate-info",
-                    )
-                    db.commit()
+                for block in pending_blocks:
+                    amount = Decimal(str(block["amount_ban"]))
+                    if amount > 0:
+                        record_donation(
+                            db,
+                            amount_ban=amount,
+                            blocks_received=1,
+                            source="donate-info",
+                            sender_address=block.get("sender"),
+                        )
+                db.commit()
         except Exception:
             pass
 

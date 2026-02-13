@@ -128,12 +128,13 @@ def get_next_milestone(total_donated: Decimal) -> Milestone | None:
     return None
 
 
-def record_donation(
+def record_donation(  # noqa: PLR0913
     session: Session,
     amount_ban: Decimal,
     blocks_received: int = 0,
     source: str = "receive",
     note: str | None = None,
+    sender_address: str | None = None,
 ) -> DonationLedger | None:
     """Record a donation entry if amount > 0. Returns the ledger row or None."""
     if amount_ban <= 0:
@@ -143,10 +144,36 @@ def record_donation(
         blocks_received=blocks_received,
         source=source,
         note=note,
+        sender_address=sender_address,
     )
     session.add(entry)
     session.flush()
     return entry
+
+
+def get_donation_leaderboard(session: Session, limit: int = 50) -> list[dict[str, object]]:
+    """Return top donors grouped by sender_address, ordered by total donated."""
+    rows = (
+        session.query(
+            DonationLedger.sender_address,
+            func.sum(DonationLedger.amount_ban).label("total"),
+            func.count(DonationLedger.id).label("donations"),
+        )
+        .filter(DonationLedger.sender_address.isnot(None))
+        .filter(DonationLedger.sender_address != "")
+        .group_by(DonationLedger.sender_address)
+        .order_by(func.sum(DonationLedger.amount_ban).desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "address": row.sender_address,
+            "total_donated": round(float(row.total), 2),
+            "donation_count": row.donations,
+        }
+        for row in rows
+    ]
 
 
 def get_donation_status(session: Session) -> dict[str, object]:
@@ -192,4 +219,5 @@ def get_donation_status(session: Session) -> dict[str, object]:
             else None
         ),
         "milestones": milestones_list,
+        "leaderboard": get_donation_leaderboard(session),
     }

@@ -188,3 +188,44 @@ class BananoClient:
             return 1 if result else 0
         except Exception:
             return 0
+
+    def get_receivable_blocks(self, account: str, count: int = 100) -> list[dict[str, Any]]:
+        """List pending/receivable blocks with sender and amount info.
+
+        Returns a list of dicts: [{hash, sender, amount_raw, amount_ban}, ...]
+        In dry-run mode returns an empty list.
+        """
+        if self.dry_run:
+            return []
+        try:
+            data = self._post(
+                {
+                    "action": "receivable",
+                    "account": account,
+                    "count": str(count),
+                    "source": "true",
+                }
+            )
+            blocks = data.get("blocks", {})
+            if not isinstance(blocks, dict) or not blocks:
+                return []
+            result = []
+            for block_hash, info in blocks.items():
+                if isinstance(info, dict):
+                    amount_raw = info.get("amount", "0")
+                    sender = info.get("source", "")
+                else:
+                    # Some nodes return {hash: amount_raw} without source
+                    amount_raw = str(info) if info else "0"
+                    sender = ""
+                result.append(
+                    {
+                        "hash": block_hash,
+                        "sender": sender,
+                        "amount_raw": amount_raw,
+                        "amount_ban": self.raw_to_ban(amount_raw),
+                    }
+                )
+            return result
+        except Exception:
+            return []

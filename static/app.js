@@ -363,6 +363,27 @@
           '</div>';
         }).join("");
       }
+
+      // Donation leaderboard
+      var lbEl = $("#donation-leaderboard");
+      if (lbEl && data.leaderboard) {
+        if (data.leaderboard.length === 0) {
+          lbEl.innerHTML = '<div class="empty-state">No donations yet — be the first!</div>';
+        } else {
+          var rows = data.leaderboard.map(function(d, i) {
+            var addr = d.address || "";
+            var short = addr.length > 16 ? addr.slice(0, 12) + "…" + addr.slice(-6) : addr;
+            var creeperUrl = "https://creeper.banano.cc/account/" + addr;
+            var medal = i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : "#" + (i + 1);
+            return '<div class="donor-row">' +
+              '<span class="donor-rank">' + medal + '</span>' +
+              '<a href="' + creeperUrl + '" target="_blank" rel="noopener" class="donor-address" title="' + addr + '">' + short + '</a>' +
+              '<span class="donor-amount">' + formatBan(d.total_donated) + ' BAN</span>' +
+            '</div>';
+          }).join("");
+          lbEl.innerHTML = rows;
+        }
+      }
     } catch (e) {
       console.error("loadDonations error", e);
     }

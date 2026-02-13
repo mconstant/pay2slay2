@@ -10,6 +10,16 @@ fi
 # Log level for uvicorn access logs (default: warning to reduce volume)
 LOG_LEVEL="${P2S_LOG_LEVEL:-warning}"
 
+# ── Periodic cleanup (prevent disk fill from temp files / stale data) ──
+# Runs every 6 hours: cleans /tmp files older than 24h
+(
+  while true; do
+    sleep 21600
+    find /tmp -type f -mtime +1 -delete 2>/dev/null || true
+    echo "[cleanup] tmp files pruned at $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  done
+) &
+
 # Start scheduler in background (log output so crashes aren't silent)
 echo "Starting scheduler..."
 python -m src.jobs 2>&1 | while IFS= read -r line; do echo "[scheduler] $line"; done &
