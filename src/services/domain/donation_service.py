@@ -9,7 +9,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from decimal import Decimal
 
-from sqlalchemy import func
+from sqlalchemy import func, inspect
 from sqlalchemy.orm import Session
 
 from src.models.models import DonationLedger, Payout
@@ -107,8 +107,17 @@ _SUSTAINABILITY_MIN = 0.1
 _SUSTAINABILITY_MAX = 2.0
 
 
+def _table_exists(session: Session, table_name: str) -> bool:
+    """Check if a table exists in the current database."""
+    bind = session.get_bind()
+    insp = inspect(bind)
+    return table_name in insp.get_table_names()
+
+
 def get_total_donated(session: Session) -> Decimal:
     """Return the cumulative sum of all donation ledger entries."""
+    if not _table_exists(session, "donation_ledger"):
+        return Decimal("0")
     total = session.query(func.coalesce(func.sum(DonationLedger.amount_ban), 0)).scalar()
     return Decimal(str(total))
 
@@ -172,6 +181,8 @@ def record_donation(  # noqa: PLR0913
     """Record a donation entry if amount > 0. Returns the ledger row or None."""
     if amount_ban <= 0:
         return None
+    if not _table_exists(session, "donation_ledger"):
+        return None
     entry = DonationLedger(
         amount_ban=amount_ban,
         blocks_received=blocks_received,
@@ -186,6 +197,8 @@ def record_donation(  # noqa: PLR0913
 
 def get_donation_leaderboard(session: Session, limit: int = 50) -> list[dict[str, object]]:
     """Return top donors grouped by sender_address, ordered by total donated."""
+    if not _table_exists(session, "donation_ledger"):
+        return []
     rows = (
         session.query(
             DonationLedger.sender_address,
