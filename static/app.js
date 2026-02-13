@@ -15,7 +15,7 @@
   const $$ = (sel) => document.querySelectorAll(sel);
 
   // Pages that require auth
-  const AUTH_PAGES = new Set(["dashboard", "wallet", "help", "admin"]);
+  const AUTH_PAGES = new Set(["dashboard", "wallet", "admin"]);
   const ALL_PAGES = new Set(["leaderboard", "activity", "donations", "dashboard", "wallet", "help", "admin", "login"]);
 
   // ── Init ─────────────────────────────────────────────
