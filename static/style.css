@@ -603,13 +603,40 @@ td.tx-hash {
 .hodl-wallet-connect {
   display: flex;
   gap: 12px;
-  align-items: flex-end;
+  align-items: center;
   margin-bottom: 16px;
   flex-wrap: wrap;
 }
-.hodl-wallet-connect .form-group {
-  flex: 1;
-  min-width: 200px;
+.sol-wallet-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  background: rgba(20, 241, 149, 0.1);
+  border: 1px solid rgba(20, 241, 149, 0.3);
+  border-radius: 8px;
+  padding: 6px 12px;
+}
+.sol-connected-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #14F195;
+  animation: pulse-dot 2s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.sol-wallet-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+  width: 100%;
+}
+.sol-wallet-hint a {
+  color: #9945FF;
 }
 .btn-sol {
   background: linear-gradient(135deg, #9945FF 0%, #14F195 100%);

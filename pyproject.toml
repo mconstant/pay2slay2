@@ -27,6 +27,7 @@ dependencies = [
   "cryptography>=42.0",
   "ed25519-blake2b>=1.4",
   "bananopie>=0.0.2",
+  "PyNaCl>=1.5",
 ]
 
 [project.optional-dependencies]
@@ -67,5 +68,5 @@ strict = true
 packages = ["src"]
 
 [[tool.mypy.overrides]]
-module = ["cryptography.*", "ed25519_blake2b", "dotenv", "bananopie"]
+module = ["cryptography.*", "ed25519_blake2b", "dotenv", "bananopie", "nacl.*"]
 ignore_missing_imports = true

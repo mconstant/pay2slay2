@@ -491,7 +491,6 @@
         var hodlMult = $("#hodl-multiplier");
         var hodlVerified = $("#hodl-verified");
         var hodlBadge = $("#hodl-badge");
-        var solInput = $("#sol-wallet-address");
         if (hodlBal) hodlBal.textContent = s.jpmt_balance ? formatNumber(s.jpmt_balance) : "—";
         if (hodlTier) hodlTier.textContent = s.jpmt_tier || "—";
         if (hodlMult) {
@@ -503,7 +502,18 @@
           hodlBadge.textContent = s.jpmt_badge || "";
           hodlBadge.title = s.jpmt_tier || "";
         }
-        if (solInput && s.solana_wallet) solInput.value = s.solana_wallet;
+        // Show connected wallet address if already linked
+        if (s.solana_wallet) {
+          var short = s.solana_wallet.slice(0, 6) + "…" + s.solana_wallet.slice(-4);
+          var statusEl = $("#sol-wallet-status");
+          var displayEl = $("#sol-wallet-display");
+          var connectBtn = $("#sol-connect-btn");
+          var verifyBtn = $("#sol-verify-btn");
+          if (statusEl) statusEl.style.display = "flex";
+          if (displayEl) displayEl.textContent = short + " (linked)";
+          if (connectBtn) connectBtn.textContent = "🔄 Reconnect Wallet";
+          if (verifyBtn) verifyBtn.style.display = "";
+        }
       }
     } catch (_) {}
   }
@@ -626,18 +636,75 @@
     }
   };
 
-  window.verifySolanaWallet = async function () {
-    var input = $("#sol-wallet-address");
-    var addr = input ? input.value.trim() : "";
-    if (!addr || addr.length < 32) {
-      toast("Enter a valid Solana wallet address", "error");
+  // ── Solana Wallet ─────────────────────────────────────
+  var _solanaProvider = null;
+  var _solanaPublicKey = null;
+
+  function _getSolanaProvider() {
+    if (window.phantom && window.phantom.solana && window.phantom.solana.isPhantom) {
+      return window.phantom.solana;
+    }
+    if (window.solflare && window.solflare.isSolflare) {
+      return window.solflare;
+    }
+    if (window.solana) {
+      return window.solana;
+    }
+    return null;
+  }
+
+  window.connectSolanaWallet = async function () {
+    var provider = _getSolanaProvider();
+    if (!provider) {
+      toast("No Solana wallet found. Install Phantom or Solflare.", "error");
+      window.open("https://phantom.app/", "_blank");
       return;
     }
     try {
+      var resp = await provider.connect();
+      _solanaProvider = provider;
+      _solanaPublicKey = resp.publicKey.toString();
+      var short = _solanaPublicKey.slice(0, 6) + "…" + _solanaPublicKey.slice(-4);
+      var statusEl = $("#sol-wallet-status");
+      var displayEl = $("#sol-wallet-display");
+      var connectBtn = $("#sol-connect-btn");
+      var verifyBtn = $("#sol-verify-btn");
+      if (statusEl) statusEl.style.display = "flex";
+      if (displayEl) displayEl.textContent = short;
+      if (connectBtn) connectBtn.style.display = "none";
+      if (verifyBtn) verifyBtn.style.display = "";
+      toast("Wallet connected: " + short, "success");
+    } catch (e) {
+      toast("Wallet connection cancelled", "error");
+    }
+  };
+
+  window.verifySolanaWallet = async function () {
+    if (!_solanaProvider || !_solanaPublicKey) {
+      toast("Connect your Solana wallet first", "error");
+      return;
+    }
+    try {
+      // Build challenge message
+      var ts = Math.floor(Date.now() / 1000);
+      var message = "Verify wallet ownership for Pay2Slay\nWallet: " + _solanaPublicKey + "\nTimestamp: " + ts;
+      var encodedMessage = new TextEncoder().encode(message);
+
+      // Request signature from wallet
+      var signResult = await _solanaProvider.signMessage(encodedMessage, "utf8");
+      var sigBytes = signResult.signature || signResult;
+      // Convert signature to base64
+      var sigB64 = btoa(String.fromCharCode.apply(null, new Uint8Array(sigBytes)));
+
+      // Send to backend
       var r = await fetch("/me/verify-solana", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ solana_address: addr }),
+        body: JSON.stringify({
+          solana_address: _solanaPublicKey,
+          signature: sigB64,
+          message: message,
+        }),
       });
       if (!r.ok) {
         var err = await r.json().catch(function () { return { detail: "Failed" }; });
@@ -647,12 +714,12 @@
       toast(
         data.jpmt_balance > 0
           ? data.tier + " — " + data.multiplier.toFixed(2) + "x boost! (" + formatNumber(data.jpmt_balance) + " $JPMT)"
-          : "No $JPMT found in this wallet",
+          : "Wallet verified but no $JPMT found",
         data.jpmt_balance > 0 ? "success" : "info"
       );
       loadStatus();
     } catch (e) {
-      toast(e.message, "error");
+      toast(e.message || "Signature rejected", "error");
     }
   };
 

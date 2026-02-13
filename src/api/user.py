@@ -1,9 +1,13 @@
+import base64
+import time
 from collections.abc import Generator
 from datetime import UTC, datetime
 from decimal import Decimal
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+from nacl.exceptions import BadSignatureError
+from nacl.signing import VerifyKey
 from sqlalchemy.orm import Session
 
 from src.lib.auth import session_secret, verify_session
@@ -72,21 +76,91 @@ def link_wallet(
 
 _SOL_ADDR_MIN_LEN = 32
 _SOL_ADDR_MAX_LEN = 64
+_VERIFY_MESSAGE_MAX_AGE_SEC = 300  # 5 minutes
+_VERIFY_MESSAGE_LINE_COUNT = 3
+
+
+def _verify_solana_signature(address: str, message: str, signature_b64: str) -> bool:
+    """Verify an ed25519 signature from a Solana wallet.
+
+    The wallet's public key IS the address (base58-decoded to 32 bytes).
+    Phantom/Solflare sign the raw UTF-8 message bytes.
+    """
+    try:
+        # Decode base58 public key to raw 32-byte ed25519 key
+        pub_bytes = _base58_decode(address)
+        if len(pub_bytes) != 32:  # noqa: PLR2004
+            return False
+        sig_bytes = base64.b64decode(signature_b64)
+        vk = VerifyKey(pub_bytes)
+        vk.verify(message.encode("utf-8"), sig_bytes)
+        return True
+    except (BadSignatureError, Exception):
+        return False
+
+
+def _base58_decode(s: str) -> bytes:
+    """Decode a base58 string (Bitcoin/Solana alphabet)."""
+    alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz"
+    n = 0
+    for ch in s:
+        n = n * 58 + alphabet.index(ch)
+    # Count leading 1s (= leading zero bytes)
+    pad = 0
+    for ch in s:
+        if ch == "1":
+            pad += 1
+        else:
+            break
+    result = n.to_bytes((n.bit_length() + 7) // 8, "big") if n else b""
+    return b"\x00" * pad + result
 
 
 @router.post("/me/verify-solana")
 def verify_solana_wallet(
     request: Request,
     solana_address: str = Body(..., embed=True),
+    signature: str = Body(..., embed=True),
+    message: str = Body(..., embed=True),
     db: Session = Depends(_get_db),  # noqa: B008
 ) -> JSONResponse:
-    """Link a Solana wallet and verify $JPMT token holdings for HODL boost."""
+    """Link a Solana wallet and verify $JPMT token holdings for HODL boost.
+
+    Requires a signed message proving wallet ownership:
+    - message: "Verify wallet ownership for Pay2Slay\\nWallet: <addr>\\nTimestamp: <unix>"
+    - signature: base64-encoded ed25519 signature from the wallet
+    """
     if (
         not isinstance(solana_address, str)
         or len(solana_address) < _SOL_ADDR_MIN_LEN
         or len(solana_address) > _SOL_ADDR_MAX_LEN
     ):
         raise HTTPException(status_code=400, detail="Invalid Solana address")
+
+    # Verify the message format and timestamp freshness
+    try:
+        lines = message.split("\n")
+        if (
+            len(lines) < _VERIFY_MESSAGE_LINE_COUNT
+            or not lines[1].startswith("Wallet: ")
+            or not lines[2].startswith("Timestamp: ")
+        ):
+            raise ValueError("Bad format")
+        msg_wallet = lines[1].removeprefix("Wallet: ").strip()
+        msg_ts = int(lines[2].removeprefix("Timestamp: ").strip())
+        if msg_wallet != solana_address:
+            raise ValueError("Address mismatch")
+        if abs(time.time() - msg_ts) > _VERIFY_MESSAGE_MAX_AGE_SEC:
+            raise ValueError("Expired")
+    except (ValueError, IndexError) as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid verification message: {exc}") from exc
+
+    # Verify ed25519 signature proves wallet ownership
+    if not _verify_solana_signature(solana_address, message, signature):
+        raise HTTPException(
+            status_code=400, detail="Invalid wallet signature — could not verify ownership"
+        )
+
     token = request.cookies.get("p2s_session") if request else None
     uid = verify_session(token, session_secret()) if token else None
     if not uid:

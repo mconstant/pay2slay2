@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 from collections.abc import Mapping, MutableMapping
 from functools import lru_cache
 from pathlib import Path
@@ -9,15 +10,25 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field
 
+_ENV_DEFAULT_RE = re.compile(r"\$\{([^}]+?):-([^}]*)\}")
+
 
 def _expand_env(obj: Any) -> Any:
     """Recursively expand environment variables in strings within a structure.
 
+    Supports ``${VAR:-default}`` syntax (Python's os.path.expandvars does not).
     Unexpanded ``${VAR}`` references (env var not set) are replaced with empty
     string so Pydantic defaults can kick in.
     """
     if isinstance(obj, str):
-        expanded = os.path.expandvars(obj)
+        # First, handle ${VAR:-default} patterns that os.path.expandvars can't
+        def _replace_with_default(m: re.Match[str]) -> str:
+            var_name, default_val = m.group(1), m.group(2)
+            return os.environ.get(var_name, default_val)
+
+        expanded = _ENV_DEFAULT_RE.sub(_replace_with_default, obj)
+        # Then expand remaining $VAR / ${VAR} references
+        expanded = os.path.expandvars(expanded)
         # If expandvars left a ${...} reference, the var was unset — use empty string
         if expanded.startswith("${") and expanded.endswith("}"):
             return ""
