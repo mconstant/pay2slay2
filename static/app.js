@@ -364,6 +364,42 @@
         }).join("");
       }
 
+      // Economics transparency
+      if (data.economics) {
+        var ec = data.economics;
+        var effEl = $("#econ-effective-rate");
+        var baseEl = $("#econ-base-rate");
+        var mileEl = $("#econ-milestone-mult");
+        var sustEl = $("#econ-sustainability");
+        var donatedEl = $("#econ-donated");
+        var paidEl = $("#econ-paid-out");
+        var seedEl = $("#econ-seed-fund");
+        var dcapEl = $("#econ-daily-cap");
+        var wcapEl = $("#econ-weekly-cap");
+        var formulaEl = $("#econ-formula");
+
+        if (effEl) effEl.textContent = ec.effective_rate.toFixed(4);
+        if (baseEl) baseEl.textContent = ec.base_rate;
+        if (mileEl) mileEl.textContent = ec.milestone_multiplier.toFixed(2);
+        if (sustEl) {
+          sustEl.textContent = ec.sustainability_factor.toFixed(2);
+          var sf = ec.sustainability_factor;
+          sustEl.className = "econ-value " + (sf >= 1 ? "econ-healthy" : sf >= 0.5 ? "econ-caution" : "econ-critical");
+        }
+        if (donatedEl) donatedEl.textContent = formatBan(data.total_donated) + " BAN";
+        if (paidEl) paidEl.textContent = formatBan(ec.total_paid_out) + " BAN";
+        if (seedEl) seedEl.textContent = formatBan(ec.seed_fund) + " BAN";
+        if (dcapEl) dcapEl.textContent = ec.daily_cap_ban;
+        if (wcapEl) wcapEl.textContent = ec.weekly_cap_ban;
+        if (formulaEl) {
+          formulaEl.innerHTML =
+            '<span class="econ-formula-label">Formula:</span> ' +
+            ec.base_rate + ' × ' + ec.milestone_multiplier.toFixed(2) + 'x × ' +
+            ec.sustainability_factor.toFixed(2) + 'x = <strong>' +
+            ec.effective_rate.toFixed(4) + '</strong> BAN/kill';
+        }
+      }
+
       // Donation leaderboard
       var lbEl = $("#donation-leaderboard");
       if (lbEl && data.leaderboard) {

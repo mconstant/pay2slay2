@@ -1,7 +1,7 @@
-"""Donation milestones and tracking service.
+"""Donation milestones, sustainability tracking, and payout economics.
 
-Defines the milestone tiers from 0 → 1,000,000 BAN with fun names and payout boosts.
-Provides helpers for recording donations and querying current milestone status.
+Defines milestone tiers, sustainability factor (donate-to-leach ratio),
+and helpers for recording donations and querying faucet health.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from decimal import Decimal
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from src.models.models import DonationLedger
+from src.models.models import DonationLedger, Payout
 
 
 @dataclass(frozen=True)
@@ -26,7 +26,7 @@ class Milestone:
     payout_multiplier: float  # applied to ban_per_kill during accrual
 
 
-# Ordered by threshold ascending
+# Ordered by threshold ascending — calibrated for realistic community funding
 MILESTONES: list[Milestone] = [
     Milestone(
         threshold=0,
@@ -36,77 +36,110 @@ MILESTONES: list[Milestone] = [
         payout_multiplier=1.0,
     ),
     Milestone(
-        threshold=1_000,
+        threshold=100,
         name="First Blood",
         emoji="🩸",
-        description="1K donated! Payouts boosted 10%.",
+        description="100 BAN donated! Payouts boosted 5%.",
+        payout_multiplier=1.05,
+    ),
+    Milestone(
+        threshold=500,
+        name="Loot Drop",
+        emoji="📦",
+        description="500 BAN donated! Payouts boosted 10%.",
         payout_multiplier=1.1,
     ),
     Milestone(
-        threshold=5_000,
-        name="Loot Drop",
-        emoji="📦",
-        description="5K donated! Payouts boosted 15%.",
+        threshold=1_000,
+        name="Supply Drop",
+        emoji="🪂",
+        description="1K donated! Payouts boosted 15%.",
         payout_multiplier=1.15,
     ),
     Milestone(
-        threshold=10_000,
-        name="Supply Drop",
-        emoji="🪂",
-        description="10K donated! Payouts boosted 20%.",
+        threshold=2_500,
+        name="Storm Surge",
+        emoji="⛈️",
+        description="2.5K donated! Payouts boosted 20%.",
         payout_multiplier=1.2,
     ),
     Milestone(
-        threshold=25_000,
-        name="Storm Surge",
-        emoji="⛈️",
-        description="25K donated! Payouts boosted 30%.",
+        threshold=5_000,
+        name="Airdrop Inbound",
+        emoji="🛩️",
+        description="5K donated! Payouts boosted 25%.",
+        payout_multiplier=1.25,
+    ),
+    Milestone(
+        threshold=10_000,
+        name="Victory Royale",
+        emoji="👑",
+        description="10K donated! Payouts boosted 30%.",
         payout_multiplier=1.3,
     ),
     Milestone(
-        threshold=50_000,
-        name="Airdrop Inbound",
-        emoji="🛩️",
-        description="50K donated! Payouts boosted 40%.",
+        threshold=25_000,
+        name="Mythic Rarity",
+        emoji="💎",
+        description="25K donated! Payouts boosted 40%.",
         payout_multiplier=1.4,
     ),
     Milestone(
-        threshold=100_000,
-        name="Victory Royale",
-        emoji="👑",
-        description="100K donated! Payouts boosted 50%.",
-        payout_multiplier=1.5,
-    ),
-    Milestone(
-        threshold=250_000,
-        name="Mythic Rarity",
-        emoji="💎",
-        description="250K donated! Payouts DOUBLED.",
-        payout_multiplier=2.0,
-    ),
-    Milestone(
-        threshold=500_000,
+        threshold=50_000,
         name="The Monke Awakens",
         emoji="🐒",
-        description="500K donated! Payouts boosted 2.5x!",
-        payout_multiplier=2.5,
+        description="50K donated! Payouts boosted 45%.",
+        payout_multiplier=1.45,
     ),
     Milestone(
-        threshold=1_000_000,
+        threshold=100_000,
         name="Potassium Singularity",
         emoji="🍌",
-        description="1 MILLION BAN! Payouts TRIPLED. GG.",
-        payout_multiplier=3.0,
+        description="100K BAN! Payouts boosted 50%. GG.",
+        payout_multiplier=1.5,
     ),
 ]
 
-GOAL_BAN = 1_000_000
+GOAL_BAN = 10_000
+
+# Sustainability factor bounds
+_SUSTAINABILITY_MIN = 0.1
+_SUSTAINABILITY_MAX = 2.0
 
 
 def get_total_donated(session: Session) -> Decimal:
     """Return the cumulative sum of all donation ledger entries."""
     total = session.query(func.coalesce(func.sum(DonationLedger.amount_ban), 0)).scalar()
     return Decimal(str(total))
+
+
+def get_total_paid_out(session: Session) -> Decimal:
+    """Return the cumulative sum of all successful payouts."""
+    total = (
+        session.query(func.coalesce(func.sum(Payout.amount_ban), 0))
+        .filter(Payout.status == "sent")
+        .scalar()
+    )
+    return Decimal(str(total))
+
+
+def get_sustainability_factor(session: Session, seed_fund: float = 0) -> float:
+    """Calculate the sustainability factor (donate-to-leach ratio).
+
+    Formula: (seed_fund + total_donated) / max(total_paid_out, 1)
+    Clamped between 0.1 (faucet draining) and 2.0 (surplus donations).
+
+    When ratio > 1: donations are keeping up with payouts → bonus
+    When ratio < 1: payouts exceed donations → payout rate reduced
+    When ratio = 1: perfectly balanced, as all things should be
+    """
+    donated = float(get_total_donated(session))
+    paid = float(get_total_paid_out(session))
+    inflow = seed_fund + donated
+    if paid <= 0:
+        return _SUSTAINABILITY_MAX  # no payouts yet → generous startup
+    ratio = inflow / paid
+    return max(_SUSTAINABILITY_MIN, min(_SUSTAINABILITY_MAX, ratio))
 
 
 def get_current_milestone(total_donated: Decimal) -> Milestone:
@@ -177,11 +210,22 @@ def get_donation_leaderboard(session: Session, limit: int = 50) -> list[dict[str
 
 
 def get_donation_status(session: Session) -> dict[str, object]:
-    """Build the full donation status dict for the API."""
+    """Build the full donation status dict for the API, including faucet economics."""
+    from src.lib.config import get_config
+
+    app_cfg = get_config()
+    payout_cfg = app_cfg.payout
+    seed_fund = payout_cfg.seed_fund_ban
+    base_rate = payout_cfg.payout_amount_ban_per_kill
+
     total = get_total_donated(session)
+    total_paid = get_total_paid_out(session)
     current = get_current_milestone(total)
     nxt = get_next_milestone(total)
     total_f = float(total)
+    total_paid_f = float(total_paid)
+    sustainability = get_sustainability_factor(session, seed_fund)
+    effective_rate = round(base_rate * current.payout_multiplier * sustainability, 4)
 
     milestones_list = []
     for m in MILESTONES:
@@ -220,4 +264,16 @@ def get_donation_status(session: Session) -> dict[str, object]:
         ),
         "milestones": milestones_list,
         "leaderboard": get_donation_leaderboard(session),
+        "economics": {
+            "base_rate": base_rate,
+            "milestone_multiplier": current.payout_multiplier,
+            "sustainability_factor": round(sustainability, 2),
+            "effective_rate": effective_rate,
+            "total_paid_out": round(total_paid_f, 2),
+            "seed_fund": seed_fund,
+            "daily_cap_kills": payout_cfg.daily_payout_cap,
+            "weekly_cap_kills": payout_cfg.weekly_payout_cap,
+            "daily_cap_ban": round(payout_cfg.daily_payout_cap * effective_rate, 2),
+            "weekly_cap_ban": round(payout_cfg.weekly_payout_cap * effective_rate, 2),
+        },
     }

@@ -39,6 +39,9 @@ class PayoutConfig(BaseModel):
     reset_tz: str = Field(..., description="Timezone name for cap resets, e.g., UTC")
     settlement_order: str = Field("random")
     batch_size: int = Field(0, ge=0, description="0 means unlimited")
+    seed_fund_ban: float = Field(
+        0, ge=0, description="Initial operator fund (BAN) for sustainability calc"
+    )
 
 
 class IntegrationsConfig(BaseModel):

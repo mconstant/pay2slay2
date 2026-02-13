@@ -78,12 +78,21 @@ def run_accrual(
         ban_per_kill = float(payout_ovr["ban_per_kill"])
 
     # Apply donation milestone multiplier
-    from src.services.domain.donation_service import get_current_milestone, get_total_donated
+    from src.services.domain.donation_service import (
+        get_current_milestone,
+        get_sustainability_factor,
+        get_total_donated,
+    )
 
     total_donated = get_total_donated(session)
     milestone = get_current_milestone(total_donated)
     if milestone.payout_multiplier != 1.0:
         ban_per_kill *= milestone.payout_multiplier
+
+    # Apply sustainability factor (donate-to-leach ratio)
+    seed_fund = app_cfg.payout.seed_fund_ban
+    sustainability = get_sustainability_factor(session, seed_fund)
+    ban_per_kill *= sustainability
 
     svc = AccrualService(
         session,

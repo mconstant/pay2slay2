@@ -1,7 +1,8 @@
-payout_amount_ban_per_kill: 2.1
+payout_amount_ban_per_kill: 0.05
 scheduler_minutes: 1
 daily_payout_cap: 100
-weekly_payout_cap: 300
+weekly_payout_cap: 500
 reset_tz: UTC
 settlement_order: random
 batch_size: 0
+seed_fund_ban: 1336
