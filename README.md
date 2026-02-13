@@ -56,7 +56,7 @@ effective_rate = base_rate × milestone_multiplier × sustainability_factor
 | Base rate | **0.05 BAN/kill** | Configured in `payout.yaml` |
 | Daily kill cap | **100 kills** (≈5 BAN/day) | Per-player limit |
 | Weekly kill cap | **500 kills** (≈25 BAN/week) | Per-player limit |
-| Seed fund | **1,337 BAN** | Initial operator-funded balance |
+| Seed fund | **~1,337 BAN** | Initial operator-funded balance |
 | Donation goal | **10,000 BAN** | Unlocks all milestone tiers |
 
 ### Sustainability Factor
