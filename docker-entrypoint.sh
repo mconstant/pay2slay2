@@ -20,9 +20,16 @@ LOG_LEVEL="${P2S_LOG_LEVEL:-warning}"
   done
 ) &
 
-# Start scheduler in background (log output so crashes aren't silent)
+# Start scheduler in background with auto-respawn on crash
 echo "Starting scheduler..."
-python -m src.jobs 2>&1 | while IFS= read -r line; do echo "[scheduler] $line"; done &
+(
+  while true; do
+    python -m src.jobs 2>&1 | while IFS= read -r line; do echo "[scheduler] $line"; done
+    EXIT_CODE=$?
+    echo "[scheduler] process exited with code $EXIT_CODE — restarting in 5s..."
+    sleep 5
+  done
+) &
 
 # Start API server (foreground)
 echo "Starting API server..."

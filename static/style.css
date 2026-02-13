@@ -955,7 +955,7 @@ td.tx-hash {
   filter: drop-shadow(0 4px 16px rgba(251,221,17,.35));
 }
 .sticker-github {
-  left: 16px;
+  left: 56px;
   color: #c9d1d9;
   animation-delay: 0s;
 }
