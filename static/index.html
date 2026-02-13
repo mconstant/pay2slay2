@@ -58,6 +58,7 @@
   <button data-page="donations">Donations</button>
   <button data-page="dashboard" class="auth-only">Dashboard</button>
   <button data-page="wallet" class="auth-only">Wallet</button>
+  <button data-page="help" class="auth-only">Help</button>
   <button data-page="admin" class="auth-only">Admin</button>
 </nav>
 
@@ -504,6 +505,27 @@
     </div>
   </div>
 
+  <!-- Help / Sherpa Guide Page -->
+  <div id="page-help" class="page help-page">
+    <div class="section-header">
+      <h2>🏔️ <span data-i18n="help.title">Account Setup Guide</span></h2>
+      <div class="help-lang-switcher">
+        <button class="help-lang active" data-lang="en">EN</button>
+        <button class="help-lang" data-lang="uk">UK</button>
+        <button class="help-lang" data-lang="es">ES</button>
+        <button class="help-lang" data-lang="pt">PT</button>
+        <button class="help-lang" data-lang="ja">JA</button>
+        <button class="help-lang" data-lang="fr">FR</button>
+        <button class="help-lang" data-lang="de">DE</button>
+        <button class="help-lang" data-lang="zh">ZH</button>
+      </div>
+    </div>
+
+    <div id="help-content">
+      <!-- Populated by help-i18n.js -->
+    </div>
+  </div>
+
 </main>
 
 <footer id="cycle-footer">
@@ -525,6 +547,7 @@
   <svg viewBox="0 0 24 24" width="34" height="34" fill="#FBDD11"><path d="M21 7H20V5A3 3 0 0 0 17 2H5A3 3 0 0 0 2 5V19A3 3 0 0 0 5 22H19A3 3 0 0 0 22 19V10A3 3 0 0 0 21 7ZM5 4H17A1 1 0 0 1 18 5V7H5A1 1 0 0 1 5 5ZM20 16H19A1 1 0 0 1 19 14H20Z"/></svg>
 </a>
 
+<script src="/static/help-i18n.js?v=12"></script>
 <script src="/static/app.js?v=12"></script>
 <script src="/static/banana-rain.js?v=12"></script>
 </body>

@@ -999,3 +999,139 @@ nav button[data-page="donations"]::after {
   .login-logo { max-width: 160px; }
   .login-page h1 { font-size: 28px; }
 }
+
+/* ── Help / Sherpa Guide Page ──────────────────────────────── */
+.help-page .section-header {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.help-lang-switcher {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.help-lang {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: var(--font-mono);
+}
+.help-lang:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+.help-lang.active {
+  background: var(--accent);
+  color: #111;
+  border-color: var(--accent);
+}
+
+.help-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.help-section h3 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.help-section h3 .sherpa-icon {
+  font-size: 20px;
+}
+.help-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.help-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+.help-step-num {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #111;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+}
+.help-step-body strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+.help-step-body p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.help-tip {
+  background: rgba(251,221,17,.08);
+  border: 1px solid rgba(251,221,17,.2);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+}
+.help-tip strong {
+  color: var(--accent);
+}
+.help-faq {
+  margin-top: 12px;
+}
+.help-faq details {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+.help-faq summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.help-faq summary::before {
+  content: "▸";
+  color: var(--accent);
+  transition: transform .15s;
+}
+.help-faq details[open] summary::before {
+  transform: rotate(90deg);
+}
+.help-faq .faq-answer {
+  padding: 0 16px 14px;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+@media (max-width: 640px) {
+  .help-section { padding: 16px; }
+  .help-step-num { width: 28px; height: 28px; min-width: 28px; font-size: 12px; }
+  .help-lang { padding: 3px 8px; font-size: 11px; }
+}
