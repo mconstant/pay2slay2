@@ -1,5 +1,8 @@
 import os
-from collections.abc import Awaitable, Callable
+import threading
+import time
+from collections.abc import AsyncIterator, Awaitable, Callable
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
 
@@ -146,7 +149,58 @@ def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup lo
 
     setup_structlog()
     log = get_logger(__name__)
-    app = FastAPI(title="Pay2Slay API", version="0.1.0")
+
+    @asynccontextmanager
+    async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
+        """Start the scheduler as a background daemon thread inside the API process."""
+        _log = get_logger("scheduler.lifespan")
+        session_factory = getattr(app.state, "session_factory", None)
+        if session_factory is None:
+            _log.error("scheduler_skipped", reason="no session_factory available")
+            yield
+            return
+
+        def _run_scheduler() -> None:
+            from src.jobs.__main__ import (
+                HeartbeatInfo,
+                _build_scheduler_components,
+                _LoopState,
+                _read_scheduler_overrides,
+                _scheduler_loop,
+                _write_heartbeat,
+            )
+
+            try:
+                cfg, fortnite, accrual_cfg = _build_scheduler_components()
+                overrides = _read_scheduler_overrides(cfg.interval_seconds)
+                _write_heartbeat(
+                    HeartbeatInfo(
+                        status="started",
+                        accrual_interval=overrides["accrual_interval_seconds"],
+                        settlement_interval=overrides["settlement_interval_seconds"],
+                    )
+                )
+                _log.info(
+                    "scheduler_thread_started",
+                    accrual_interval=overrides["accrual_interval_seconds"],
+                    settlement_interval=overrides["settlement_interval_seconds"],
+                    dry_run=cfg.dry_run,
+                )
+                state = _LoopState()
+                state.last_settlement_ts = (
+                    time.time() - overrides["settlement_interval_seconds"] / 2
+                )
+                while True:
+                    _scheduler_loop(session_factory, cfg, fortnite, accrual_cfg, state)
+            except Exception as exc:
+                _log.error("scheduler_thread_crashed", error=str(exc))
+
+        thread = threading.Thread(target=_run_scheduler, daemon=True, name="scheduler")
+        thread.start()
+        _log.info("scheduler_thread_launched")
+        yield
+
+    app = FastAPI(title="Pay2Slay API", version="0.1.0", lifespan=_lifespan)
     # Add correlation/trace middleware early
     app.middleware("http")(correlation_middleware)
 

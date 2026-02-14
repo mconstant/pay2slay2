@@ -20,17 +20,6 @@ LOG_LEVEL="${P2S_LOG_LEVEL:-warning}"
   done
 ) &
 
-# Start scheduler in background with auto-respawn on crash
-echo "Starting scheduler..."
-(
-  while true; do
-    python -m src.jobs 2>&1 | while IFS= read -r line; do echo "[scheduler] $line"; done
-    EXIT_CODE=$?
-    echo "[scheduler] process exited with code $EXIT_CODE — restarting in 5s..."
-    sleep 5
-  done
-) &
-
-# Start API server (foreground)
+# Start API server (foreground) — scheduler runs as a background thread inside the API process
 echo "Starting API server..."
 exec uvicorn src.api.app:create_app --factory --host 0.0.0.0 --port 8000 --log-level "$LOG_LEVEL"
