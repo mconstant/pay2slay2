@@ -191,6 +191,11 @@
     } catch (_) {}
   }
 
+  function _boostBadge(badge) {
+    if (!badge) return '';
+    return ' <span class="boost-badge" title="HODL Boosted">\uD83D\uDE80' + badge + '</span>';
+  }
+
   function renderLeaderboard(rows) {
     const tbody = $("#leaderboard-tbody");
     if (!tbody) return;
@@ -203,7 +208,7 @@
       var owed = parseFloat(p.total_accrued_ban).toFixed(2);
       return '<tr>' +
         '<td class="rank">' + (i + 1) + '</td>' +
-        '<td class="player-name">' + escapeHtml(p.discord_username) + '</td>' +
+        '<td class="player-name">' + escapeHtml(p.discord_username) + _boostBadge(p.jpmt_badge) + '</td>' +
         '<td>' + p.total_kills + '</td>' +
         '<td class="earned-cell"><span class="earned-paid" title="Paid (settled)">' + paid + '</span> <span class="earned-sep">/</span> <span class="earned-owed" title="Owed (accrued)">' + owed + '</span></td>' +
         '</tr>';
@@ -280,7 +285,7 @@
       var statusClass = a.settled ? "badge-sent" : "badge-pending";
       var date = shortDate(a.created_at);
       return '<tr>' +
-        '<td class="player-name">' + escapeHtml(a.discord_username) + '</td>' +
+        '<td class="player-name">' + escapeHtml(a.discord_username) + _boostBadge(a.jpmt_badge) + '</td>' +
         '<td>' + a.kills + '</td>' +
         '<td>' + parseFloat(a.amount_ban).toFixed(2) + ' BAN</td>' +
         '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span>' + (date ? ' <span class="cell-date">' + date + '</span>' : '') + '</td>' +
@@ -298,7 +303,7 @@
     tbody.innerHTML = rows.map(function (p) {
       var date = shortDate(p.created_at);
       return '<tr>' +
-        '<td class="player-name">' + escapeHtml(p.discord_username) + '</td>' +
+        '<td class="player-name">' + escapeHtml(p.discord_username) + _boostBadge(p.jpmt_badge) + '</td>' +
         '<td>' + parseFloat(p.amount_ban).toFixed(2) + ' BAN</td>' +
         '<td><span class="badge badge-' + p.status + '">' + p.status + '</span></td>' +
         txHashCell(p.tx_hash, date) +

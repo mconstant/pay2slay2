@@ -10,6 +10,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.models.models import Payout, RewardAccrual, User
+from src.services.domain.hodl_boost_service import get_tier_for_balance
 
 router = APIRouter()
 
@@ -55,6 +56,7 @@ def leaderboard(
     rows = (
         db.query(
             User.discord_username,
+            User.jpmt_balance,
             func.coalesce(accrual_sub.c.total_kills, 0).label("total_kills"),
             func.coalesce(accrual_sub.c.total_accrued, 0).label("total_accrued"),
             func.coalesce(payout_sub.c.total_paid, 0).label("total_paid"),
@@ -77,6 +79,7 @@ def leaderboard(
                     "total_kills": int(r.total_kills),
                     "total_accrued_ban": float(r.total_accrued),
                     "total_paid_ban": float(r.total_paid),
+                    "jpmt_badge": get_tier_for_balance(r.jpmt_balance or 0).badge,
                 }
                 for r in rows
             ],
@@ -98,6 +101,7 @@ def activity_feed(
     accruals = (
         db.query(
             User.discord_username,
+            User.jpmt_balance,
             RewardAccrual.kills,
             RewardAccrual.amount_ban,
             RewardAccrual.settled,
@@ -112,6 +116,7 @@ def activity_feed(
     payouts = (
         db.query(
             User.discord_username,
+            User.jpmt_balance,
             Payout.amount_ban,
             Payout.status,
             Payout.tx_hash,
@@ -133,6 +138,7 @@ def activity_feed(
                     "amount_ban": float(a.amount_ban),
                     "settled": a.settled,
                     "created_at": a.created_at.isoformat() if a.created_at else None,
+                    "jpmt_badge": get_tier_for_balance(a.jpmt_balance or 0).badge,
                 }
                 for a in accruals
             ],
@@ -144,6 +150,7 @@ def activity_feed(
                     "tx_hash": p.tx_hash,
                     "error_detail": p.error_detail,
                     "created_at": p.created_at.isoformat() if p.created_at else None,
+                    "jpmt_badge": get_tier_for_balance(p.jpmt_balance or 0).badge,
                 }
                 for p in payouts
             ],

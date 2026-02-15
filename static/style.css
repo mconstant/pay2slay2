@@ -217,6 +217,15 @@ header .user-info .username {
   cursor: not-allowed;
 }
 
+/* ── Boost Badge (inline) ─────────────────────────────── */
+.boost-badge {
+  display: inline-block;
+  font-size: 13px;
+  margin-left: 4px;
+  vertical-align: baseline;
+  cursor: default;
+}
+
 /* ── Wallet Warning Banner ────────────────────────────── */
 .wallet-warning {
   display: flex;
