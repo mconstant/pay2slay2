@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pay2Slay Faucet</title>
-  <link rel="stylesheet" href="/static/style.css?v=20">
+  <link rel="stylesheet" href="/static/style.css?v=21">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍌</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -250,6 +250,16 @@
       <div style="display:flex;gap:8px;">
         <button id="seed-btn" class="btn btn-sm" onclick="seedDemoData()">Seed Demo Data</button>
       </div>
+    </div>
+
+    <!-- Wallet not linked warning (shown dynamically) -->
+    <div id="wallet-warning" class="wallet-warning" style="display:none;">
+      <div class="wallet-warning-icon">⚠️</div>
+      <div class="wallet-warning-body">
+        <strong>Your kills are not being counted!</strong>
+        <p>You need to link a Banano wallet before your Fortnite kills can earn rewards. Without a linked wallet, the scheduler skips your account each cycle.</p>
+      </div>
+      <button class="btn btn-primary btn-sm" onclick="location.hash='#wallet'">Link Wallet &rarr;</button>
     </div>
 
     <div class="stat-grid">
@@ -659,7 +669,7 @@
 </a>
 
 <script src="/static/help-i18n.js?v=20"></script>
-<script src="/static/app.js?v=20"></script>
+<script src="/static/app.js?v=21"></script>
 <script src="/static/banana-rain.js?v=20"></script>
 </body>
 </html>

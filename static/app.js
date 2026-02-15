@@ -477,6 +477,10 @@
         $("#stat-verified-at").textContent = s.last_verified_at
           ? fmtDate(s.last_verified_at)
           : "never";
+        // Show/hide wallet warning banner
+        var walletWarn = $("#wallet-warning");
+        if (walletWarn) walletWarn.style.display = s.linked ? "none" : "flex";
+
         // Update username if we get it from the status response
         if (s.discord_username && user) {
           user.discord_username = s.discord_username;
