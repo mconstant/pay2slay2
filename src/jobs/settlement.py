@@ -9,10 +9,37 @@ from dataclasses import dataclass
 from prometheus_client import Counter
 from sqlalchemy.orm import Session
 
+from src.lib.observability import get_logger
 from src.services.banano_client import BananoClient
 from src.services.domain.abuse_analytics_service import AbuseAnalyticsService
 from src.services.domain.payout_service import PayoutService
 from src.services.domain.settlement_service import SettlementService
+
+_settle_log = get_logger("jobs.settlement")
+
+
+def repair_orphaned_accruals(session: Session) -> int:
+    """Un-settle accruals that were marked settled but have no linked payout.
+
+    This can happen when daily/weekly caps reduce the payable amount but all
+    accruals were still marked settled.  Resetting them lets the next settlement
+    cycle create a proper payout.
+    """
+    from src.models.models import RewardAccrual
+
+    orphans = (
+        session.query(RewardAccrual)
+        .filter(RewardAccrual.settled.is_(True), RewardAccrual.payout_id.is_(None))
+        .all()
+    )
+    count = len(orphans)
+    for a in orphans:
+        a.settled = False
+        a.settled_at = None
+    if count:
+        session.commit()
+        _settle_log.info("repaired_orphaned_accruals", count=count)
+    return count
 
 
 @dataclass
@@ -43,6 +70,9 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
 
     Note: caps and operator balance checks to be fleshed out in later tasks.
     """
+    # Repair any accruals orphaned by the old settle-all-even-when-capped bug
+    repair_orphaned_accruals(session)
+
     settlement = SettlementService(session, daily_cap=cfg.daily_cap, weekly_cap=cfg.weekly_cap)
     seed = _load_operator_seed(session)
     banano = BananoClient(node_url=cfg.node_url, dry_run=cfg.dry_run, seed=seed)
@@ -62,7 +92,19 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
         if not payable_amt or not payable_kills:
             continue
         # collect unsettled accruals for this user
-        accruals = [a for a in cand.user.accruals if not a.settled]
+        all_unsettled = [a for a in cand.user.accruals if not a.settled]
+        if not all_unsettled:
+            continue
+        # Only settle accruals up to the payable kill count (caps may reduce it).
+        # Sort oldest-first so earlier accruals get settled before newer ones.
+        all_unsettled.sort(key=lambda a: a.created_at or a.id)
+        accruals = []
+        kills_budget = payable_kills
+        for a in all_unsettled:
+            if kills_budget <= 0:
+                break
+            accruals.append(a)
+            kills_budget -= a.kills
         if not accruals:
             continue
         res = payout_svc.create_payout(cand.user, payable_amt, accruals)
