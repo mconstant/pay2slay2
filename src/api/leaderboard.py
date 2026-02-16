@@ -70,17 +70,41 @@ def _compute_cap_status(
     ) or 0
 
     # Count unsettled kills (earned but not yet paid — waiting due to cap)
-    unsettled_kills = (
-        db.query(func.coalesce(func.sum(RewardAccrual.kills), 0))
+    unsettled_row = (
+        db.query(
+            func.coalesce(func.sum(RewardAccrual.kills), 0),
+            func.coalesce(func.sum(RewardAccrual.amount_ban), 0),
+        )
         .filter(
             RewardAccrual.user_id == user_id,
             RewardAccrual.settled == False,  # noqa: E712
         )
-        .scalar()
-    ) or 0
+        .one()
+    )
+    unsettled_kills = int(unsettled_row[0])
+    unsettled_ban = float(unsettled_row[1])
+
+    # Count orphaned accruals (settled=True but no payout — from previous cap bug)
+    orphan_row = (
+        db.query(
+            func.coalesce(func.sum(RewardAccrual.kills), 0),
+            func.coalesce(func.sum(RewardAccrual.amount_ban), 0),
+        )
+        .filter(
+            RewardAccrual.user_id == user_id,
+            RewardAccrual.settled == True,  # noqa: E712
+            RewardAccrual.payout_id.is_(None),
+        )
+        .one()
+    )
+    orphan_kills = int(orphan_row[0])
+    orphan_ban = float(orphan_row[1])
 
     daily_at_cap = int(day_kills_paid) >= daily_cap
     weekly_at_cap = int(week_kills_paid) >= weekly_cap
+
+    pending_kills = unsettled_kills + orphan_kills
+    pending_ban = round(unsettled_ban + orphan_ban, 8)
 
     return {
         "daily_kills_used": int(day_kills_paid),
@@ -92,7 +116,10 @@ def _compute_cap_status(
         "weekly_remaining": max(weekly_cap - int(week_kills_paid), 0),
         "weekly_at_cap": weekly_at_cap,
         "at_cap": daily_at_cap or weekly_at_cap,
-        "unsettled_kills": int(unsettled_kills),
+        "unsettled_kills": unsettled_kills,
+        "orphan_kills": orphan_kills,
+        "pending_kills": pending_kills,
+        "pending_ban": pending_ban,
     }
 
 

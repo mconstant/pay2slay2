@@ -458,6 +458,17 @@ header .user-info .username {
   margin-left: 2px;
   cursor: help;
 }
+
+/* ── Earned pending indicator (leaderboard) ──────────── */
+.earned-pending {
+  display: inline-block;
+  font-size: 10px;
+  color: #fbaa1e;
+  font-weight: 600;
+  margin-left: 4px;
+  cursor: help;
+  white-space: nowrap;
+}
   }
 }
 

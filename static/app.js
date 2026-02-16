@@ -213,6 +213,20 @@
     tbody.innerHTML = rows.map(function (p, i) {
       var paid = parseFloat(p.total_paid_ban).toFixed(2);
       var owed = parseFloat(p.total_accrued_ban).toFixed(2);
+      // Build earned cell with pending indicator when there's a gap
+      var earnedCell = '';
+      var pendingBan = p.cap_status ? p.cap_status.pending_ban : 0;
+      var pendingKills = p.cap_status ? p.cap_status.pending_kills : 0;
+      if (pendingBan > 0.001) {
+        earnedCell = '<td class="earned-cell">' +
+          '<span class="earned-paid" title="Paid (settled)">' + paid + '</span>' +
+          ' <span class="earned-sep">/</span> ' +
+          '<span class="earned-owed" title="Total accrued">' + owed + '</span>' +
+          ' <span class="earned-pending" title="' + pendingBan.toFixed(2) + ' BAN (' + pendingKills + ' kills) pending — will be paid next settlement cycle">⏳ ' + pendingBan.toFixed(2) + '</span>' +
+          '</td>';
+      } else {
+        earnedCell = '<td class="earned-cell"><span class="earned-paid" title="Paid (settled)">' + paid + '</span> <span class="earned-sep">/</span> <span class="earned-owed" title="Owed (accrued)">' + owed + '</span></td>';
+      }
       var capCell = '';
       if (p.cap_status) {
         var cs = p.cap_status;
@@ -238,7 +252,7 @@
         '<td class="rank">' + (i + 1) + '</td>' +
         '<td class="player-name">' + escapeHtml(p.discord_username) + _boostBadge(p.jpmt_badge) + '</td>' +
         '<td>' + p.total_kills + '</td>' +
-        '<td class="earned-cell"><span class="earned-paid" title="Paid (settled)">' + paid + '</span> <span class="earned-sep">/</span> <span class="earned-owed" title="Owed (accrued)">' + owed + '</span></td>' +
+        earnedCell +
         capCell +
         '</tr>';
     }).join("");
@@ -626,13 +640,16 @@
       }
     }
 
-    // Unsettled kills callout
+    // Pending kills callout (unsettled + orphaned from previous bug)
     var unsettledEl = $("#cap-unsettled");
     var unsettledText = $("#cap-unsettled-text");
     if (unsettledEl) {
-      if (cap.unsettled_kills > 0 && cap.at_cap) {
+      var pendingKills = cap.pending_kills || 0;
+      var pendingBan = cap.pending_ban || 0;
+      if (pendingKills > 0) {
         unsettledEl.style.display = "flex";
-        if (unsettledText) unsettledText.textContent = cap.unsettled_kills + " kill" + (cap.unsettled_kills !== 1 ? "s" : "") + " waiting — will be paid when the cap resets";
+        var reason = cap.at_cap ? "will be paid when the cap resets" : "will be paid next settlement cycle";
+        if (unsettledText) unsettledText.textContent = pendingKills + " kill" + (pendingKills !== 1 ? "s" : "") + " (" + pendingBan.toFixed(2) + " BAN) pending — " + reason;
       } else {
         unsettledEl.style.display = "none";
       }
