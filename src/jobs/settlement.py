@@ -42,6 +42,64 @@ def repair_orphaned_accruals(session: Session) -> int:
     return count
 
 
+def repair_underpaid_accruals(session: Session) -> int:
+    """Un-settle excess accruals from payouts that were cap-ratio-scaled.
+
+    Old bug: all unsettled accruals were linked to a payout whose amount_ban
+    was reduced by the cap ratio.  So accruals point to a payout covering less
+    BAN than they represent.  repair_orphaned_accruals() misses these because
+    payout_id IS NOT NULL.
+
+    For each sent payout where sum(linked accruals amount_ban) > payout amount_ban,
+    detach the newest accruals until the remaining sum <= payout amount_ban and
+    mark them unsettled so the next cycle pays them properly.
+    """
+    from decimal import Decimal
+
+    from sqlalchemy import func
+
+    from src.models.models import Payout, RewardAccrual
+
+    # Find payouts where linked accruals exceed payout amount
+    overpaid_payouts = (
+        session.query(
+            Payout.id,
+            Payout.amount_ban,
+            func.sum(RewardAccrual.amount_ban).label("accrual_sum"),
+        )
+        .join(RewardAccrual, RewardAccrual.payout_id == Payout.id)
+        .filter(Payout.status == "sent")
+        .group_by(Payout.id)
+        .having(func.sum(RewardAccrual.amount_ban) > Payout.amount_ban)
+        .all()
+    )
+
+    total_freed = 0
+    for payout_id, payout_ban, accrual_sum in overpaid_payouts:
+        excess = Decimal(str(accrual_sum)) - Decimal(str(payout_ban))
+        # Get linked accruals newest-first (detach newest so oldest stay covered)
+        linked = (
+            session.query(RewardAccrual)
+            .filter(RewardAccrual.payout_id == payout_id)
+            .order_by(RewardAccrual.created_at.desc())
+            .all()
+        )
+        freed_ban = Decimal("0")
+        for a in linked:
+            if freed_ban >= excess:
+                break
+            a.settled = False
+            a.settled_at = None
+            a.payout_id = None
+            freed_ban += Decimal(str(a.amount_ban))
+            total_freed += 1
+
+    if total_freed:
+        session.commit()
+        _settle_log.info("repaired_underpaid_accruals", accruals_freed=total_freed)
+    return total_freed
+
+
 @dataclass
 class SchedulerConfig:
     min_operator_balance_ban: float
@@ -72,6 +130,8 @@ def run_settlement(session: Session, cfg: SchedulerConfig) -> dict[str, int]:
     """
     # Repair any accruals orphaned by the old settle-all-even-when-capped bug
     repair_orphaned_accruals(session)
+    # Repair accruals linked to underpaid payouts (cap-ratio-scaled)
+    repair_underpaid_accruals(session)
 
     settlement = SettlementService(session, daily_cap=cfg.daily_cap, weekly_cap=cfg.weekly_cap)
     seed = _load_operator_seed(session)

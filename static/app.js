@@ -677,35 +677,60 @@
     }
   }
 
-  async function loadAccruals() {
+  // ── Pagination state ──────────────────────────────────
+  var _accrualOffset = 0;
+  var _accrualHasMore = false;
+  var _accrualLoading = false;
+  var _payoutOffset = 0;
+  var _payoutHasMore = false;
+  var _payoutLoading = false;
+  var _PAGE_SIZE = 20;
+
+  async function loadAccruals(append) {
+    if (_accrualLoading) return;
+    _accrualLoading = true;
     try {
-      const r = await fetch("/me/accruals?limit=10");
+      if (!append) _accrualOffset = 0;
+      const r = await fetch("/me/accruals?limit=" + _PAGE_SIZE + "&offset=" + _accrualOffset);
       if (r.ok) {
         const data = await r.json();
-        renderAccruals(data.accruals || []);
+        _accrualHasMore = data.has_more;
+        _accrualOffset += (data.accruals || []).length;
+        renderAccruals(data.accruals || [], append);
       }
     } catch (_) {}
+    _accrualLoading = false;
   }
 
-  async function loadPayouts() {
+  async function loadPayouts(append) {
+    if (_payoutLoading) return;
+    _payoutLoading = true;
     try {
-      const r = await fetch("/me/payouts?limit=10");
+      if (!append) _payoutOffset = 0;
+      const r = await fetch("/me/payouts?limit=" + _PAGE_SIZE + "&offset=" + _payoutOffset);
       if (r.ok) {
         const data = await r.json();
-        renderPayouts(data.payouts || []);
+        _payoutHasMore = data.has_more;
+        _payoutOffset += (data.payouts || []).length;
+        renderPayouts(data.payouts || [], append);
       }
     } catch (_) {}
+    _payoutLoading = false;
   }
 
-  function renderAccruals(rows) {
+  function renderAccruals(rows, append) {
     const tbody = $("#accruals-tbody");
     if (!tbody) return;
-    if (rows.length === 0) {
+    // Remove existing load-more row
+    var existing = tbody.querySelector(".load-more-row");
+    if (existing) existing.remove();
+
+    if (rows.length === 0 && !append) {
       const hint = isDryRun ? ' Click "Seed Demo Data" to generate sample data.' : '';
       tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No accruals yet.' + hint + '</td></tr>';
       return;
     }
-    tbody.innerHTML = rows.map(function (a) {
+    var html = rows.map(function (a) {
       var statusLabel = a.settled ? "settled" : "pending";
       var statusClass = a.settled ? "badge-sent" : "badge-pending";
       var date = shortDate(a.created_at);
@@ -716,17 +741,35 @@
         '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span>' + (date ? ' <span class="cell-date">' + date + '</span>' : '') + '</td>' +
         '</tr>';
     }).join("");
-  }
 
-  function renderPayouts(rows) {
+    if (append) {
+      tbody.insertAdjacentHTML("beforeend", html);
+    } else {
+      tbody.innerHTML = html;
+    }
+    // Add "Load More" if there are more results
+    if (_accrualHasMore) {
+      tbody.insertAdjacentHTML("beforeend",
+        '<tr class="load-more-row"><td colspan="4" style="text-align:center">' +
+        '<button class="btn btn-sm load-more-btn" onclick="window._loadMoreAccruals()">Load More</button>' +
+        '</td></tr>'
+      );
+    }
+  }
+  window._loadMoreAccruals = function() { loadAccruals(true); };
+
+  function renderPayouts(rows, append) {
     const tbody = $("#payouts-tbody");
     if (!tbody) return;
-    if (rows.length === 0) {
+    var existing = tbody.querySelector(".load-more-row");
+    if (existing) existing.remove();
+
+    if (rows.length === 0 && !append) {
       const hint = isDryRun ? ' Run the scheduler to settle pending accruals.' : '';
       tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No payouts yet.' + hint + '</td></tr>';
       return;
     }
-    tbody.innerHTML = rows.map(function (p) {
+    var html = rows.map(function (p) {
       var date = shortDate(p.created_at);
       return '<tr>' +
         '<td>' + p.id + '</td>' +
@@ -735,7 +778,21 @@
         txHashCell(p.tx_hash, date) +
         '</tr>';
     }).join("");
+
+    if (append) {
+      tbody.insertAdjacentHTML("beforeend", html);
+    } else {
+      tbody.innerHTML = html;
+    }
+    if (_payoutHasMore) {
+      tbody.insertAdjacentHTML("beforeend",
+        '<tr class="load-more-row"><td colspan="4" style="text-align:center">' +
+        '<button class="btn btn-sm load-more-btn" onclick="window._loadMorePayouts()">Load More</button>' +
+        '</td></tr>'
+      );
+    }
   }
+  window._loadMorePayouts = function() { loadPayouts(true); };
 
   // ── Wallet ───────────────────────────────────────────
   async function loadWallet() {

@@ -380,7 +380,8 @@ def me_payouts(  # noqa: PLR0913 - explicit filter params acceptable for clarity
         field = sort.lstrip("-")
         col = getattr(Payout, field)
         q = q.order_by(col.desc() if is_desc else col.asc())
-        q = q.offset(offset).limit(min(limit, 100))
+        capped_limit = min(limit, 100)
+        q = q.offset(offset).limit(capped_limit)
         rows = q.all()
         return JSONResponse(
             {
@@ -395,8 +396,9 @@ def me_payouts(  # noqa: PLR0913 - explicit filter params acceptable for clarity
                     for p in rows
                 ],
                 "count": len(rows),
-                "limit": limit,
+                "limit": capped_limit,
                 "offset": offset,
+                "has_more": len(rows) >= capped_limit,
             }
         )
     except HTTPException:
@@ -424,7 +426,8 @@ def me_accruals(
     q = db.query(RewardAccrual).filter(RewardAccrual.user_id == user.id)
     if settled is not None:
         q = q.filter(RewardAccrual.settled.is_(settled))
-    q = q.order_by(RewardAccrual.created_at.desc()).offset(offset).limit(min(limit, 200))
+    capped_limit = min(limit, 200)
+    q = q.order_by(RewardAccrual.created_at.desc()).offset(offset).limit(capped_limit)
     rows = q.all()
     return JSONResponse(
         {
@@ -440,7 +443,8 @@ def me_accruals(
                 for a in rows
             ],
             "count": len(rows),
-            "limit": limit,
+            "limit": capped_limit,
             "offset": offset,
+            "has_more": len(rows) >= capped_limit,
         }
     )

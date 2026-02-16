@@ -100,11 +100,28 @@ def _compute_cap_status(
     orphan_kills = int(orphan_row[0])
     orphan_ban = float(orphan_row[1])
 
+    # Detect underpaid accruals: settled with payout_id, but payout's amount_ban
+    # is less than sum of its linked accruals (cap-ratio-scaling leftover).
+    # Compare total accrued vs total paid for this user.
+    total_accrued = float(
+        db.query(func.coalesce(func.sum(RewardAccrual.amount_ban), 0))
+        .filter(RewardAccrual.user_id == user_id)
+        .scalar()
+        or 0
+    )
+    total_paid = float(
+        db.query(func.coalesce(func.sum(Payout.amount_ban), 0))
+        .filter(Payout.user_id == user_id, Payout.status == "sent")
+        .scalar()
+        or 0
+    )
+    underpaid_ban = round(max(total_accrued - total_paid - unsettled_ban - orphan_ban, 0), 8)
+
     daily_at_cap = int(day_kills_paid) >= daily_cap
     weekly_at_cap = int(week_kills_paid) >= weekly_cap
 
     pending_kills = unsettled_kills + orphan_kills
-    pending_ban = round(unsettled_ban + orphan_ban, 8)
+    pending_ban = round(unsettled_ban + orphan_ban + underpaid_ban, 8)
 
     return {
         "daily_kills_used": int(day_kills_paid),
@@ -118,6 +135,7 @@ def _compute_cap_status(
         "at_cap": daily_at_cap or weekly_at_cap,
         "unsettled_kills": unsettled_kills,
         "orphan_kills": orphan_kills,
+        "underpaid_ban": underpaid_ban,
         "pending_kills": pending_kills,
         "pending_ban": pending_ban,
     }
