@@ -12,7 +12,7 @@ from prometheus_client import Counter, start_http_server
 
 HEARTBEAT_PATH = Path(os.getenv("P2S_HEARTBEAT_FILE", "/tmp/scheduler_heartbeat.json"))
 SCHEDULER_CONFIG_PATH = Path(
-    os.getenv("P2S_SCHEDULER_CONFIG_FILE", "/tmp/scheduler_overrides.json")
+    os.getenv("P2S_SCHEDULER_CONFIG_FILE", "/data/scheduler_overrides.json")
 )
 
 load_dotenv()

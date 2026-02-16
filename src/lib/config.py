@@ -163,6 +163,14 @@ def load_config(configs_dir: Path | None = None) -> AppConfig:
     if dry_run_env is not None:
         integrations["dry_run"] = dry_run_env.lower() not in ("false", "0", "no", "off")
 
+    # Allow cap overrides via env vars (persist across deploys)
+    daily_cap_env = os.getenv("P2S_DAILY_CAP")
+    if daily_cap_env is not None:
+        payout["daily_payout_cap"] = int(daily_cap_env)
+    weekly_cap_env = os.getenv("P2S_WEEKLY_CAP")
+    if weekly_cap_env is not None:
+        payout["weekly_payout_cap"] = int(weekly_cap_env)
+
     return AppConfig(
         payout=PayoutConfig(**payout),
         integrations=IntegrationsConfig(**integrations),

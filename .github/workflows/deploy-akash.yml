@@ -150,6 +150,8 @@ jobs:
           MIN_OPERATOR_BALANCE_BAN: ${{ vars.MIN_OPERATOR_BALANCE_BAN || '50' }}
           ADMIN_DISCORD_USERNAMES: ${{ vars.ADMIN_DISCORD_USERNAMES }}
           DISCORD_INVITE_URL: ${{ vars.DISCORD_INVITE_URL }}
+          P2S_DAILY_CAP: ${{ vars.P2S_DAILY_CAP || '150' }}
+          P2S_WEEKLY_CAP: ${{ vars.P2S_WEEKLY_CAP || '750' }}
         run: |
           envsubst < infra/akash/deploy.yaml > deploy-final.yaml
           echo "=== Final SDL ==="
