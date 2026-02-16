@@ -70,7 +70,10 @@
         if (brand && productConfig.app_name) brand.textContent = productConfig.app_name;
         isDryRun = !!(productConfig.feature_flags && productConfig.feature_flags.dry_run_banner);
         const banner = $(".dry-run-banner");
-        if (banner && isDryRun) banner.classList.add("visible");
+        if (banner) {
+          if (isDryRun) { banner.style.display = "block"; banner.classList.add("visible"); }
+          else { banner.style.display = "none"; banner.classList.remove("visible"); }
+        }
         // Hide demo-only elements when not in dry run mode
         if (!isDryRun) {
           const ids = ["seed-btn", "demo-login-btn", "demo-login-btn-2"];
