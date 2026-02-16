@@ -207,53 +207,37 @@
     const tbody = $("#leaderboard-tbody");
     if (!tbody) return;
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No players yet. Be the first!</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No players yet. Be the first!</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (p, i) {
       var paid = parseFloat(p.total_paid_ban).toFixed(2);
-      var owed = parseFloat(p.total_accrued_ban).toFixed(2);
-      // Build earned cell with pending indicator when there's a gap
-      var earnedCell = '';
-      var pendingBan = p.cap_status ? p.cap_status.pending_ban : 0;
-      var pendingKills = p.cap_status ? p.cap_status.pending_kills : 0;
-      if (pendingBan > 0.001) {
-        earnedCell = '<td class="earned-cell">' +
-          '<span class="earned-paid" title="Paid (settled)">' + paid + '</span>' +
-          ' <span class="earned-sep">/</span> ' +
-          '<span class="earned-owed" title="Total accrued">' + owed + '</span>' +
-          ' <span class="earned-pending" title="' + pendingBan.toFixed(2) + ' BAN (' + pendingKills + ' kills) pending — will be paid next settlement cycle">⏳ ' + pendingBan.toFixed(2) + '</span>' +
-          '</td>';
-      } else {
-        earnedCell = '<td class="earned-cell"><span class="earned-paid" title="Paid (settled)">' + paid + '</span> <span class="earned-sep">/</span> <span class="earned-owed" title="Owed (accrued)">' + owed + '</span></td>';
-      }
-      var capCell = '';
+      var paidCell = '<td>' + paid + ' BAN</td>';
+      var dailyCapCell = '';
+      var weeklyCapCell = '';
       if (p.cap_status) {
         var cs = p.cap_status;
-        if (cs.at_cap) {
-          var capType = cs.daily_at_cap ? 'daily' : 'weekly';
-          capCell = '<td class="cap-cell"><span class="badge badge-capped" title="' +
-            cs.daily_kills_used + '/' + cs.daily_kill_cap + ' daily · ' +
-            cs.weekly_kills_used + '/' + cs.weekly_kill_cap + ' weekly">⚠️ CAPPED</span>' +
-            (cs.unsettled_kills > 0 ? '<span class="cap-overflow" title="Kills waiting for cap reset">' + cs.unsettled_kills + ' queued</span>' : '') +
-            '</td>';
-        } else {
-          var dailyPct = Math.round((cs.daily_kills_used / cs.daily_kill_cap) * 100);
-          capCell = '<td class="cap-cell"><span class="cap-mini-bar" title="' +
-            cs.daily_kills_used + '/' + cs.daily_kill_cap + ' daily · ' +
-            cs.weekly_kills_used + '/' + cs.weekly_kill_cap + ' weekly">' +
-            '<span class="cap-mini-fill' + (dailyPct >= 80 ? ' cap-mini-warn' : '') + '" style="width:' + dailyPct + '%"></span></span>' +
-            '<span class="cap-mini-label">' + cs.daily_kills_used + '/' + cs.daily_kill_cap + '</span></td>';
-        }
+        var dailyPct = cs.daily_kill_cap > 0 ? Math.min(100, Math.round((cs.daily_kills_used / cs.daily_kill_cap) * 100)) : 0;
+        var weeklyPct = cs.weekly_kill_cap > 0 ? Math.min(100, Math.round((cs.weekly_kills_used / cs.weekly_kill_cap) * 100)) : 0;
+        dailyCapCell = '<td class="cap-cell">' +
+          (cs.daily_at_cap ? '<span class="badge badge-capped">FULL</span>' :
+          '<span class="cap-mini-bar"><span class="cap-mini-fill' + (dailyPct >= 80 ? ' cap-mini-warn' : '') + '" style="width:' + dailyPct + '%"></span></span>') +
+          '<span class="cap-mini-label">' + cs.daily_kills_used + '/' + cs.daily_kill_cap + '</span></td>';
+        weeklyCapCell = '<td class="cap-cell">' +
+          (cs.weekly_at_cap ? '<span class="badge badge-capped">FULL</span>' :
+          '<span class="cap-mini-bar"><span class="cap-mini-fill' + (weeklyPct >= 80 ? ' cap-mini-warn' : '') + '" style="width:' + weeklyPct + '%"></span></span>') +
+          '<span class="cap-mini-label">' + cs.weekly_kills_used + '/' + cs.weekly_kill_cap + '</span></td>';
       } else {
-        capCell = '<td class="cap-cell">-</td>';
+        dailyCapCell = '<td class="cap-cell">-</td>';
+        weeklyCapCell = '<td class="cap-cell">-</td>';
       }
       return '<tr' + (p.cap_status && p.cap_status.at_cap ? ' class="row-capped"' : '') + '>' +
         '<td class="rank">' + (i + 1) + '</td>' +
         '<td class="player-name">' + escapeHtml(p.discord_username) + _boostBadge(p.jpmt_badge) + '</td>' +
         '<td>' + p.total_kills + '</td>' +
-        earnedCell +
-        capCell +
+        paidCell +
+        dailyCapCell +
+        weeklyCapCell +
         '</tr>';
     }).join("");
   }
