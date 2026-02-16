@@ -2,7 +2,9 @@ import json
 import os
 import time as _time
 from collections.abc import Generator
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse
@@ -13,6 +15,85 @@ from src.models.models import Payout, RewardAccrual, User
 from src.services.domain.hodl_boost_service import get_tier_for_balance
 
 router = APIRouter()
+
+
+def _get_cap_config(request: Request) -> tuple[int, int]:
+    """Return (daily_cap, weekly_cap) accounting for runtime overrides."""
+    app_state = getattr(request.app, "state", None)
+    cfg_obj = getattr(app_state, "config", None)
+    payout_cfg = getattr(cfg_obj, "payout", None)
+    daily_cap = payout_cfg.daily_payout_cap if payout_cfg else 100
+    weekly_cap = payout_cfg.weekly_payout_cap if payout_cfg else 500
+    # Apply runtime overrides if present
+    from src.jobs.__main__ import SCHEDULER_CONFIG_PATH as _SCP
+
+    if _SCP.exists():
+        try:
+            _ovr = json.loads(_SCP.read_text()).get("payout", {})
+            if "daily_kill_cap" in _ovr:
+                daily_cap = int(_ovr["daily_kill_cap"])
+            if "weekly_kill_cap" in _ovr:
+                weekly_cap = int(_ovr["weekly_kill_cap"])
+        except Exception:
+            pass
+    return daily_cap, weekly_cap
+
+
+def _compute_cap_status(
+    db: Session, user_id: int, daily_cap: int, weekly_cap: int
+) -> dict[str, Any]:
+    """Compute a user's cap usage for the last 24h / 7d windows."""
+    now = datetime.now(UTC)
+    day_ago = now - timedelta(days=1)
+    week_ago = now - timedelta(days=7)
+
+    day_kills_paid = (
+        db.query(func.coalesce(func.sum(RewardAccrual.kills), 0))
+        .join(Payout, RewardAccrual.payout_id == Payout.id)
+        .filter(
+            RewardAccrual.user_id == user_id,
+            Payout.status == "sent",
+            Payout.created_at >= day_ago,
+        )
+        .scalar()
+    ) or 0
+
+    week_kills_paid = (
+        db.query(func.coalesce(func.sum(RewardAccrual.kills), 0))
+        .join(Payout, RewardAccrual.payout_id == Payout.id)
+        .filter(
+            RewardAccrual.user_id == user_id,
+            Payout.status == "sent",
+            Payout.created_at >= week_ago,
+        )
+        .scalar()
+    ) or 0
+
+    # Count unsettled kills (earned but not yet paid — waiting due to cap)
+    unsettled_kills = (
+        db.query(func.coalesce(func.sum(RewardAccrual.kills), 0))
+        .filter(
+            RewardAccrual.user_id == user_id,
+            RewardAccrual.settled == False,  # noqa: E712
+        )
+        .scalar()
+    ) or 0
+
+    daily_at_cap = int(day_kills_paid) >= daily_cap
+    weekly_at_cap = int(week_kills_paid) >= weekly_cap
+
+    return {
+        "daily_kills_used": int(day_kills_paid),
+        "daily_kill_cap": daily_cap,
+        "daily_remaining": max(daily_cap - int(day_kills_paid), 0),
+        "daily_at_cap": daily_at_cap,
+        "weekly_kills_used": int(week_kills_paid),
+        "weekly_kill_cap": weekly_cap,
+        "weekly_remaining": max(weekly_cap - int(week_kills_paid), 0),
+        "weekly_at_cap": weekly_at_cap,
+        "at_cap": daily_at_cap or weekly_at_cap,
+        "unsettled_kills": int(unsettled_kills),
+    }
 
 
 def _get_db(request: Request) -> Generator[Session, None, None]:
@@ -26,12 +107,14 @@ def _get_db(request: Request) -> Generator[Session, None, None]:
 
 @router.get("/api/leaderboard")
 def leaderboard(
+    request: Request,
     db: Session = Depends(_get_db),  # noqa: B008
     limit: int = 50,
     offset: int = 0,
 ) -> JSONResponse:
     """Public leaderboard showing all players, kills, and payouts. No auth required."""
     limit = min(max(limit, 1), 100)
+    daily_cap, weekly_cap = _get_cap_config(request)
 
     accrual_sub = (
         db.query(
@@ -55,6 +138,7 @@ def leaderboard(
 
     rows = (
         db.query(
+            User.id,
             User.discord_username,
             User.jpmt_balance,
             func.coalesce(accrual_sub.c.total_kills, 0).label("total_kills"),
@@ -71,35 +155,44 @@ def leaderboard(
 
     total_users = db.query(func.count(User.id)).scalar() or 0
 
+    players = []
+    for r in rows:
+        cap = _compute_cap_status(db, r.id, daily_cap, weekly_cap)
+        players.append(
+            {
+                "discord_username": r.discord_username or "Unknown",
+                "total_kills": int(r.total_kills),
+                "total_accrued_ban": float(r.total_accrued),
+                "total_paid_ban": float(r.total_paid),
+                "jpmt_badge": get_tier_for_balance(r.jpmt_balance or 0).badge,
+                "cap_status": cap,
+            }
+        )
+
     return JSONResponse(
         {
-            "players": [
-                {
-                    "discord_username": r.discord_username or "Unknown",
-                    "total_kills": int(r.total_kills),
-                    "total_accrued_ban": float(r.total_accrued),
-                    "total_paid_ban": float(r.total_paid),
-                    "jpmt_badge": get_tier_for_balance(r.jpmt_balance or 0).badge,
-                }
-                for r in rows
-            ],
+            "players": players,
             "total": total_users,
             "limit": limit,
             "offset": offset,
+            "caps": {"daily": daily_cap, "weekly": weekly_cap},
         }
     )
 
 
 @router.get("/api/feed")
 def activity_feed(
+    request: Request,
     db: Session = Depends(_get_db),  # noqa: B008
     limit: int = 30,
 ) -> JSONResponse:
     """Public activity feed — recent accruals and payouts across all players."""
     limit = min(max(limit, 1), 100)
+    daily_cap, weekly_cap = _get_cap_config(request)
 
     accruals = (
         db.query(
+            User.id.label("user_id"),
             User.discord_username,
             User.jpmt_balance,
             RewardAccrual.kills,
@@ -129,6 +222,12 @@ def activity_feed(
         .all()
     )
 
+    # Build cap cache for users in the accrual list
+    _cap_cache: dict[int, dict[str, Any]] = {}
+    for a in accruals:
+        if a.user_id not in _cap_cache:
+            _cap_cache[a.user_id] = _compute_cap_status(db, a.user_id, daily_cap, weekly_cap)
+
     return JSONResponse(
         {
             "accruals": [
@@ -139,6 +238,7 @@ def activity_feed(
                     "settled": a.settled,
                     "created_at": a.created_at.isoformat() if a.created_at else None,
                     "jpmt_badge": get_tier_for_balance(a.jpmt_balance or 0).badge,
+                    "user_at_cap": _cap_cache.get(a.user_id, {}).get("at_cap", False),
                 }
                 for a in accruals
             ],

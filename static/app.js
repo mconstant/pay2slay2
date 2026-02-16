@@ -184,9 +184,16 @@
       const r = await fetch("/api/leaderboard?limit=50");
       if (r.ok) {
         const data = await r.json();
-        renderLeaderboard(data.players || []);
+        renderLeaderboard(data.players || [], data.caps || {});
         const countEl = $("#leaderboard-count");
         if (countEl) countEl.textContent = data.total + " players";
+        // Update footer caps
+        if (data.caps) {
+          var fdc = $("#footer-daily-cap");
+          var fwc = $("#footer-weekly-cap");
+          if (fdc) fdc.textContent = data.caps.daily;
+          if (fwc) fwc.textContent = data.caps.weekly;
+        }
       }
     } catch (_) {}
   }
@@ -196,21 +203,43 @@
     return ' <span class="boost-badge" title="HODL Boosted">\uD83D\uDE80' + badge + '</span>';
   }
 
-  function renderLeaderboard(rows) {
+  function renderLeaderboard(rows, caps) {
     const tbody = $("#leaderboard-tbody");
     if (!tbody) return;
     if (rows.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="4" class="empty-state">No players yet. Be the first!</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No players yet. Be the first!</td></tr>';
       return;
     }
     tbody.innerHTML = rows.map(function (p, i) {
       var paid = parseFloat(p.total_paid_ban).toFixed(2);
       var owed = parseFloat(p.total_accrued_ban).toFixed(2);
-      return '<tr>' +
+      var capCell = '';
+      if (p.cap_status) {
+        var cs = p.cap_status;
+        if (cs.at_cap) {
+          var capType = cs.daily_at_cap ? 'daily' : 'weekly';
+          capCell = '<td class="cap-cell"><span class="badge badge-capped" title="' +
+            cs.daily_kills_used + '/' + cs.daily_kill_cap + ' daily · ' +
+            cs.weekly_kills_used + '/' + cs.weekly_kill_cap + ' weekly">⚠️ CAPPED</span>' +
+            (cs.unsettled_kills > 0 ? '<span class="cap-overflow" title="Kills waiting for cap reset">' + cs.unsettled_kills + ' queued</span>' : '') +
+            '</td>';
+        } else {
+          var dailyPct = Math.round((cs.daily_kills_used / cs.daily_kill_cap) * 100);
+          capCell = '<td class="cap-cell"><span class="cap-mini-bar" title="' +
+            cs.daily_kills_used + '/' + cs.daily_kill_cap + ' daily · ' +
+            cs.weekly_kills_used + '/' + cs.weekly_kill_cap + ' weekly">' +
+            '<span class="cap-mini-fill' + (dailyPct >= 80 ? ' cap-mini-warn' : '') + '" style="width:' + dailyPct + '%"></span></span>' +
+            '<span class="cap-mini-label">' + cs.daily_kills_used + '/' + cs.daily_kill_cap + '</span></td>';
+        }
+      } else {
+        capCell = '<td class="cap-cell">-</td>';
+      }
+      return '<tr' + (p.cap_status && p.cap_status.at_cap ? ' class="row-capped"' : '') + '>' +
         '<td class="rank">' + (i + 1) + '</td>' +
         '<td class="player-name">' + escapeHtml(p.discord_username) + _boostBadge(p.jpmt_badge) + '</td>' +
         '<td>' + p.total_kills + '</td>' +
         '<td class="earned-cell"><span class="earned-paid" title="Paid (settled)">' + paid + '</span> <span class="earned-sep">/</span> <span class="earned-owed" title="Owed (accrued)">' + owed + '</span></td>' +
+        capCell +
         '</tr>';
     }).join("");
   }
@@ -284,8 +313,14 @@
       var statusLabel = a.settled ? "settled" : "pending";
       var statusClass = a.settled ? "badge-sent" : "badge-pending";
       var date = shortDate(a.created_at);
-      return '<tr>' +
-        '<td class="player-name">' + escapeHtml(a.discord_username) + _boostBadge(a.jpmt_badge) + '</td>' +
+      var capTag = '';
+      if (a.user_at_cap && !a.settled) {
+        statusLabel = "capped";
+        statusClass = "badge-capped";
+        capTag = ' <span class="cap-tag" title="Player has hit their kill cap — payout queued">⚠️</span>';
+      }
+      return '<tr' + (a.user_at_cap && !a.settled ? ' class="row-capped"' : '') + '>' +
+        '<td class="player-name">' + escapeHtml(a.discord_username) + _boostBadge(a.jpmt_badge) + capTag + '</td>' +
         '<td>' + a.kills + '</td>' +
         '<td>' + parseFloat(a.amount_ban).toFixed(2) + ' BAN</td>' +
         '<td><span class="badge ' + statusClass + '">' + statusLabel + '</span>' + (date ? ' <span class="cell-date">' + date + '</span>' : '') + '</td>' +
@@ -486,6 +521,9 @@
         var walletWarn = $("#wallet-warning");
         if (walletWarn) walletWarn.style.display = s.linked ? "none" : "flex";
 
+        // Cap status
+        _renderCapStatus(s.cap_status);
+
         // Update username if we get it from the status response
         if (s.discord_username && user) {
           user.discord_username = s.discord_username;
@@ -532,6 +570,94 @@
     if (n >= 1000000) return (n / 1000000).toFixed(1) + "M";
     if (n >= 1000) return (n / 1000).toFixed(1) + "K";
     return String(n);
+  }
+
+  /** Render cap progress bars and warning banner on the dashboard. */
+  function _renderCapStatus(cap) {
+    var section = $("#cap-status-section");
+    var warning = $("#cap-warning");
+    if (!section) return;
+
+    if (!cap) {
+      section.style.display = "none";
+      if (warning) warning.style.display = "none";
+      return;
+    }
+
+    section.style.display = "block";
+
+    // Daily bar
+    var dailyPct = cap.daily_kill_cap > 0 ? Math.min(100, Math.round((cap.daily_kills_used / cap.daily_kill_cap) * 100)) : 0;
+    var dailyFill = $("#cap-daily-fill");
+    var dailyCount = $("#cap-daily-count");
+    var dailyInfo = $("#cap-daily-info");
+    if (dailyFill) {
+      dailyFill.style.width = dailyPct + "%";
+      dailyFill.className = "cap-bar-fill" + (dailyPct >= 100 ? " cap-bar-full" : dailyPct >= 80 ? " cap-bar-warn" : "");
+    }
+    if (dailyCount) dailyCount.textContent = cap.daily_kills_used + " / " + cap.daily_kill_cap;
+    if (dailyInfo) {
+      if (cap.daily_at_cap) {
+        dailyInfo.innerHTML = '<span class="badge badge-capped">CAP REACHED</span>';
+      } else if (dailyPct >= 80) {
+        dailyInfo.innerHTML = '<span class="cap-bar-remaining">' + cap.daily_remaining + ' kills left today</span>';
+      } else {
+        dailyInfo.textContent = '';
+      }
+    }
+
+    // Weekly bar
+    var weeklyPct = cap.weekly_kill_cap > 0 ? Math.min(100, Math.round((cap.weekly_kills_used / cap.weekly_kill_cap) * 100)) : 0;
+    var weeklyFill = $("#cap-weekly-fill");
+    var weeklyCount = $("#cap-weekly-count");
+    var weeklyInfo = $("#cap-weekly-info");
+    if (weeklyFill) {
+      weeklyFill.style.width = weeklyPct + "%";
+      weeklyFill.className = "cap-bar-fill" + (weeklyPct >= 100 ? " cap-bar-full" : weeklyPct >= 80 ? " cap-bar-warn" : "");
+    }
+    if (weeklyCount) weeklyCount.textContent = cap.weekly_kills_used + " / " + cap.weekly_kill_cap;
+    if (weeklyInfo) {
+      if (cap.weekly_at_cap) {
+        weeklyInfo.innerHTML = '<span class="badge badge-capped">CAP REACHED</span>';
+      } else if (weeklyPct >= 80) {
+        weeklyInfo.innerHTML = '<span class="cap-bar-remaining">' + cap.weekly_remaining + ' kills left this week</span>';
+      } else {
+        weeklyInfo.textContent = '';
+      }
+    }
+
+    // Unsettled kills callout
+    var unsettledEl = $("#cap-unsettled");
+    var unsettledText = $("#cap-unsettled-text");
+    if (unsettledEl) {
+      if (cap.unsettled_kills > 0 && cap.at_cap) {
+        unsettledEl.style.display = "flex";
+        if (unsettledText) unsettledText.textContent = cap.unsettled_kills + " kill" + (cap.unsettled_kills !== 1 ? "s" : "") + " waiting — will be paid when the cap resets";
+      } else {
+        unsettledEl.style.display = "none";
+      }
+    }
+
+    // Warning banner
+    if (warning) {
+      if (cap.at_cap) {
+        warning.style.display = "flex";
+        var title = $("#cap-warning-title");
+        var detail = $("#cap-warning-detail");
+        if (cap.daily_at_cap && cap.weekly_at_cap) {
+          if (title) title.textContent = "Daily & weekly kill caps reached";
+          if (detail) detail.textContent = "You've used " + cap.daily_kills_used + "/" + cap.daily_kill_cap + " daily kills and " + cap.weekly_kills_used + "/" + cap.weekly_kill_cap + " weekly kills. Your kills still count toward the leaderboard — payouts resume automatically when the cap resets (rolling 24h/7d window).";
+        } else if (cap.daily_at_cap) {
+          if (title) title.textContent = "Daily kill cap reached (" + cap.daily_kills_used + "/" + cap.daily_kill_cap + ")";
+          if (detail) detail.textContent = "You've hit the daily kill cap. Your kills still count toward the leaderboard, but payouts are paused until the 24-hour rolling window resets. You have " + cap.weekly_kills_used + "/" + cap.weekly_kill_cap + " weekly kills used.";
+        } else {
+          if (title) title.textContent = "Weekly kill cap reached (" + cap.weekly_kills_used + "/" + cap.weekly_kill_cap + ")";
+          if (detail) detail.textContent = "You've hit the weekly kill cap. Your kills still count toward the leaderboard, but payouts are paused until the 7-day rolling window resets.";
+        }
+      } else {
+        warning.style.display = "none";
+      }
+    }
   }
 
   async function loadAccruals() {

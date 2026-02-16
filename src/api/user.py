@@ -327,6 +327,12 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
     solana_addr = getattr(user, "solana_wallet_address", None)
     jpmt_verified = getattr(user, "jpmt_verified_at", None)
 
+    # Kill cap status
+    from src.api.leaderboard import _compute_cap_status, _get_cap_config
+
+    daily_cap, weekly_cap = _get_cap_config(request)
+    cap_status = _compute_cap_status(db, user.id, daily_cap, weekly_cap)
+
     return JSONResponse(
         {
             "discord_username": user.discord_username,
@@ -342,6 +348,7 @@ def me_status(request: Request, db: Session = Depends(_get_db)) -> JSONResponse:
             "jpmt_badge": tier.badge,
             "jpmt_multiplier": tier.multiplier,
             "jpmt_verified_at": jpmt_verified.isoformat() if jpmt_verified else None,
+            "cap_status": cap_status,
         }
     )
 

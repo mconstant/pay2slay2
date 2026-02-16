@@ -271,6 +271,196 @@ header .user-info .username {
   }
 }
 
+/* ── Cap Warning Banner ───────────────────────────────── */
+.cap-warning {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(248,81,73,.06);
+  border: 1px solid rgba(248,81,73,.30);
+  border-left: 4px solid var(--danger);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  animation: cap-warn-pulse 2s ease-in-out 3;
+}
+.cap-warning-icon {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+.cap-warning-body {
+  flex: 1;
+  min-width: 0;
+}
+.cap-warning-body strong {
+  display: block;
+  color: var(--danger);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+.cap-warning-body p {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+@keyframes cap-warn-pulse {
+  0%, 100% { border-left-color: var(--danger); }
+  50% { border-left-color: #fbaa1e; }
+}
+@media (max-width: 600px) {
+  .cap-warning {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+}
+
+/* ── Cap Progress Bars (Dashboard) ────────────────────── */
+.cap-status-section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.cap-bar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.cap-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cap-bar-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  min-width: 160px;
+  flex-shrink: 0;
+}
+.cap-bar-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.cap-bar-count {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  margin-left: 8px;
+}
+.cap-bar-track {
+  flex: 1;
+  min-width: 120px;
+  height: 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+.cap-bar-fill {
+  height: 100%;
+  border-radius: 5px;
+  background: var(--green);
+  transition: width .5s ease, background .3s;
+}
+.cap-bar-fill.cap-bar-warn {
+  background: #fbaa1e;
+}
+.cap-bar-fill.cap-bar-full {
+  background: var(--danger);
+}
+.cap-bar-info {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.cap-bar-remaining {
+  color: #fbaa1e;
+  font-weight: 600;
+  font-size: 12px;
+}
+.cap-unsettled {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+  padding: 10px 14px;
+  background: rgba(248,81,73,.06);
+  border: 1px solid rgba(248,81,73,.20);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-muted);
+}
+.cap-unsettled-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+/* ── Cap badges (leaderboard) ─────────────────────────── */
+.badge-capped {
+  background: rgba(248,81,73,.15);
+  color: var(--danger);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .3px;
+}
+.cap-overflow {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.cap-cell {
+  white-space: nowrap;
+  min-width: 80px;
+}
+.row-capped {
+  background: rgba(248,81,73,.04);
+}
+.cap-mini-bar {
+  display: inline-block;
+  width: 40px;
+  height: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+  vertical-align: middle;
+  margin-right: 4px;
+}
+.cap-mini-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--green);
+  transition: width .3s;
+}
+.cap-mini-fill.cap-mini-warn {
+  background: #fbaa1e;
+}
+.cap-mini-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* ── Footer caps ─────────────────────────────────── */
+.footer-caps {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.cap-tag {
+  font-size: 12px;
+  margin-left: 2px;
+  cursor: help;
+}
+  }
+}
+
 /* ── Dry-run banner ──────────────────────────────────── */
 .dry-run-banner {
   background: rgba(251,219,30,.12);

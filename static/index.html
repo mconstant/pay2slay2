@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Pay2Slay Faucet</title>
-  <link rel="stylesheet" href="/static/style.css?v=22">
+  <link rel="stylesheet" href="/static/style.css?v=23">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍌</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -87,10 +87,11 @@
             <th>Player</th>
             <th>Kills</th>
             <th>Earned</th>
+            <th>Cap</th>
           </tr>
         </thead>
         <tbody id="leaderboard-tbody">
-          <tr><td colspan="4" class="empty-state">Loading...</td></tr>
+          <tr><td colspan="5" class="empty-state">Loading...</td></tr>
         </tbody>
       </table>
     </div>
@@ -260,6 +261,45 @@
         <p>You need to link a Banano wallet before your Fortnite kills can earn rewards. Without a linked wallet, the scheduler skips your account each cycle.</p>
       </div>
       <button class="btn btn-primary btn-sm" onclick="location.hash='#wallet'">Link Wallet &rarr;</button>
+    </div>
+
+    <!-- Cap status banner (shown when at daily or weekly cap) -->
+    <div id="cap-warning" class="cap-warning" style="display:none;">
+      <div class="cap-warning-icon">🚫</div>
+      <div class="cap-warning-body">
+        <strong id="cap-warning-title">Kill cap reached</strong>
+        <p id="cap-warning-detail">You've hit your daily or weekly kill cap. Kills still count toward the leaderboard, but payouts are paused until the cap resets.</p>
+      </div>
+    </div>
+
+    <!-- Cap progress bars -->
+    <div id="cap-status-section" class="cap-status-section" style="display:none;">
+      <div class="cap-bar-group">
+        <div class="cap-bar-row">
+          <div class="cap-bar-label">
+            <span class="cap-bar-title">Daily Kills</span>
+            <span class="cap-bar-count" id="cap-daily-count">0 / 100</span>
+          </div>
+          <div class="cap-bar-track">
+            <div class="cap-bar-fill" id="cap-daily-fill" style="width:0%"></div>
+          </div>
+          <div class="cap-bar-info" id="cap-daily-info"></div>
+        </div>
+        <div class="cap-bar-row">
+          <div class="cap-bar-label">
+            <span class="cap-bar-title">Weekly Kills</span>
+            <span class="cap-bar-count" id="cap-weekly-count">0 / 500</span>
+          </div>
+          <div class="cap-bar-track">
+            <div class="cap-bar-fill" id="cap-weekly-fill" style="width:0%"></div>
+          </div>
+          <div class="cap-bar-info" id="cap-weekly-info"></div>
+        </div>
+      </div>
+      <div class="cap-unsettled" id="cap-unsettled" style="display:none;">
+        <span class="cap-unsettled-icon">⏳</span>
+        <span id="cap-unsettled-text">0 kills waiting for cap to reset</span>
+      </div>
     </div>
 
     <div class="stat-grid">
@@ -649,6 +689,8 @@
   <span id="cycle-countdown-settlement">Settlement: --:--</span>
   <span style="margin:0 12px;color:var(--border);">|</span>
   <span>Stats ready for accrual ~5min post-match.</span>
+  <span style="margin:0 12px;color:var(--border);">|</span>
+  <span id="footer-caps" class="footer-caps">Caps: <span id="footer-daily-cap">100</span>/day · <span id="footer-weekly-cap">500</span>/wk</span>
 </footer>
 
 <!-- Flapping Stickers -->
@@ -669,7 +711,7 @@
 </a>
 
 <script src="/static/help-i18n.js?v=20"></script>
-<script src="/static/app.js?v=22"></script>
+<script src="/static/app.js?v=23"></script>
 <script src="/static/banana-rain.js?v=20"></script>
 </body>
 </html>
