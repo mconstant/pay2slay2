@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from ...models.models import RewardAccrual, User
 from ..fortnite_service import FortniteService
+from .hodl_boost_service import get_multiplier_for_balance
 
 
 @dataclass
@@ -61,6 +62,13 @@ class AccrualService:
             if isinstance(self.payout_amount_per_kill, Decimal)
             else Decimal(str(self.payout_amount_per_kill))
         )
+        # Apply per-user HODL boost multiplier
+        jpmt_balance = getattr(user, "jpmt_balance", 0) or 0
+        hodl_mult = get_multiplier_for_balance(jpmt_balance)
+        if hodl_mult != 1.0:
+            per_kill = (per_kill * Decimal(str(hodl_mult))).quantize(
+                Decimal("0.00000001"), rounding=ROUND_DOWN
+            )
         amount = (Decimal(delta_kills) * per_kill).quantize(
             Decimal("0.00000001"), rounding=ROUND_DOWN
         )
