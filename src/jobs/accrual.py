@@ -94,6 +94,13 @@ def run_accrual(
     sustainability = get_sustainability_factor(session, seed_fund)
     ban_per_kill *= sustainability
 
+    # Apply active promo multiplier (if any)
+    from src.lib.promo import get_active_promo
+
+    promo = get_active_promo()
+    if promo:
+        ban_per_kill *= promo.multiplier
+
     svc = AccrualService(
         session,
         fortnite=fortnite,

@@ -152,6 +152,7 @@ jobs:
           DISCORD_INVITE_URL: ${{ vars.DISCORD_INVITE_URL }}
           P2S_DAILY_CAP: ${{ vars.P2S_DAILY_CAP || '150' }}
           P2S_WEEKLY_CAP: ${{ vars.P2S_WEEKLY_CAP || '750' }}
+          P2S_LUNAR_NEW_YEAR: ${{ vars.P2S_LUNAR_NEW_YEAR || 'true' }}
         run: |
           envsubst < infra/akash/deploy.yaml > deploy-final.yaml
           echo "=== Final SDL ==="

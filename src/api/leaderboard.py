@@ -18,7 +18,7 @@ router = APIRouter()
 
 
 def _get_cap_config(request: Request) -> tuple[int, int]:
-    """Return (daily_cap, weekly_cap) accounting for runtime overrides."""
+    """Return (daily_cap, weekly_cap) accounting for runtime overrides and active promos."""
     app_state = getattr(request.app, "state", None)
     cfg_obj = getattr(app_state, "config", None)
     payout_cfg = getattr(cfg_obj, "payout", None)
@@ -36,6 +36,15 @@ def _get_cap_config(request: Request) -> tuple[int, int]:
                 weekly_cap = int(_ovr["weekly_kill_cap"])
         except Exception:
             pass
+    # Apply active promo cap overrides (takes precedence if higher)
+    from src.lib.promo import get_active_promo
+
+    promo = get_active_promo()
+    if promo:
+        if promo.daily_cap is not None:
+            daily_cap = max(daily_cap, promo.daily_cap)
+        if promo.weekly_cap is not None:
+            weekly_cap = max(weekly_cap, promo.weekly_cap)
     return daily_cap, weekly_cap
 
 

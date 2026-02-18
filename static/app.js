@@ -7,6 +7,7 @@
   let isAdmin = false;
   let productConfig = null;
   let isDryRun = false;
+  let activePromo = null;
   let refreshTimer = null;
   const REFRESH_INTERVAL = 30000; // 30s auto-refresh
 
@@ -82,8 +83,44 @@
             if (el) el.style.display = "none";
           });
         }
+        // Promo handling
+        activePromo = productConfig.promo || null;
+        _renderPromoBanner();
       }
     } catch (_) { /* config not critical */ }
+  }
+
+  /** Render the promo banner and apply body theme class. */
+  function _renderPromoBanner() {
+    var el = $("#promo-banner");
+    if (!el) return;
+    if (!activePromo) {
+      el.innerHTML = "";
+      document.body.classList.remove("promo-active");
+      return;
+    }
+    document.body.classList.add("promo-active");
+    // Inject CSS custom properties for theme
+    if (activePromo.theme) {
+      Object.keys(activePromo.theme).forEach(function (k) {
+        document.documentElement.style.setProperty(k, activePromo.theme[k]);
+      });
+    }
+    var daysText = activePromo.days_remaining === 1
+      ? "Last day!"
+      : activePromo.days_remaining + " days left";
+    el.innerHTML =
+      '<div class="promo-banner-inner">' +
+        '<span class="promo-emoji">🧧</span>' +
+        '<span class="promo-emoji">🐴</span>' +
+        '<div>' +
+          '<div class="promo-name">\uD83D\uDD25 ' + escapeHtml(activePromo.name) + '</div>' +
+          '<div class="promo-tagline">' + escapeHtml(activePromo.tagline) + '</div>' +
+        '</div>' +
+        '<span class="promo-mult">\uD83C\uDF86 ' + activePromo.multiplier + '\u00D7 REWARDS</span>' +
+        '<span class="promo-days">' + daysText + '</span>' +
+        '<span class="promo-emoji">\uD83E\uDDE8</span>' +
+      '</div>';
   }
 
   // ── Navigation ───────────────────────────────────────
@@ -189,7 +226,7 @@
         const data = await r.json();
         renderLeaderboard(data.players || [], data.caps || {});
         const countEl = $("#leaderboard-count");
-        if (countEl) countEl.textContent = data.total + " players";
+        if (countEl) countEl.textContent = data.total + " players" + (activePromo ? " \u00B7 " + activePromo.emoji + " " + activePromo.multiplier + "\u00D7 promo active!" : "");
         // Update footer caps
         if (data.caps) {
           var fdc = $("#footer-daily-cap");
@@ -204,6 +241,11 @@
   function _boostBadge(badge) {
     if (!badge) return '';
     return ' <span class="boost-badge" title="HODL Boosted">\uD83D\uDE80' + badge + '</span>';
+  }
+
+  function _promoBadge() {
+    if (!activePromo) return '';
+    return ' <span class="promo-badge" title="' + escapeHtml(activePromo.name) + '">' + activePromo.emoji + ' ' + activePromo.multiplier + '\u00D7</span>';
   }
 
   function renderLeaderboard(rows, caps) {

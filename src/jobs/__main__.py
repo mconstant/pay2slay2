@@ -39,11 +39,22 @@ def _build_scheduler_components() -> tuple[SchedulerConfig, FortniteService, Acc
     cfg_obj = get_config()
     integrations = cfg_obj.integrations
     payout_cfg = cfg_obj.payout
+    daily_cap = payout_cfg.daily_payout_cap
+    weekly_cap = payout_cfg.weekly_payout_cap
+    # Apply active promo cap overrides
+    from src.lib.promo import get_active_promo
+
+    promo = get_active_promo()
+    if promo:
+        if promo.daily_cap is not None:
+            daily_cap = max(daily_cap, promo.daily_cap)
+        if promo.weekly_cap is not None:
+            weekly_cap = max(weekly_cap, promo.weekly_cap)
     cfg = SchedulerConfig(
         min_operator_balance_ban=min_balance,
         batch_size=payout_cfg.batch_size or None,
-        daily_cap=payout_cfg.daily_payout_cap,
-        weekly_cap=payout_cfg.weekly_payout_cap,
+        daily_cap=daily_cap,
+        weekly_cap=weekly_cap,
         dry_run=dry_run,
         interval_seconds=interval,
         operator_account=operator_account,

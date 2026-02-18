@@ -4,6 +4,7 @@ from fastapi import APIRouter, Query
 from fastapi.responses import JSONResponse
 
 from src.lib.config import get_config
+from src.lib.promo import get_active_promo, promo_to_dict
 from src.services.yunite_service import YuniteService
 
 router = APIRouter()
@@ -17,6 +18,9 @@ def get_product_config() -> JSONResponse:
     # Override dry_run_banner based on actual dry_run setting
     feature_flags = dict(product.feature_flags)
     feature_flags["dry_run_banner"] = integrations.dry_run
+    # Active promo
+    promo = get_active_promo()
+    promo_data = promo_to_dict(promo) if promo else None
     return JSONResponse(
         {
             "app_name": product.app_name,
@@ -26,6 +30,7 @@ def get_product_config() -> JSONResponse:
             "default_locale": product.default_locale,
             "discord_invite_url": product.discord_invite_url,
             "feature_flags": feature_flags,
+            "promo": promo_data,
         }
     )
 

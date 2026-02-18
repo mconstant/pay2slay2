@@ -22,6 +22,7 @@ services:
       - DISCORD_INVITE_URL=${DISCORD_INVITE_URL}
       - P2S_DAILY_CAP=${P2S_DAILY_CAP}
       - P2S_WEEKLY_CAP=${P2S_WEEKLY_CAP}
+      - P2S_LUNAR_NEW_YEAR=${P2S_LUNAR_NEW_YEAR}
       - IMAGE_TAG=${IMAGE_TAG}
       - DATABASE_URL=sqlite:////data/pay2slay.db
       - PAY2SLAY_AUTO_MIGRATE=1

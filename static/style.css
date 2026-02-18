@@ -1629,3 +1629,128 @@ nav button[data-page="donations"]::after {
   .help-step-num { width: 28px; height: 28px; min-width: 28px; font-size: 12px; }
   .help-lang { padding: 3px 8px; font-size: 11px; }
 }
+
+/* ── Promo Banner (Lunar New Year) ────────────────────── */
+.promo-banner {
+  display: none;
+  background: linear-gradient(135deg, #D4171E 0%, #8B0000 40%, #D4171E 60%, #FFD700 100%);
+  border-bottom: 2px solid #FFD700;
+  padding: 12px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: promo-shimmer 4s ease-in-out infinite;
+}
+@keyframes promo-shimmer {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.08); }
+}
+.promo-banner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    rgba(255,215,0,.05) 20px,
+    rgba(255,215,0,.05) 40px
+  );
+  pointer-events: none;
+}
+.promo-banner-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  max-width: 960px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+}
+.promo-emoji {
+  font-size: 28px;
+  animation: promo-bounce 2s ease-in-out infinite;
+}
+@keyframes promo-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+.promo-text {
+  color: #FFD700;
+  font-weight: 700;
+  font-size: 15px;
+  text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+.promo-name {
+  font-size: 16px;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+.promo-tagline {
+  font-size: 13px;
+  color: #FFD700;
+  font-weight: 600;
+}
+.promo-mult {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255,215,0,.2);
+  border: 1px solid rgba(255,215,0,.5);
+  border-radius: 20px;
+  padding: 4px 14px;
+  font-size: 14px;
+  font-weight: 800;
+  color: #FFD700;
+  text-shadow: 0 1px 2px rgba(0,0,0,.4);
+  animation: promo-pulse 2s ease-in-out infinite;
+}
+@keyframes promo-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,215,0,.3); }
+  50% { box-shadow: 0 0 12px 4px rgba(255,215,0,.2); }
+}
+.promo-days {
+  font-size: 11px;
+  color: rgba(255,255,255,.8);
+  font-weight: 600;
+}
+.promo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: linear-gradient(135deg, #D4171E, #FFD700);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-left: 4px;
+  text-shadow: 0 1px 1px rgba(0,0,0,.3);
+  vertical-align: baseline;
+  letter-spacing: 0.3px;
+}
+
+/* Promo-themed accent overrides when .promo-active is on body */
+body.promo-active header::after {
+  background: linear-gradient(90deg, transparent, #D4171E, #FFD700, #D4171E, transparent);
+  opacity: .7;
+  height: 3px;
+}
+body.promo-active .donate-strip {
+  background: linear-gradient(135deg, rgba(212,23,30,.06) 0%, rgba(255,215,0,.04) 100%);
+}
+body.promo-active footer {
+  border-top-color: rgba(212,23,30,.3);
+}
+body.promo-active .promo-banner { display: block; }
+
+@media (max-width: 640px) {
+  .promo-banner { padding: 10px 16px; }
+  .promo-emoji { font-size: 22px; }
+  .promo-name { font-size: 14px; }
+  .promo-tagline { font-size: 12px; }
+  .promo-mult { font-size: 12px; padding: 3px 10px; }
+}
