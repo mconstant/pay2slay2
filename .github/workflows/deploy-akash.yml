@@ -84,6 +84,7 @@ jobs:
     needs: build_and_push
     if: always() && (needs.build_and_push.result == 'success' || github.event.inputs.action == 'close')
     env:
+      AKASH_KEYRING_BACKEND: test
       AKASH_NODE: ${{ github.event.inputs.akash_network }}
       AKASH_CHAIN_ID: akashnet-2
       AKASH_GAS: auto
@@ -96,32 +97,32 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install pass
+      - name: Install Akash provider-services CLI
         run: |
-          sudo apt-get update > /dev/null
-          sudo apt-get install -yqq pass
+          # Pin to v0.11.2 — v0.12.0 (released 2026-04-22) has breaking changes
+          PROVIDER_VERSION="0.11.2"
+          curl -sL "https://github.com/akash-network/provider/releases/download/v${PROVIDER_VERSION}/provider-services_${PROVIDER_VERSION}_linux_amd64.zip" -o provider-services.zip
+          unzip -o provider-services.zip -d ./bin
+          chmod +x ./bin/provider-services
+          sudo mv ./bin/provider-services /usr/local/bin
+          provider-services version
 
-      - name: Setup Akash CLI
-        uses: LumeWeb/akash-action@cfd98517684fe809a107442d56bb4e22e1cfa0a5
-        with:
-          wallet-name: deployer
-          mnemonic: ${{ secrets.AKASH_MNEMONIC }}
-          cert-content: ${{ secrets.AKASH_CERT }}
-          cert-id: ${{ vars.AKASH_CERT_ID }}
-
-      - name: Override Akash env (action may clobber job-level vars)
+      - name: Setup Akash wallet
+        env:
+          AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
         run: |
-          echo "AKASH_NODE=${{ github.event.inputs.akash_network }}" >> $GITHUB_ENV
-          echo "AKASH_GAS_ADJUSTMENT=1.5" >> $GITHUB_ENV
+          echo "Recovering wallet from mnemonic (test keyring — no password needed)..."
+          echo "$AKASH_MNEMONIC" | provider-services keys add deployer \
+            --keyring-backend test \
+            --recover
 
-      - name: Resolve Akash account address
-        run: |
-          if [ -n "${{ vars.AKASH_ACCOUNT_ADDRESS }}" ]; then
-            echo "AKASH_FROM=${{ vars.AKASH_ACCOUNT_ADDRESS }}" >> $GITHUB_ENV
-          else
-            echo "::error::AKASH_ACCOUNT_ADDRESS repo variable not set"
+          echo "=== Verifying key ==="
+          WALLET_ADDR=$(provider-services keys show deployer --keyring-backend test -a)
+          if [ -z "$WALLET_ADDR" ]; then
+            echo "::error::Wallet key import failed"
             exit 1
           fi
+          echo "AKASH_FROM=$WALLET_ADDR" >> $GITHUB_ENV
 
       - name: Create Akash cert
         run: |
