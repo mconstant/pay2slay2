@@ -15,6 +15,7 @@ provider "akash" {
 locals {  
   # Fully qualified image reference (e.g. ghcr.io/OWNER/REPO:TAG)
   image = "${var.image_repo}:${var.image_tag}"
+  deployment_price_uact = coalesce(var.deployment_price_uact, var.deployment_price_uakt, 1000)
 }
 
 # Placeholder: Define a basic SDL rendered as part of a deployment
@@ -65,8 +66,8 @@ resource "akash_deployment" "p2s" {
             anyOf:
               - "${var.preferred_providers}"
           pricing:
-            api:
-              denom: uakt
+            api:ct
+              amount: ${local.deployment_price_uac
               amount: ${var.deployment_price_uakt}
     deployment:
       api:

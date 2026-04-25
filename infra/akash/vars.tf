@@ -29,10 +29,16 @@ variable "image_repo" {
 }
 
 
+variable "deployment_price_uact" {
+  type        = number
+  description = "Bid pricing amount (uact) for the service profile."
+  default     = 1000
+}
+
 variable "deployment_price_uakt" {
   type        = number
-  description = "Bid pricing amount (uakt) for the service profile."
-  default     = 1000
+  description = "Deprecated compatibility input for the old uakt pricing variable name."
+  default     = null
 }
 
 variable "cpu_units" {

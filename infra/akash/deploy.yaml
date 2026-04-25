@@ -56,7 +56,7 @@ profiles:
     dcloud:
       pricing:
         api:
-          denom: uakt
+          denom: uact
           amount: 10000
 deployment:
   api:

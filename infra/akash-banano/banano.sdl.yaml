@@ -35,7 +35,7 @@ profiles:
     westcoast:
       pricing:
         banano-profile:
-          denom: uakt
+          denom: uact
           amount: 1000
 deployment:
   banano:

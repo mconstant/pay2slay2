@@ -6,6 +6,7 @@ provider "akash" {
 
 locals {
   image = "${var.image_repo}:${var.image_tag}"
+  deployment_price_uact = coalesce(var.deployment_price_uact, var.deployment_price_uakt, 1000)
 }
 
 resource "akash_deployment" "api" {
@@ -35,8 +36,8 @@ resource "akash_deployment" "api" {
         westcoast:
           pricing:
             api:
-              denom: uakt
-              amount: var.deployment_price_uakt
+              denom: uact
+              amount: local.deployment_price_uact
     deployment:
       api:
         westcoast:

@@ -6,6 +6,7 @@ provider "akash" {
 
 locals {
   image = "xmconstantx/configurable-bananode:stable"
+  deployment_price_uact = coalesce(var.deployment_price_uact, var.deployment_price_uakt, 1000)
 }
 
 resource "akash_deployment" "banano" {
@@ -46,8 +47,8 @@ resource "akash_deployment" "banano" {
       placement:
         westcoast:
           pricing:
-            banano-profile:
-              denom: uakt
+            banano-profct
+              amount: local.deployment_price_uac
               amount: var.deployment_price_uakt
     deployment:
       banano:
