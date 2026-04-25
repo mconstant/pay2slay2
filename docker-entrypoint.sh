@@ -20,6 +20,21 @@ LOG_LEVEL="${P2S_LOG_LEVEL:-warning}"
   done
 ) &
 
+# ── Periodic Backup to Storj ──
+# Runs every 4 hours (14400s)
+(
+  # Wait a bit before initial backup
+  sleep 60
+  while true; do
+    echo "[backup] Starting SQLite database backup to Storj..."
+    sqlite3 /app/pay2slay.db ".backup '/tmp/pay2slay.db'"
+    rclone copy /tmp/pay2slay.db storj:bananocraftbackups/pay2slay2-backups/pay2slay-$(date -u +%Y%m%d-%H%M%S).db -v || echo "[backup] rclone upload failed"
+    rm -f /tmp/pay2slay.db
+    echo "[backup] Finished backup run."
+    sleep 14400
+  done
+) &
+
 # Start API server (foreground) — scheduler runs as a background thread inside the API process
 echo "Starting API server..."
 exec uvicorn src.api.app:create_app --factory --host 0.0.0.0 --port 8000 --log-level "$LOG_LEVEL"
