@@ -28,7 +28,7 @@ LOG_LEVEL="${P2S_LOG_LEVEL:-warning}"
   while true; do
     echo "[backup] Starting SQLite database backup to Storj..."
     sqlite3 /app/pay2slay.db ".backup '/tmp/pay2slay.db'"
-    rclone copy /tmp/pay2slay.db storj:pay2slay2-backups/pay2slay-$(date -u +%Y%m%d-%H%M%S).db -v || echo "[backup] rclone upload failed"
+    rclone copyto /tmp/pay2slay.db storj:pay2slay2-backups/pay2slay-$(date -u +%Y%m%d-%H%M%S).db -v --s3-no-check-bucket || echo "[backup] rclone upload failed"
     rm -f /tmp/pay2slay.db
     echo "[backup] Finished backup run."
     sleep 14400
