@@ -10,7 +10,12 @@ pay2slay.db
 *.egg-info
 infra
 tests
-scripts
+scripts/*
+!scripts/infra
+scripts/infra/*
+!scripts/infra/backup.sh
+!scripts/infra/check_backup.sh
+!scripts/infra/restore.sh
 docs
 .pre-commit-config.yaml
 .gitignore
