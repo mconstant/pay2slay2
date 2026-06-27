@@ -154,6 +154,12 @@ jobs:
           P2S_DAILY_CAP: ${{ vars.P2S_DAILY_CAP || '150' }}
           P2S_WEEKLY_CAP: ${{ vars.P2S_WEEKLY_CAP || '750' }}
           P2S_LUNAR_NEW_YEAR: ${{ vars.P2S_LUNAR_NEW_YEAR || 'true' }}
+          # DR (restic→Storj). RESTIC_PASSWORD must be a repo/env secret.
+          RESTIC_PASSWORD: ${{ secrets.RESTIC_PASSWORD }}
+          SERVER_NAME: ${{ vars.BACKUP_SERVER_NAME || 'prod' }}
+          CHECK_BACKUP: ${{ vars.CHECK_BACKUP || 'true' }}
+          RESTORE_FROM_BACKUP: ${{ vars.RESTORE_FROM_BACKUP || 'true' }}
+          BACKUP_MINUTE_INTERVAL: ${{ vars.BACKUP_MINUTE_INTERVAL || '240' }}
         run: |
           envsubst < infra/akash/deploy.yaml > deploy-final.yaml
           echo "=== Final SDL ==="

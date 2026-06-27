@@ -26,6 +26,12 @@ services:
       - IMAGE_TAG=${IMAGE_TAG}
       - DATABASE_URL=sqlite:////data/pay2slay.db
       - PAY2SLAY_AUTO_MIGRATE=1
+      - RESTIC_PASSWORD=${RESTIC_PASSWORD}
+      - SERVER_NAME=${SERVER_NAME}
+      - CHECK_BACKUP=${CHECK_BACKUP}
+      - RESTORE_FROM_BACKUP=${RESTORE_FROM_BACKUP}
+      - BACKUP_MINUTE_INTERVAL=${BACKUP_MINUTE_INTERVAL}
+      - DB_PATH=/data/pay2slay.db
     expose:
       - port: 8000
         as: 80

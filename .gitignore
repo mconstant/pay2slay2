@@ -65,3 +65,5 @@ sbom*.spdx.json
 *.sbom.json
 
 .claude/
+# DR safety copies (never commit DB exports)
+backups/

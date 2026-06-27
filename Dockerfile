@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl ca-certificates gcc build-essential rclone sqlite3 && rm -rf /var/lib/apt/lists/*
+    curl ca-certificates gcc build-essential rclone restic sqlite3 && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml README.md ./
 RUN pip install --no-cache-dir -e .
@@ -18,6 +18,7 @@ COPY static ./static
 COPY alembic ./alembic
 COPY alembic.ini ./
 COPY rclone.conf /root/.config/rclone/rclone.conf
+COPY scripts/infra/backup.sh scripts/infra/check_backup.sh scripts/infra/restore.sh ./scripts/infra/
 COPY docker-entrypoint.sh ./
 
 EXPOSE 8000

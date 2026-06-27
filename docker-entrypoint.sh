@@ -20,20 +20,21 @@ LOG_LEVEL="${P2S_LOG_LEVEL:-warning}"
   done
 ) &
 
-# ── Periodic Backup to Storj ──
-# Runs every 4 hours (14400s)
-(
-  # Wait a bit before initial backup
-  sleep 60
-  while true; do
-    echo "[backup] Starting SQLite database backup to Storj..."
-    sqlite3 /app/pay2slay.db ".backup '/tmp/pay2slay.db'"
-    rclone copyto /tmp/pay2slay.db storj:pay2slay2-backups/pay2slay-$(date -u +%Y%m%d-%H%M%S).db -v --s3-no-check-bucket || echo "[backup] rclone upload failed"
-    rm -f /tmp/pay2slay.db
-    echo "[backup] Finished backup run."
-    sleep 14400
-  done
-) &
+# ── DR: optional integrity check of the existing restic repo on startup ──
+if [ "${CHECK_BACKUP}" = "true" ]; then
+  bash /app/scripts/infra/check_backup.sh || true
+fi
+
+# ── DR: restore from latest snapshot before first run on a fresh volume ──
+DATA_DIR="$(dirname "${DB_PATH:-/data/pay2slay.db}")"
+if [ ! -f "${DATA_DIR}/.restored" ] && [ "${RESTORE_FROM_BACKUP}" = "true" ]; then
+  bash /app/scripts/infra/restore.sh
+fi
+
+# ── DR: periodic restic backup of the live DB to Storj ──
+# Loud failures (no `|| echo swallow`) — the previous loop was silently
+# 403'ing for months because of misscoped creds.
+bash /app/scripts/infra/backup.sh &
 
 # Start API server (foreground) — scheduler runs as a background thread inside the API process
 echo "Starting API server..."
