@@ -66,10 +66,15 @@ class PayoutService:
         accrual_ids = sorted(a.id for a in accruals)
         raw_key = ",".join(str(i) for i in accrual_ids).encode("utf-8")
         idem_key = hashlib.sha256(raw_key).hexdigest()
+        # Use .first() with order_by so duplicate rows (from migration
+        # drift that allowed two inserts before the UNIQUE index landed)
+        # don't crash with MultipleResultsFound. Prefer any 'sent' row;
+        # otherwise the newest row.
         existing = (
             self.session.query(Payout)
             .filter(Payout.user_id == user.id, Payout.idempotency_key == idem_key)
-            .one_or_none()
+            .order_by((Payout.status == "sent").desc(), Payout.id.desc())
+            .first()
         )
         if existing and existing.status == "sent":
             return PayoutResult(

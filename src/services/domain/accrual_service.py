@@ -72,10 +72,13 @@ class AccrualService:
         amount = (Decimal(delta_kills) * per_kill).quantize(
             Decimal("0.00000001"), rounding=ROUND_DOWN
         )
+        # .first() with order_by so duplicate accrual rows (from migration
+        # drift) don't crash with MultipleResultsFound. Newest wins.
         existing = (
             self.session.query(RewardAccrual)
             .filter(RewardAccrual.user_id == user.id, RewardAccrual.epoch_minute == epoch_minute)
-            .one_or_none()
+            .order_by(RewardAccrual.id.desc())
+            .first()
         )
         if existing:
             return AccrualResult(

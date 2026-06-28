@@ -573,6 +573,79 @@ def admin_get_operator_seed_status(
     return JSONResponse({"configured": False, "address": None, "set_by": None, "updated_at": None})
 
 
+@router.post("/db/dedupe")
+def admin_dedupe_db(
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Cleanup helper: collapse duplicate rows on tables whose UNIQUE
+    indexes drifted because of the 2026-06-27 alembic migration replay.
+
+    Affected (per the duplicate-column warnings in lease-logs):
+      * payouts.(user_id, idempotency_key)     — keep newest 'sent', else newest
+      * reward_accruals.(user_id, epoch_minute) — keep newest
+
+    Safe to call any time — no-op when there are no dupes.
+    """
+    from sqlalchemy import func
+
+    from src.models.models import Payout, RewardAccrual
+
+    summary: dict[str, int] = {"payouts_removed": 0, "accruals_removed": 0}
+
+    # Payouts: find (user_id, idempotency_key) groups with count > 1
+    payout_dupes = (
+        db.query(
+            Payout.user_id,
+            Payout.idempotency_key,
+            func.count(Payout.id).label("n"),
+        )
+        .filter(Payout.idempotency_key.isnot(None))
+        .group_by(Payout.user_id, Payout.idempotency_key)
+        .having(func.count(Payout.id) > 1)
+        .all()
+    )
+    for uid, idem, _n in payout_dupes:
+        rows = (
+            db.query(Payout)
+            .filter(Payout.user_id == uid, Payout.idempotency_key == idem)
+            .order_by((Payout.status == "sent").desc(), Payout.id.desc())
+            .all()
+        )
+        for stale in rows[1:]:
+            db.delete(stale)
+            summary["payouts_removed"] += 1
+
+    # Reward accruals: same shape
+    accrual_dupes = (
+        db.query(
+            RewardAccrual.user_id,
+            RewardAccrual.epoch_minute,
+            func.count(RewardAccrual.id).label("n"),
+        )
+        .group_by(RewardAccrual.user_id, RewardAccrual.epoch_minute)
+        .having(func.count(RewardAccrual.id) > 1)
+        .all()
+    )
+    for uid, epoch_min, _n in accrual_dupes:
+        a_rows: list[RewardAccrual] = (
+            db.query(RewardAccrual)
+            .filter(
+                RewardAccrual.user_id == uid,
+                RewardAccrual.epoch_minute == epoch_min,
+            )
+            .order_by(RewardAccrual.id.desc())
+            .all()
+        )
+        for a_stale in a_rows[1:]:
+            db.delete(a_stale)
+            summary["accruals_removed"] += 1
+
+    db.commit()
+    log.warning("admin_db_dedupe", **summary)
+    return JSONResponse({"deduped": True, **summary})
+
+
 @router.post("/config/operator-seed/dedupe")
 def admin_dedupe_operator_seed(
     _: None = Depends(_require_admin),
