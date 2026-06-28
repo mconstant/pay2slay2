@@ -1,0 +1,123 @@
+name: akash-logs
+
+# Pulls service logs from the production Akash deployment on demand.
+# Use when the webapp's admin log-tail isn't enough (container crashed,
+# you need lease events, or you want logs older than the in-process
+# ring buffer).
+on:
+  workflow_dispatch:
+    inputs:
+      tail_lines:
+        description: 'Number of log lines to fetch (last N)'
+        required: true
+        default: '500'
+      service_name:
+        description: 'SDL service name (api / scheduler / etc)'
+        required: true
+        default: 'api'
+      include_events:
+        description: 'Also include lease events (yes/no)'
+        required: true
+        default: 'yes'
+
+permissions:
+  contents: read
+
+jobs:
+  fetch_logs:
+    runs-on: ubuntu-latest
+    env:
+      AKASH_KEYRING_BACKEND: test
+      AKASH_NODE: https://akash-rpc.polkachu.com:443
+      AKASH_CHAIN_ID: akashnet-2
+      AKASH_FROM: ${{ vars.AKASH_ACCOUNT_ADDRESS }}
+      AKASH_SIGN_MODE: amino-json
+      PROVIDER_VERSION: '0.11.2'
+    steps:
+      - name: Install Akash provider-services CLI
+        run: |
+          curl -sL "https://github.com/akash-network/provider/releases/download/v${PROVIDER_VERSION}/provider-services_${PROVIDER_VERSION}_linux_amd64.zip" -o provider-services.zip
+          unzip -o provider-services.zip -d ./bin
+          chmod +x ./bin/provider-services
+          sudo mv ./bin/provider-services /usr/local/bin
+          provider-services version
+
+      - name: Import deployer key + cert
+        env:
+          AKASH_MNEMONIC: ${{ secrets.AKASH_MNEMONIC }}
+          AKASH_CERT: ${{ secrets.AKASH_CERT }}
+        run: |
+          echo "$AKASH_MNEMONIC" | provider-services keys add deployer \
+            --recover --keyring-backend test
+          mkdir -p $HOME/.akash
+          echo "$AKASH_CERT" > $HOME/.akash/cert.pem || true
+
+      - name: Determine DSEQ and Provider
+        id: dseq
+        env:
+          DSEQ: ${{ secrets.AKASH_DEPLOYMENT_DSEQ }}
+          PREFERRED_PROVIDERS: ${{ vars.PREFERRED_PROVIDERS }}
+        run: |
+          # Query the chain for the active lease provider — don't trust local vars
+          DEPLOYER="${{ vars.AKASH_ACCOUNT_ADDRESS }}"
+          LEASES=$(curl -s "https://akash-api.polkachu.com/akash/market/v1beta5/leases/list?filters.owner=${DEPLOYER}&filters.dseq=${DSEQ}")
+          PROVIDER=$(echo "$LEASES" | jq -r '.leases[0].lease.id.provider // empty')
+          if [ -z "$PROVIDER" ]; then
+            echo "::error::Could not find active lease for DSEQ=$DSEQ"
+            exit 1
+          fi
+          echo "DSEQ=$DSEQ" >> $GITHUB_OUTPUT
+          echo "PROVIDER=$PROVIDER" >> $GITHUB_OUTPUT
+          echo "Production DSEQ=$DSEQ on provider=$PROVIDER"
+
+      - name: Pull lease-status snapshot
+        env:
+          DSEQ: ${{ steps.dseq.outputs.DSEQ }}
+          PROVIDER: ${{ steps.dseq.outputs.PROVIDER }}
+        run: |
+          echo "## Lease status" >> $GITHUB_STEP_SUMMARY
+          echo '```json' >> $GITHUB_STEP_SUMMARY
+          provider-services lease-status \
+            --dseq $DSEQ --provider $PROVIDER \
+            --from deployer 2>/dev/null | tee /tmp/lease-status.json >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Pull lease-events (when requested)
+        if: ${{ github.event.inputs.include_events == 'yes' }}
+        env:
+          DSEQ: ${{ steps.dseq.outputs.DSEQ }}
+          PROVIDER: ${{ steps.dseq.outputs.PROVIDER }}
+          SERVICE: ${{ github.event.inputs.service_name }}
+        run: |
+          echo "## Lease events (last 200)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          provider-services lease-events \
+            --dseq $DSEQ --provider $PROVIDER \
+            --service $SERVICE \
+            --from deployer 2>&1 | tail -200 | tee /tmp/lease-events.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Pull lease-logs (last N lines)
+        env:
+          DSEQ: ${{ steps.dseq.outputs.DSEQ }}
+          PROVIDER: ${{ steps.dseq.outputs.PROVIDER }}
+          SERVICE: ${{ github.event.inputs.service_name }}
+          TAIL: ${{ github.event.inputs.tail_lines }}
+        run: |
+          echo "## Service logs (last $TAIL lines)" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          provider-services lease-logs \
+            --dseq $DSEQ --provider $PROVIDER \
+            --service $SERVICE \
+            --from deployer \
+            --tail $TAIL 2>&1 | tee /tmp/lease-logs.txt >> $GITHUB_STEP_SUMMARY || true
+          echo '```' >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload logs as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: akash-logs-${{ github.run_id }}
+          path: /tmp/lease-*.{json,txt}
+          if-no-files-found: warn
+          retention-days: 14

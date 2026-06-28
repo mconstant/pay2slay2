@@ -5,8 +5,8 @@ from collections.abc import Generator
 from datetime import UTC, datetime
 from pathlib import Path
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Request
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 from prometheus_client import Counter
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -565,6 +565,52 @@ def admin_scheduler_status(
         )
     except Exception as exc:
         return JSONResponse({"alive": False, "detail": str(exc)})
+
+
+@router.get("/logs/recent")
+def admin_logs_recent(
+    tail: int = Query(500, ge=1, le=5000),
+    _: None = Depends(_require_admin),
+) -> JSONResponse:
+    """Return the last `tail` log lines from the in-process ring buffer.
+
+    Snapshot-only — for live tail use ``/admin/logs/tail`` (SSE).
+    """
+    from src.lib.log_buffer import get_ring
+
+    lines = get_ring().snapshot(tail=tail)
+    return JSONResponse({"count": len(lines), "lines": lines})
+
+
+@router.get("/logs/tail")
+async def admin_logs_tail(
+    tail: int = Query(200, ge=0, le=5000),
+    _: None = Depends(_require_admin),
+) -> StreamingResponse:
+    """Server-Sent Events stream: replay last `tail` lines, then live-tail.
+
+    Browser usage:
+        const es = new EventSource('/admin/logs/tail?tail=200', {withCredentials: true});
+        es.onmessage = (e) => appendLogLine(e.data);
+    """
+    from src.lib.log_buffer import stream
+
+    async def _gen() -> Generator[bytes, None, None]:  # type: ignore[misc]
+        async for line in stream(tail=tail):
+            # SSE: each event is `data: <line>\n\n`. Newlines inside the
+            # JSON line aren't an issue because structlog's JSONRenderer
+            # produces single-line output.
+            yield f"data: {line}\n\n".encode()
+
+    return StreamingResponse(
+        _gen(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # disable nginx buffering on Akash ingress
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @router.post("/scheduler/trigger")

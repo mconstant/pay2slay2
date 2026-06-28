@@ -147,6 +147,14 @@ def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup lo
 
     load_dotenv()
 
+    # Install ring-buffer log handler BEFORE setup_structlog so it survives
+    # any basicConfig() call inside structlog setup.
+    from src.lib.log_buffer import install as _install_log_buffer
+
+    _install_log_buffer(
+        capacity=int(os.getenv("P2S_LOG_BUFFER_SIZE", "5000")),
+    )
+
     setup_structlog()
     log = get_logger(__name__)
 
@@ -154,6 +162,13 @@ def create_app() -> FastAPI:  # noqa: PLR0915 - acceptable aggregated startup lo
     async def _lifespan(app: FastAPI) -> AsyncIterator[None]:
         """Start the scheduler as a background daemon thread inside the API process."""
         _log = get_logger("scheduler.lifespan")
+        # Attach the running event loop to the log buffer so the
+        # scheduler thread can broadcast lines into SSE subscribers.
+        import asyncio as _asyncio
+
+        from src.lib.log_buffer import attach_event_loop as _attach_loop
+
+        _attach_loop(_asyncio.get_event_loop())
         session_factory = getattr(app.state, "session_factory", None)
         if session_factory is None:
             _log.error("scheduler_skipped", reason="no session_factory available")

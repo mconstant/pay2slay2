@@ -1754,3 +1754,8 @@ body.promo-active .promo-banner { display: block; }
   .promo-tagline { font-size: 12px; }
   .promo-mult { font-size: 12px; padding: 3px 10px; }
 }
+
+/* Live log tail */
+#logs-view .log-error { color: #ff6b6b; }
+#logs-view .log-warn  { color: #ffd166; }
+#logs-view .log-info  { color: #82aaff; }

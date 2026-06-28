@@ -1420,6 +1420,94 @@
     });
   };
 
+  // ── Live Log Tail (admin) ─────────────────────────────
+  var __logsState = {
+    eventSource: null,
+    paused: false,
+    buffer: [],
+    maxLines: 2000,
+  };
+
+  function _logsView() { return document.getElementById("logs-view"); }
+  function _logsStatus() { return document.getElementById("logs-status"); }
+  function _logsFilter() {
+    var el = document.getElementById("logs-filter");
+    return el && el.value ? el.value.toLowerCase() : "";
+  }
+
+  function _appendLogLine(line) {
+    if (__logsState.paused) {
+      __logsState.buffer.push(line);
+      if (__logsState.buffer.length > __logsState.maxLines) {
+        __logsState.buffer.shift();
+      }
+      return;
+    }
+    var filter = _logsFilter();
+    if (filter && line.toLowerCase().indexOf(filter) === -1) return;
+    var view = _logsView();
+    if (!view) return;
+    var cls = "";
+    if (/"level":"error"|\berror\b|exception|traceback/i.test(line)) cls = "log-error";
+    else if (/"level":"warning"|warn/i.test(line)) cls = "log-warn";
+    else if (/"level":"info"/i.test(line)) cls = "log-info";
+    var span = document.createElement("span");
+    if (cls) span.className = cls;
+    span.textContent = line + "\n";
+    var atBottom = (view.scrollTop + view.clientHeight + 16) >= view.scrollHeight;
+    view.appendChild(span);
+    while (view.childNodes.length > __logsState.maxLines) {
+      view.removeChild(view.firstChild);
+    }
+    if (atBottom) view.scrollTop = view.scrollHeight;
+  }
+
+  window.connectLogsTail = function () {
+    if (__logsState.eventSource) {
+      __logsState.eventSource.close();
+      __logsState.eventSource = null;
+    }
+    var view = _logsView();
+    if (view) view.textContent = "";
+    var sizeSel = document.getElementById("logs-tail-size");
+    var tail = sizeSel ? parseInt(sizeSel.value, 10) || 200 : 200;
+    var status = _logsStatus();
+    if (status) status.textContent = "connecting…";
+    try {
+      var es = new EventSource("/admin/logs/tail?tail=" + tail, { withCredentials: true });
+      __logsState.eventSource = es;
+      es.onopen = function () {
+        if (status) status.textContent = "connected (tail=" + tail + ")";
+      };
+      es.onmessage = function (ev) {
+        if (ev.data) _appendLogLine(ev.data);
+      };
+      es.onerror = function () {
+        if (status) status.textContent = "disconnected — click Connect to retry";
+        es.close();
+        __logsState.eventSource = null;
+      };
+    } catch (e) {
+      if (status) status.textContent = "error: " + (e && e.message ? e.message : "unknown");
+    }
+  };
+
+  window.toggleLogsPause = function () {
+    __logsState.paused = !__logsState.paused;
+    var btn = document.getElementById("logs-pause-btn");
+    if (btn) btn.textContent = __logsState.paused ? "Resume" : "Pause";
+    if (!__logsState.paused) {
+      var queued = __logsState.buffer.splice(0);
+      queued.forEach(_appendLogLine);
+    }
+  };
+
+  window.clearLogsView = function () {
+    var view = _logsView();
+    if (view) view.textContent = "";
+    __logsState.buffer = [];
+  };
+
   // ── Boot ─────────────────────────────────────────────
   document.addEventListener("DOMContentLoaded", function () {
     init();
