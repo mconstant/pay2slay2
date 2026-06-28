@@ -327,7 +327,10 @@ def donate_info(
         from src.services.banano_client import seed_to_address
 
         seed_config = (
-            db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+            db.query(SecureConfig)
+            .filter(SecureConfig.key == "operator_seed")
+            .order_by(SecureConfig.id.desc())
+            .first()
         )
         if seed_config:
             decrypted = decrypt_value(seed_config.encrypted_value)
@@ -352,7 +355,10 @@ def donate_info(
             from src.models.models import SecureConfig
 
             _seed_row = (
-                db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+                db.query(SecureConfig)
+                .filter(SecureConfig.key == "operator_seed")
+                .order_by(SecureConfig.id.desc())
+                .first()
             )
             if _seed_row:
                 seed_hex = _dv(_seed_row.encrypted_value)

@@ -216,8 +216,17 @@ def admin_payouts_retry(
     integrations = getattr(cfg_obj, "integrations", None)
     if integrations is None:
         raise HTTPException(status_code=500, detail="Config not loaded")
-    # Load operator seed for bananopie signing
-    seed_row = db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+    # Load operator seed for bananopie signing.
+    # `.first()` with order_by(id desc) survives any duplicate-row drift
+    # (e.g. from an out-of-sync alembic_version that allowed two inserts
+    # before the UNIQUE index was added). Cleanup endpoint exists at
+    # /admin/config/operator-seed/dedupe.
+    seed_row = (
+        db.query(SecureConfig)
+        .filter(SecureConfig.key == "operator_seed")
+        .order_by(SecureConfig.id.desc())
+        .first()
+    )
     seed = decrypt_value(seed_row.encrypted_value) if seed_row else None
     if not seed:
         return JSONResponse(
@@ -363,10 +372,13 @@ def admin_stats(
     operator_pending: float | None = None
     operator_account = os.getenv("P2S_OPERATOR_ACCOUNT", "")
 
-    # If no env var, try to derive from stored seed
+    # If no env var, try to derive from stored seed (dedupe-safe)
     if not operator_account:
         seed_config = (
-            db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+            db.query(SecureConfig)
+            .filter(SecureConfig.key == "operator_seed")
+            .order_by(SecureConfig.id.desc())
+            .first()
         )
         if seed_config:
             decrypted = decrypt_value(seed_config.encrypted_value)
@@ -486,10 +498,25 @@ def admin_set_operator_seed(
     # Encrypt and store
     encrypted = encrypt_value(seed)
 
-    existing = db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
-    if existing:
-        existing.encrypted_value = encrypted
-        existing.set_by = admin_email
+    # Dedupe on read so duplicate rows from past drift don't crash this path.
+    # Update the newest row + delete older siblings in a single transaction.
+    rows = (
+        db.query(SecureConfig)
+        .filter(SecureConfig.key == "operator_seed")
+        .order_by(SecureConfig.id.desc())
+        .all()
+    )
+    if rows:
+        rows[0].encrypted_value = encrypted
+        rows[0].set_by = admin_email
+        for stale in rows[1:]:
+            db.delete(stale)
+        if len(rows) > 1:
+            log.warning(
+                "operator_seed_dedupe_on_write",
+                kept_id=rows[0].id,
+                deleted=len(rows) - 1,
+            )
     else:
         sc = SecureConfig(
             key="operator_seed",
@@ -523,7 +550,12 @@ def admin_get_operator_seed_status(
     db: Session = Depends(_get_db),  # noqa: B008
 ) -> JSONResponse:
     """Check if operator seed is configured and derive the address."""
-    existing = db.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+    existing = (
+        db.query(SecureConfig)
+        .filter(SecureConfig.key == "operator_seed")
+        .order_by(SecureConfig.id.desc())
+        .first()
+    )
     if existing:
         # Verify it's decryptable and derive address
         decrypted = decrypt_value(existing.encrypted_value)
@@ -539,6 +571,37 @@ def admin_get_operator_seed_status(
             }
         )
     return JSONResponse({"configured": False, "address": None, "set_by": None, "updated_at": None})
+
+
+@router.post("/config/operator-seed/dedupe")
+def admin_dedupe_operator_seed(
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Cleanup helper: collapse duplicate operator_seed rows.
+
+    Keeps the highest-id row (most recently inserted) and deletes the
+    rest. Safe to call any time — no-op when no dupes exist.
+
+    This is a recovery tool for when an out-of-sync alembic_version
+    let two inserts happen before the UNIQUE index was added.
+    """
+    rows = (
+        db.query(SecureConfig)
+        .filter(SecureConfig.key == "operator_seed")
+        .order_by(SecureConfig.id.desc())
+        .all()
+    )
+    if len(rows) <= 1:
+        return JSONResponse({"deduped": False, "kept": len(rows), "removed": 0})
+    kept_id = rows[0].id
+    removed = 0
+    for stale in rows[1:]:
+        db.delete(stale)
+        removed += 1
+    db.commit()
+    log.warning("operator_seed_dedupe_admin", kept_id=kept_id, removed=removed)
+    return JSONResponse({"deduped": True, "kept": kept_id, "removed": removed})
 
 
 @router.get("/scheduler/status")

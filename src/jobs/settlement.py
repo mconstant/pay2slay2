@@ -113,11 +113,21 @@ class SchedulerConfig:
 
 
 def _load_operator_seed(session: Session) -> str | None:
-    """Load the operator wallet seed from SecureConfig (encrypted at rest)."""
+    """Load the operator wallet seed from SecureConfig (encrypted at rest).
+
+    Uses order_by(id desc).first() instead of one_or_none() so duplicate
+    rows (from alembic drift or pre-UNIQUE-index inserts) don't crash
+    settlement with MultipleResultsFound.
+    """
     from src.lib.crypto import decrypt_value
     from src.models.models import SecureConfig
 
-    row = session.query(SecureConfig).filter(SecureConfig.key == "operator_seed").one_or_none()
+    row = (
+        session.query(SecureConfig)
+        .filter(SecureConfig.key == "operator_seed")
+        .order_by(SecureConfig.id.desc())
+        .first()
+    )
     if not row:
         return None
     return decrypt_value(row.encrypted_value)
