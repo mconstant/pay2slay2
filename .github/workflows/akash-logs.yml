@@ -118,6 +118,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: akash-logs-${{ github.run_id }}
-          path: /tmp/lease-*.{json,txt}
+          path: |
+            /tmp/lease-status.json
+            /tmp/lease-events.txt
+            /tmp/lease-logs.txt
           if-no-files-found: warn
           retention-days: 14
