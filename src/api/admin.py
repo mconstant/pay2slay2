@@ -573,6 +573,210 @@ def admin_get_operator_seed_status(
     return JSONResponse({"configured": False, "address": None, "set_by": None, "updated_at": None})
 
 
+@router.post("/donations/rebuild")
+def admin_rebuild_donations(  # noqa: PLR0915 - end-to-end pipeline kept inline
+    request: Request,
+    force: bool = Body(False, embed=True),
+    dry_run: bool = Body(False, embed=True),
+    _: None = Depends(_require_admin),
+    db: Session = Depends(_get_db),  # noqa: B008
+) -> JSONResponse:
+    """Rebuild donation_ledger by reading the operator's chain history.
+
+    Pulls every `receive` block from Banano RPC `account_history`, groups
+    by sender, and inserts one `DonationLedger` row per receive block with
+    `source="rebuild"`. Real `sender_address` and timestamps are preserved.
+
+    Modes:
+      * dry_run=true (default false): scan only, report counts + total.
+      * force=false (default): refuse if any `rebuild`-source rows exist.
+      * force=true: wipe existing `rebuild`-source rows + replay clean.
+
+    Returns the top-15 donor table + new milestone tier. The next accrual
+    cycle picks up the boosted multiplier automatically via
+    get_current_milestone() in src/jobs/accrual.py.
+    """
+    import os
+    from collections import defaultdict
+    from decimal import Decimal as _Dec
+
+    import httpx
+
+    from src.lib.crypto import decrypt_value
+    from src.models.models import DonationLedger, SecureConfig
+    from src.services.banano_client import seed_to_address
+    from src.services.domain.donation_service import (
+        get_current_milestone,
+        get_next_milestone,
+        get_total_donated,
+    )
+
+    token = request.cookies.get("p2s_admin")
+    admin_email = verify_admin_session(token, session_secret()) if token else "unknown"
+
+    # Resolve operator address: env var first, then derive from stored seed.
+    operator_account = os.getenv("P2S_OPERATOR_ACCOUNT", "") or None
+    if not operator_account:
+        seed_row = (
+            db.query(SecureConfig)
+            .filter(SecureConfig.key == "operator_seed")
+            .order_by(SecureConfig.id.desc())
+            .first()
+        )
+        if seed_row:
+            decrypted = decrypt_value(seed_row.encrypted_value)
+            if decrypted:
+                operator_account = seed_to_address(decrypted)
+    if not operator_account:
+        return JSONResponse(
+            {"status": "error", "detail": "operator_account not resolvable"},
+            status_code=400,
+        )
+
+    # Existing rebuild rows guard
+    existing_rebuild_count = (
+        db.query(DonationLedger).filter(DonationLedger.source == "rebuild").count()
+    )
+    if existing_rebuild_count > 0 and not force and not dry_run:
+        return JSONResponse(
+            {
+                "status": "already_rebuilt",
+                "existing_count": existing_rebuild_count,
+                "detail": "Call again with force=true to wipe + replay.",
+            },
+            status_code=409,
+        )
+
+    # Pull full history from configured Banano RPC.
+    app_state = getattr(request.app, "state", None)
+    cfg_obj = getattr(app_state, "config", None)
+    integrations = getattr(cfg_obj, "integrations", None)
+    rpc_url = (
+        getattr(integrations, "node_rpc", None)
+        or os.getenv("BANANO_NODE_RPC")
+        or "https://kaliumapi.appditto.com/api"
+    )
+    try:
+        r = httpx.post(
+            rpc_url,
+            json={"action": "account_history", "account": operator_account, "count": 10000},
+            timeout=30.0,
+        )
+        history = r.json().get("history", []) or []
+    except Exception as exc:
+        return JSONResponse(
+            {"status": "error", "detail": f"RPC fetch failed: {exc!s}"},
+            status_code=502,
+        )
+
+    receives = [h for h in history if h.get("type") == "receive"]
+    sends = [h for h in history if h.get("type") == "send"]
+    total_recv_ban = sum(float(h.get("amount_decimal", 0) or 0) for h in receives)
+    total_send_ban = sum(float(h.get("amount_decimal", 0) or 0) for h in sends)
+
+    # Aggregate by sender for the leaderboard response.
+    by_sender: dict[str, list[float]] = defaultdict(lambda: [0.0, 0])
+    for h in receives:
+        addr = h.get("account", "")
+        amt = float(h.get("amount_decimal", 0) or 0)
+        by_sender[addr][0] += amt
+        by_sender[addr][1] += 1
+    top_donors = [
+        {
+            "sender_address": addr,
+            "amount_ban": round(amt, 4),
+            "block_count": int(cnt),
+        }
+        for addr, (amt, cnt) in sorted(by_sender.items(), key=lambda kv: -kv[1][0])[:15]
+    ]
+
+    if dry_run:
+        return JSONResponse(
+            {
+                "status": "dry_run",
+                "operator_account": operator_account,
+                "blocks_scanned": len(history),
+                "receive_blocks": len(receives),
+                "send_blocks": len(sends),
+                "total_received_ban": round(total_recv_ban, 4),
+                "total_sent_ban": round(total_send_ban, 4),
+                "distinct_senders": len(by_sender),
+                "top_donors": top_donors,
+            }
+        )
+
+    # Wipe + replay
+    if existing_rebuild_count > 0 and force:
+        db.query(DonationLedger).filter(DonationLedger.source == "rebuild").delete()
+        db.flush()
+    inserted = 0
+    for h in receives:
+        amt_dec = _Dec(str(h.get("amount_decimal", "0") or "0"))
+        if amt_dec <= 0:
+            continue
+        entry = DonationLedger(
+            amount_ban=amt_dec,
+            blocks_received=1,
+            source="rebuild",
+            note=f"hash:{h.get('hash', '?')[:16]} h:{h.get('height', '?')}",
+            sender_address=h.get("account") or None,
+        )
+        db.add(entry)
+        inserted += 1
+    record_admin_audit(
+        db,
+        AdminAuditPayload(
+            action="rebuild_donations",
+            actor_email=admin_email,
+            target_type="donation_ledger",
+            target_id="all",
+            summary=f"Rebuilt {inserted} rows; total {total_recv_ban:.2f} BAN",
+            detail=f"operator={operator_account[:30]}... force={force}",
+        ),
+    )
+    db.commit()
+
+    total = get_total_donated(db)
+    cur = get_current_milestone(total)
+    nxt = get_next_milestone(total)
+    log.info(
+        "admin_rebuild_donations",
+        admin=admin_email,
+        operator=operator_account,
+        inserted=inserted,
+        total_ban=str(total),
+        milestone=cur.name,
+    )
+    return JSONResponse(
+        {
+            "status": "rebuilt",
+            "operator_account": operator_account,
+            "inserted": inserted,
+            "total_donated_ban": float(total),
+            "distinct_senders": len(by_sender),
+            "top_donors": top_donors,
+            "current_milestone": {
+                "name": cur.name,
+                "emoji": cur.emoji,
+                "threshold_ban": cur.threshold,
+                "payout_multiplier": cur.payout_multiplier,
+                "description": cur.description,
+            },
+            "next_milestone": (
+                {
+                    "name": nxt.name,
+                    "emoji": nxt.emoji,
+                    "threshold_ban": nxt.threshold,
+                    "payout_multiplier": nxt.payout_multiplier,
+                    "ban_remaining": nxt.threshold - float(total),
+                }
+                if nxt
+                else None
+            ),
+        }
+    )
+
+
 @router.post("/db/dedupe")
 def admin_dedupe_db(
     _: None = Depends(_require_admin),
